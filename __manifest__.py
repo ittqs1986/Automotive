@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '2.2',                          # เวอร์ชัน: ตั้งค่า Redirect ไปยัง /automotive หลัง Login สำเร็จ
+    'version': '2.3',                          # เวอร์ชัน: เพิ่มการ Redirect หน้า Root (/) ไปยัง /automotive
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs

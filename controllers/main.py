@@ -17,6 +17,11 @@ class VehicleBorrowController(http.Controller):
         )
         return vehicle_types, vehicles, employee
 
+    @http.route(['/'], type='http', auth="public", website=True)
+    def index_redirect(self, **kw):
+        """บังคับให้หน้าแรกสุดของเว็บไซต์ Redirect มาที่หน้าหลักของระบบรถ"""
+        return request.redirect('/automotive')
+
     @http.route(['/automotive'], type='http', auth="public", website=True)
     def vehicle_home(self, **post):
         vehicle_types, vehicles, employee = self._get_repair_data()
