@@ -2106,7 +2106,7 @@
                                                 <tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่มีรายการอะไหล่ในระบบ</td></tr>
                                             </t>
                                             <t t-foreach="parts" t-as="p">
-                                                <tr t-attf-class="spare-part-row #{'opacity-50 grayscale' if hasattr(p, 'active') and not p.active else ''}" t-att-data-id="p.id" t-att-data-name="p.display_name" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#partLotDetailModal">
+                                                <tr t-attf-class="spare-part-row #{'opacity-50 grayscale' if 'active' in p._fields and not p.active else ''}" t-att-data-id="p.id" t-att-data-name="p.display_name" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#partLotDetailModal">
                                                     <td class="ps-4 fw-bold"><t t-esc="p.code or '-'"/></td>
 
                                                     <td>
@@ -2129,7 +2129,7 @@
                                                     </td>
                                                     <td class="text-muted"><t t-esc="p.uom"/></td>
                                                     <td class="text-center">
-                                                        <t t-if="hasattr(p, 'active') and not p.active">
+                                                        <t t-if="'active' in p._fields and not p.active">
                                                             <span class="badge bg-secondary rounded-pill px-3 py-2">ปิดใช้งาน</span>
                                                         </t>
                                                         <t t-else="">
@@ -2158,7 +2158,7 @@
                                                             </button>
                                                             
                                                             <!-- ปุ่มสลับสถานะ / ลบ -->
-                                                            <t t-if="hasattr(p, 'active') and not p.active">
+                                                            <t t-if="'active' in p._fields and not p.active">
                                                                 <!-- ถ้าปิดอยู่ ให้แสดงปุ่มเปิดการใช้งาน -->
                                                                 <form t-attf-action="/automotive/spare-parts/toggle-active/#{p.id}" method="post">
                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -2380,7 +2380,7 @@
                                         <select name="part_id" class="form-select form-select-lg" required="1">
                                             <option value="">-- เลือกอะไหล่ --</option>
                                             <t t-foreach="parts" t-as="p">
-                                                <t t-if="not hasattr(p, 'active') or p.active">
+                                                <t t-if="'active' not in p._fields or p.active">
                                                     <option t-att-value="p.id">
                                                         <t t-esc="p.name"/> (คงเหลือ: <t t-esc="int(p.qty_on_hand)"/>)
                                                     </option>
@@ -2433,7 +2433,7 @@
                                         <select name="part_id" id="issue_part_select" class="form-select form-select-lg" required="1">
                                             <option value="">-- เลือกอะไหล่ --</option>
                                             <t t-foreach="parts" t-as="p">
-                                                <t t-if="not hasattr(p, 'active') or p.active">
+                                                <t t-if="'active' not in p._fields or p.active">
                                                     <option t-att-value="p.id" t-att-data-qty="p.qty_on_hand">
                                                         <t t-esc="p.name"/> (คงเหลือ: <t t-esc="int(p.qty_on_hand)"/> <t t-esc="p.uom"/>)
                                                     </option>
