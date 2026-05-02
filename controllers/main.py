@@ -568,7 +568,7 @@ class VehicleBorrowController(http.Controller):
             request.env['fleet.vehicle'].sudo().create(vals)
             import logging
             logging.getLogger(__name__).info("Created vehicle with image length: %s", len(image_b64) if image_b64 else 0)
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=vehicle_added&type=%s" % model_name)
+            return request.redirect('/automotive/admin/vehicle/dashboard?msg=vehicle_added&type=%s' % model_name)
         except Exception as e:
             import logging
             _logger = logging.getLogger(__name__)
@@ -1305,7 +1305,7 @@ class VehicleBorrowController(http.Controller):
                 new_state = not part.active
                 part.write({'active': new_state})
                 msg = "part_activated" if new_state else "part_deactivated"
-                return request.redirect('/automotive/admin/spare-parts?msg=" + msg)
+                return request.redirect('/automotive/admin/spare-parts?msg=' + msg)
             return request.redirect('/automotive/admin/spare-parts?error=ไม่พบรายการอะไหล่')
         except Exception as e:
             return request.redirect("/automotive/admin/spare-parts?error=" + str(e))

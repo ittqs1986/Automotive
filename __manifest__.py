@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '1.7',                          # เวอร์ชัน: แก้ไข Syntax Error และเปลี่ยนชื่อ DB เป็น ittest
+    'version': '1.8',                          # เวอร์ชัน: แก้ไข Syntax และตั้งค่าใช้ฐานข้อมูล ittest สมบูรณ์
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs
