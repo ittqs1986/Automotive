@@ -758,7 +758,7 @@
                                                                     <form method="post" class="m-0">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <select class="form-select form-select-sm border-0 bg-light fw-bold" 
-                                                                                onchange="this.form.action='/admin/vehicle/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
+                                                                                onchange="this.form.action='/automotive/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
                                                                                 t-att-data-id="v.id"
                                                                                 t-attf-style="width: 100px; font-size: 0.7rem; color: #{'#198754' if v.vehicle_status == 'active' else '#6c757d' if v.vehicle_status == 'retired' else '#dc3545'}; cursor: pointer; box-shadow: none;">
                                                                             <option value="active" t-att-selected="v.vehicle_status == 'active'">พร้อมใช้</option>
@@ -1822,35 +1822,35 @@
     <!-- Nav Menu -->
     <record id="menu_vehicle_booking_website" model="website.menu">
         <field name="name">Vehicle Usage Recording</field>
-        <field name="url">/vehicle/booking</field>
+        <field name="url">/automotive/booking</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">20</field>
     </record>
 
     <record id="menu_vehicle_my_history_website" model="website.menu">
         <field name="name">ประวัติการใช้งานของฉัน</field>
-        <field name="url">/vehicle/my-bookings</field>
+        <field name="url">/automotive/my-bookings</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">22</field>
     </record>
 
     <record id="menu_vehicle_admin_bookings_website" model="website.menu">
         <field name="name">ประวัติรวม (Admin)</field>
-        <field name="url">/admin/vehicle/bookings</field>
+        <field name="url">/automotive/bookings</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">25</field>
     </record>
 
     <record id="menu_vehicle_admin_dashboard_website" model="website.menu">
-        <field name="name">จัดการระบบ (Admin)</field>
-        <field name="url">/admin/vehicle/dashboard</field>
+        <field name="name">ศูนย์ควบคุมผู้ดูแลระบบ</field>
+        <field name="url">/automotive/dashboard</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">30</field>
     </record>
 
     <record id="menu_vehicle_admin_repair_website" model="website.menu">
         <field name="name">แจ้งซ่อมรถยนต์ (Admin)</field>
-        <field name="url">/admin/vehicle/repair</field>
+        <field name="url">/automotive/repair</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">35</field>
     </record>
