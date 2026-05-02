@@ -26,7 +26,7 @@ class VehicleBorrowController(http.Controller):
             'current_employee': employee,
         })
 
-    @http.route(['/automotive/vehicle/booking'], type='http', auth="user", website=True)
+    @http.route(['/automotive/booking'], type='http', auth="user", website=True)
     def vehicle_booking_form(self, **kw):
         import logging
         _logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class VehicleBorrowController(http.Controller):
             'vehicle_types': vehicle_types,
         })
 
-    @http.route(['/automotive/vehicle/booking/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/booking/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def vehicle_booking_submit(self, **post):
         import logging
         _logger = logging.getLogger(__name__)
@@ -169,7 +169,7 @@ class VehicleBorrowController(http.Controller):
                 'post': post,
             })
 
-    @http.route(['/automotive/vehicle/my-bookings'], type='http', auth="user", website=True)
+    @http.route(['/automotive/my-bookings'], type='http', auth="user", website=True)
     def my_bookings_page(self, **post):
         current_user = request.env.user
         employee = request.env['hr.employee'].sudo().search(
@@ -187,7 +187,7 @@ class VehicleBorrowController(http.Controller):
             'current_employee': employee,
         })
 
-    @http.route(['/automotive/vehicle/return/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/return/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def vehicle_return(self, req_id, **post):
         from odoo import fields
         current_user = request.env.user
@@ -200,9 +200,9 @@ class VehicleBorrowController(http.Controller):
                 'state': 'returned',
                 'date_end': fields.Datetime.now(),
             })
-        return request.redirect('/automotive/vehicle/booking?msg=returned')
+        return request.redirect('/automotive/booking?msg=returned')
 
-    @http.route(['/automotive/vehicle/cancel/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/cancel/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def vehicle_cancel(self, req_id, **post):
         current_user = request.env.user
         employee = request.env['hr.employee'].sudo().search(
@@ -212,9 +212,9 @@ class VehicleBorrowController(http.Controller):
         # ตรวจสอบว่าเป็นเจ้าของรายการถึงจะยกเลิกได้
         if borrow.exists() and borrow.employee_id.id == (employee.id if employee else -1):
             borrow.sudo().write({'state': 'cancelled'})
-        return request.redirect('/automotive/vehicle/booking?msg=cancelled')
+        return request.redirect('/automotive/booking?msg=cancelled')
 
-    @http.route(['/automotive/vehicle/report-issue/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/report-issue/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def vehicle_report_issue_submit(self, **post):
         try:
             vehicle_id = post.get('vehicle_id')
@@ -298,7 +298,7 @@ class VehicleBorrowController(http.Controller):
             domain.append(('factory_id', '=', int(factory_id)))
         return domain
 
-    @http.route(['/automotive/admin/vehicle/dashboard'], type='http', auth="user", website=True)
+    @http.route(['/automotive/dashboard'], type='http', auth="user", website=True)
     def admin_dashboard(self, **post):
         import logging
         _logger = logging.getLogger(__name__)
@@ -398,7 +398,7 @@ class VehicleBorrowController(http.Controller):
             'transfer_history': transfer_history,
         })
 
-    @http.route(['/automotive/admin/member/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/member/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_add(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -437,21 +437,21 @@ class VehicleBorrowController(http.Controller):
                 'user_id': new_user.id,
             })
             
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=member_added')
+            return request.redirect('/automotive/dashboard?msg=member_added')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
+            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/admin/member/delete/<int:user_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/member/delete/<int:user_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_delete(self, user_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
         
         if user_id == request.env.user.id or user_id == 1:
-            return request.redirect('/automotive/admin/vehicle/dashboard?error=ไม่สามารถลบบัญชีของตัวเองหรือ Admin หลักได้')
+            return request.redirect('/automotive/dashboard?error=ไม่สามารถลบบัญชีของตัวเองหรือ Admin หลักได้')
         
         user = request.env['res.users'].sudo().browse(user_id)
         if not user.exists():
-            return request.redirect('/automotive/admin/vehicle/dashboard?error=ไม่พบผู้ใช้งานนี้ในระบบ')
+            return request.redirect('/automotive/dashboard?error=ไม่พบผู้ใช้งานนี้ในระบบ')
         
         # ลองลบก่อน หากลบไม่ได้ (มีประวัติการจองผูกอยู่) ให้ Archive แทน
         try:
@@ -468,9 +468,9 @@ class VehicleBorrowController(http.Controller):
                 emp.sudo().write({'active': False})
             user.sudo().write({'active': False})
         
-        return request.redirect('/automotive/admin/vehicle/dashboard?msg=member_deleted')
+        return request.redirect('/automotive/dashboard?msg=member_deleted')
 
-    @http.route(['/automotive/admin/member/role/<int:user_id>/<string:role>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/member/role/<int:user_id>/<string:role>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_role(self, user_id, role, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -506,11 +506,11 @@ class VehicleBorrowController(http.Controller):
                 user.sudo().write({'groups_id': [(4, group.id)]})
             # role == 'user' = ไม่มี group admin
                 
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=role_updated')
+            return request.redirect('/automotive/dashboard?msg=role_updated')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
+            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/admin/member/status/<int:user_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/member/status/<int:user_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_status(self, user_id, status, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -520,12 +520,12 @@ class VehicleBorrowController(http.Controller):
             if user.exists():
                 active_val = True if status == 'active' else False
                 user.sudo().write({'active': active_val})
-                return request.redirect('/automotive/admin/vehicle/dashboard?msg=status_updated')
+                return request.redirect('/automotive/dashboard?msg=status_updated')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
-        return request.redirect('/automotive/admin/vehicle/dashboard')
+            return request.redirect("/automotive/dashboard?error=" + str(e))
+        return request.redirect('/automotive/dashboard')
 
-    @http.route(['/automotive/admin/vehicle/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_add(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -533,7 +533,7 @@ class VehicleBorrowController(http.Controller):
         try:
             model_name = post.get('model_name')
             if not model_name:
-                return request.redirect('/automotive/admin/vehicle/dashboard?error=Missing model name')
+                return request.redirect('/automotive/dashboard?error=Missing model name')
 
             # จัดการรูปภาพ (ถ้ามี)
             image_file = request.httprequest.files.get('image')
@@ -568,14 +568,14 @@ class VehicleBorrowController(http.Controller):
             request.env['fleet.vehicle'].sudo().create(vals)
             import logging
             logging.getLogger(__name__).info("Created vehicle with image length: %s", len(image_b64) if image_b64 else 0)
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=vehicle_added&type=%s' % model_name)
+            return request.redirect('/automotive/dashboard?msg=vehicle_added&type=%s' % model_name)
         except Exception as e:
             import logging
             _logger = logging.getLogger(__name__)
             _logger.error("Error adding vehicle: %s", str(e))
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
+            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/admin/vehicle/edit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/edit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_edit(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -586,7 +586,7 @@ class VehicleBorrowController(http.Controller):
             
             vehicle = request.env['fleet.vehicle'].sudo().browse(int(vehicle_id))
             if not vehicle.exists():
-                return request.redirect('/automotive/admin/vehicle/dashboard?error=ไม่พบรถยนต์ที่ต้องการแก้ไข')
+                return request.redirect('/automotive/dashboard?error=ไม่พบรถยนต์ที่ต้องการแก้ไข')
 
             vals = {
                 'license_plate': license_plate,
@@ -602,11 +602,11 @@ class VehicleBorrowController(http.Controller):
                     vals['image_1920'] = image_b64
 
             vehicle.sudo().write(vals)
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=vehicle_updated')
+            return request.redirect('/automotive/dashboard?msg=vehicle_updated')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
+            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/admin/vehicle/status/<int:vehicle_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/status/<int:vehicle_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_status(self, vehicle_id, status, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -615,12 +615,12 @@ class VehicleBorrowController(http.Controller):
             vehicle = request.env['fleet.vehicle'].sudo().browse(vehicle_id)
             if vehicle.exists():
                 vehicle.sudo().write({'vehicle_status': status})
-                return request.redirect('/automotive/admin/vehicle/dashboard?msg=status_updated')
+                return request.redirect('/automotive/dashboard?msg=status_updated')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
-        return request.redirect('/automotive/admin/vehicle/dashboard')
+            return request.redirect("/automotive/dashboard?error=" + str(e))
+        return request.redirect('/automotive/dashboard')
 
-    @http.route(['/automotive/admin/setup/init-vehicles'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/init-vehicles'], type='http', auth="user", website=True)
     def admin_init_vehicles(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -682,11 +682,11 @@ class VehicleBorrowController(http.Controller):
                     'vehicle_status': 'active'
                 })
         
-        return request.redirect('/automotive/admin/vehicle/dashboard?msg=setup_completed')
+        return request.redirect('/automotive/dashboard?msg=setup_completed')
         
 
 
-    @http.route(['/automotive/admin/vehicle/bookings'], type='http', auth="user", website=True)
+    @http.route(['/automotive/bookings'], type='http', auth="user", website=True)
     def admin_bookings(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -701,7 +701,7 @@ class VehicleBorrowController(http.Controller):
             'requests': borrow_requests,
         })
 
-    @http.route(['/automotive/admin/vehicle/delete/<int:vehicle_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/delete/<int:vehicle_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_delete(self, vehicle_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -710,11 +710,11 @@ class VehicleBorrowController(http.Controller):
             vehicle = request.env['fleet.vehicle'].sudo().browse(vehicle_id)
             if vehicle.exists():
                 vehicle.sudo().unlink()
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=vehicle_deleted')
+            return request.redirect('/automotive/dashboard?msg=vehicle_deleted')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/dashboard?error=" + str(e))
+            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/admin/booking/delete/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/booking/delete/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_booking_delete(self, req_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -723,11 +723,11 @@ class VehicleBorrowController(http.Controller):
             req = request.env['vehicle.borrow.request'].sudo().browse(req_id)
             if req.exists():
                 req.sudo().unlink()
-            return request.redirect('/automotive/admin/vehicle/bookings?msg=booking_deleted')
+            return request.redirect('/automotive/bookings?msg=booking_deleted')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/bookings?error=" + str(e))
+            return request.redirect("/automotive/bookings?error=" + str(e))
 
-    @http.route(['/automotive/admin/setup/list-vehicles'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/list-vehicles'], type='http', auth="user", website=True)
     def admin_list_vehicles(self, **post):
         if not self._is_admin(): return request.render("http_routing.403")
         vehicles = request.env['fleet.vehicle'].sudo().search([])
@@ -736,7 +736,7 @@ class VehicleBorrowController(http.Controller):
             output += f"{v.id} - {v.license_plate} - {'Active' if v.active else 'Archived'} - Image: {'Yes' if v.image_128 else 'No'}<br/>"
         return output
 
-    @http.route(['/automotive/admin/setup/delete-vehicle-by-name'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/delete-vehicle-by-name'], type='http', auth="user", website=True)
     def admin_delete_vehicle_by_name(self, name=None, **post):
         if not self._is_admin(): return request.render("http_routing.403")
         if not name: return "Please provide ?name=xxx"
@@ -761,7 +761,7 @@ class VehicleBorrowController(http.Controller):
             return f"<b>ทำไมคุณถึงลบ {name} ไม่ได้:</b><br/>" + "<br/>".join(reasons) + "<br/><br/>" + \
                    f"ลิงก์ข้อมูลเหล่านี้ยังคงอยู่ ไม่สามารถลบรถตัวจริงทิ้งได้ " + \
                    f"แนะนำให้ใช้การปิดการใช้งาน (Archive) แทนครับ<br/><br/>" + \
-                   f"<a href='/automotive/admin/setup/list-vehicles' class='btn btn-primary'>กลับไปดูรายการทั้งหมด</a>"
+                   f"<a href='/automotive/setup/list-vehicles' class='btn btn-primary'>กลับไปดูรายการทั้งหมด</a>"
 
         try:
             v.unlink()
@@ -769,7 +769,7 @@ class VehicleBorrowController(http.Controller):
         except Exception as e:
             return f"Error while trying to unlink: {str(e)}"
 
-    @http.route(['/automotive/admin/setup/force-delete-vehicle'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/force-delete-vehicle'], type='http', auth="user", website=True)
     def admin_force_delete_vehicle(self, name=None, **post):
         if not self._is_admin(): return request.render("http_routing.403")
         if not name: return "Please provide ?name=xxx"
@@ -795,9 +795,9 @@ class VehicleBorrowController(http.Controller):
         return f"Successfully cleaned all data and deleted vehicle '{name}'.<br/>" \
                f"- Deleted {repair_count} repair requests.<br/>" \
                f"- Deleted {borrow_count} borrowing requests.<br/><br/>" \
-               f"<a href='/automotive/admin/vehicle/dashboard' class='btn btn-success'>กลับสู่ Dashboard</a>"
+               f"<a href='/automotive/dashboard' class='btn btn-success'>กลับสู่ Dashboard</a>"
 
-    @http.route(['/automotive/admin/vehicle/repair'], type='http', auth="user", website=True)
+    @http.route(['/automotive/repair'], type='http', auth="user", website=True)
     def admin_repair_page(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -884,7 +884,7 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
-    @http.route(['/automotive/admin/vehicle/repair/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/repair/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_repair_submit(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -894,7 +894,7 @@ class VehicleBorrowController(http.Controller):
             description = post.get('description')
             
             if not vehicle_id or not description:
-                return request.redirect('/automotive/admin/vehicle/repair?error=กรุณาระบุรถและรายละเอียดอาการเสีย')
+                return request.redirect('/automotive/repair?error=กรุณาระบุรถและรายละเอียดอาการเสีย')
                 
             request.env['vehicle.repair.request'].sudo().create({
                 'vehicle_id': int(vehicle_id),
@@ -902,11 +902,11 @@ class VehicleBorrowController(http.Controller):
                 'reported_by_id': request.env.user.id,
             })
             
-            return request.redirect('/automotive/admin/vehicle/repair?msg=repair_added')
+            return request.redirect('/automotive/repair?msg=repair_added')
         except Exception as e:
-            return request.redirect("/automotive/admin/vehicle/repair?error=" + str(e))
+            return request.redirect("/automotive/repair?error=" + str(e))
             
-    @http.route(['/automotive/admin/setup/rename-vehicles'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/rename-vehicles'], type='http', auth="user", website=True)
     def admin_rename_vehicles(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -932,9 +932,9 @@ class VehicleBorrowController(http.Controller):
                 vehicle.write({'license_plate': new_name})
                 updated_count += 1
         
-        return request.redirect('/automotive/admin/vehicle/dashboard?msg=rename_completed&count={updated_count}')
+        return request.redirect('/automotive/dashboard?msg=rename_completed&count={updated_count}')
 
-    @http.route(['/automotive/admin/setup/assign-tqs'], type='http', auth="user", website=True)
+    @http.route(['/automotive/setup/assign-tqs'], type='http', auth="user", website=True)
     def admin_assign_tqs(self, **post):
         """กำหนดรถที่ยังไม่มี factory ทั้งหมดให้เป็น TQS"""
         if not self._is_admin():
@@ -945,10 +945,10 @@ class VehicleBorrowController(http.Controller):
         vehicles = env_sudo['fleet.vehicle'].search(['|', ('factory', '=', False), ('factory', '=', '')])
         count = len(vehicles)
         vehicles.write({'factory': 'TQS'})
-        return request.redirect('/automotive/admin/vehicle/dashboard?msg=assign_tqs_done&count={count}')
+        return request.redirect('/automotive/dashboard?msg=assign_tqs_done&count={count}')
 
 
-    @http.route(['/automotive/admin/vehicle/repair/done'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/repair/done'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_repair_done(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -963,12 +963,12 @@ class VehicleBorrowController(http.Controller):
                 'repair_cost': float(post.get('repair_cost') or 0),
             }
             repair.action_done(vals)
-        return request.redirect('/automotive/admin/vehicle/repair?msg=status_updated')
+        return request.redirect('/automotive/repair?msg=status_updated')
 
 
     # --- SPARE PARTS FRONTEND ---
 
-    @http.route(['/automotive/admin/spare-parts'], type='http', auth="user", website=True)
+    @http.route(['/automotive/spare-parts'], type='http', auth="user", website=True)
     def admin_spare_parts_dashboard(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1111,7 +1111,7 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
-    @http.route(['/automotive/admin/spare-parts/move'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/spare-parts/move'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_move_submit(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1144,13 +1144,13 @@ class VehicleBorrowController(http.Controller):
                 except: pass
 
             request.env['vehicle.spare.part.movement'].sudo().create(vals)
-            return request.redirect('/automotive/admin/spare-parts?msg=move_success')
+            return request.redirect('/automotive/spare-parts?msg=move_success')
         except Exception as e:
             import logging
             logging.getLogger(__name__).error("Spare Parts Move Error: %s", str(e))
-            return request.redirect("/automotive/admin/spare-parts?error=" + str(e))
+            return request.redirect("/automotive/spare-parts?error=" + str(e))
 
-    @http.route(['/automotive/admin/spare-parts/history'], type='http', auth="user", website=True)
+    @http.route(['/automotive/spare-parts/history'], type='http', auth="user", website=True)
     def admin_spare_parts_history(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1230,7 +1230,7 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
-    @http.route(['/automotive/admin/spare-parts/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/spare-parts/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_add(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1258,11 +1258,11 @@ class VehicleBorrowController(http.Controller):
                     vals['image'] = base64.b64encode(image_content).decode('ascii')
 
             request.env['vehicle.spare.part'].sudo().create(vals)
-            return request.redirect('/automotive/admin/spare-parts?msg=part_added')
+            return request.redirect('/automotive/spare-parts?msg=part_added')
         except Exception as e:
-            return request.redirect("/automotive/admin/spare-parts?error=" + str(e))
+            return request.redirect("/automotive/spare-parts?error=" + str(e))
 
-    @http.route(['/automotive/admin/spare-parts/edit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/spare-parts/edit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_edit(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1271,7 +1271,7 @@ class VehicleBorrowController(http.Controller):
             part_id = int(post.get('part_id'))
             part = request.env['vehicle.spare.part'].sudo().browse(part_id)
             if not part.exists():
-                return request.redirect('/automotive/admin/spare-parts?error=ไม่พบรายการอะไหล่')
+                return request.redirect('/automotive/spare-parts?error=ไม่พบรายการอะไหล่')
                 
             vals = {
                 'name': post.get('name'),
@@ -1290,11 +1290,11 @@ class VehicleBorrowController(http.Controller):
                     vals['image'] = base64.b64encode(image_content).decode('ascii')
 
             part.write(vals)
-            return request.redirect('/automotive/admin/spare-parts?msg=part_updated')
+            return request.redirect('/automotive/spare-parts?msg=part_updated')
         except Exception as e:
-            return request.redirect("/automotive/admin/spare-parts?error=" + str(e))
+            return request.redirect("/automotive/spare-parts?error=" + str(e))
 
-    @http.route(['/automotive/admin/spare-parts/toggle-active/<int:part_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/spare-parts/toggle-active/<int:part_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_toggle_active(self, part_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1305,12 +1305,12 @@ class VehicleBorrowController(http.Controller):
                 new_state = not part.active
                 part.write({'active': new_state})
                 msg = "part_activated" if new_state else "part_deactivated"
-                return request.redirect('/automotive/admin/spare-parts?msg=' + msg)
-            return request.redirect('/automotive/admin/spare-parts?error=ไม่พบรายการอะไหล่')
+                return request.redirect('/automotive/spare-parts?msg=' + msg)
+            return request.redirect('/automotive/spare-parts?error=ไม่พบรายการอะไหล่')
         except Exception as e:
-            return request.redirect("/automotive/admin/spare-parts?error=" + str(e))
+            return request.redirect("/automotive/spare-parts?error=" + str(e))
 
-    @http.route(['/automotive/admin/spare-parts/delete/<int:part_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/spare-parts/delete/<int:part_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_delete(self, part_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1323,17 +1323,17 @@ class VehicleBorrowController(http.Controller):
                 if movements > 0:
                     # หากมีประวัติ ให้ปิดการใช้งานแทนการลบ
                     part.write({'active': False})
-                    return request.redirect('/automotive/admin/spare-parts?msg=part_deactivated')
+                    return request.redirect('/automotive/spare-parts?msg=part_deactivated')
                 
                 part.unlink()
-                return request.redirect('/automotive/admin/spare-parts?msg=part_deleted')
-            return request.redirect('/automotive/admin/spare-parts?error=ไม่พบรายการอะไหล่')
+                return request.redirect('/automotive/spare-parts?msg=part_deleted')
+            return request.redirect('/automotive/spare-parts?error=ไม่พบรายการอะไหล่')
         except Exception as e:
-            return request.redirect("/automotive/admin/spare-parts?error=" + str(e))
+            return request.redirect("/automotive/spare-parts?error=" + str(e))
 
     # --- Vehicle Transfer System ---
     
-    @http.route(['/automotive/admin/vehicle/transfer/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/transfer/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_transfer_submit(self, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1349,11 +1349,11 @@ class VehicleBorrowController(http.Controller):
                 'reason': reason,
                 'state': 'requested'
             })
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=transfer_requested')
+            return request.redirect('/automotive/dashboard?msg=transfer_requested')
         except Exception as e:
-            return request.redirect('/automotive/admin/vehicle/dashboard?error=' + str(e))
+            return request.redirect('/automotive/dashboard?error=' + str(e))
 
-    @http.route(['/automotive/admin/vehicle/transfer/approve/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/transfer/approve/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_transfer_approve(self, req_id, **post):
         if not self._is_head_admin():
             return request.render("http_routing.403")
@@ -1361,10 +1361,10 @@ class VehicleBorrowController(http.Controller):
         transfer = request.env['vehicle.transfer.request'].sudo().browse(req_id)
         if transfer.exists():
             transfer.action_approve()
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=transfer_approved')
-        return request.redirect('/automotive/admin/vehicle/dashboard')
+            return request.redirect('/automotive/dashboard?msg=transfer_approved')
+        return request.redirect('/automotive/dashboard')
 
-    @http.route(['/automotive/admin/vehicle/transfer/cancel/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/transfer/cancel/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_transfer_cancel(self, req_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1372,10 +1372,10 @@ class VehicleBorrowController(http.Controller):
         transfer = request.env['vehicle.transfer.request'].sudo().browse(req_id)
         if transfer.exists():
             transfer.action_cancel()
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=transfer_cancelled')
-        return request.redirect('/automotive/admin/vehicle/dashboard')
+            return request.redirect('/automotive/dashboard?msg=transfer_cancelled')
+        return request.redirect('/automotive/dashboard')
 
-    @http.route(['/automotive/admin/vehicle/transfer/accept/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/transfer/accept/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_transfer_accept(self, req_id, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1385,11 +1385,11 @@ class VehicleBorrowController(http.Controller):
             # ตรวจสอบว่าผู้กด อยู่ในโรงงานปลายทางหรือไม่ (ยกเว้น Head Admin)
             user_factory = self._get_user_factory()
             if not self._is_head_admin() and transfer.to_factory != user_factory:
-                return request.redirect('/automotive/admin/vehicle/dashboard?error=ไม่ใช่โรงงานปลายทาง')
+                return request.redirect('/automotive/dashboard?error=ไม่ใช่โรงงานปลายทาง')
                 
             transfer.action_accept()
-            return request.redirect('/automotive/admin/vehicle/dashboard?msg=transfer_accepted')
-        return request.redirect('/automotive/admin/vehicle/dashboard')
+            return request.redirect('/automotive/dashboard?msg=transfer_accepted')
+        return request.redirect('/automotive/dashboard')
 
 
 

@@ -29,7 +29,7 @@
                                     <div class="row g-4 justify-content-center mt-2">
                                         <!-- Primary Actions for All Users -->
                                         <div class="col-6 col-sm-4 col-md-3">
-                                            <a href="/automotive/vehicle/booking" class="text-decoration-none h-100">
+                                            <a href="/automotive/booking" class="text-decoration-none h-100">
                                                 <div class="card h-100 border-0 shadow-lg rounded-4 text-center p-3 p-md-4 scale-on-hover bg-success text-white">
                                                     <i class="fa fa-calendar-plus-o mb-3 fs-1"/>
                                                     <h4 class="fw-bold fs-5 mb-0">
@@ -40,7 +40,7 @@
                                             </a>
                                         </div>
                                         <div class="col-6 col-sm-4 col-md-3">
-                                            <a href="/automotive/vehicle/my-bookings" class="text-decoration-none h-100">
+                                            <a href="/automotive/my-bookings" class="text-decoration-none h-100">
                                                 <div class="card h-100 border-0 shadow-lg rounded-4 text-center p-3 p-md-4 scale-on-hover bg-white text-dark">
                                                     <i class="fa fa-list-alt mb-3 fs-1 text-primary"/>
                                                     <h4 class="fw-bold fs-5 mb-0">
@@ -72,12 +72,12 @@
                                                 <t t-else="">Administrator Menu (Admin Only)</t>
                                             </p>
                                             <div class="d-flex flex-wrap justify-content-center gap-3">
-                                                <a href="/automotive/admin/vehicle/dashboard" class="btn btn-warning rounded-pill px-4 py-2 fw-bold shadow">
+                                                <a href="/automotive/dashboard" class="btn btn-warning rounded-pill px-4 py-2 fw-bold shadow">
                                                     <i class="fa fa-dashboard me-2"/>
                                                     <t t-if="request.env.lang and request.env.lang.startswith('th')">แผงควบคุมระบบ</t>
                                                     <t t-else="">System Control Panel</t>
                                                 </a>
-                                                <a href="/automotive/admin/spare-parts" class="btn btn-info rounded-pill px-4 py-2 fw-bold text-white shadow">
+                                                <a href="/automotive/spare-parts" class="btn btn-info rounded-pill px-4 py-2 fw-bold text-white shadow">
                                                     <i class="fa fa-cubes me-2"/>
                                                     <t t-if="request.env.lang and request.env.lang.startswith('th')">จัดการสต็อกอะไหล่</t>
                                                     <t t-else="">Manage Spare Parts Inventory</t>
@@ -180,7 +180,7 @@
                                     </div>
                                     <div class="card-body p-4">
                                         <t t-if="current_employee">
-                                            <form id="vehicle-booking-form" action="/automotive/vehicle/booking/submit" method="post">
+                                            <form id="vehicle-booking-form" action="/automotive/booking/submit" method="post">
                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                 <!-- date_start จะถูก set โดย JS -->
                                                 <input type="hidden" name="date_start" id="date_start"/>
@@ -358,7 +358,7 @@
                                                             </div>
                                                             <div class="d-flex flex-column align-items-end ms-2" style="gap: 5px;">
                                                                 <!-- ปุ่มคืนรถ -->
-                                                                <form t-attf-action="/automotive/vehicle/return/#{b.id}" method="post">
+                                                                <form t-attf-action="/automotive/return/#{b.id}" method="post">
                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                     <button type="submit" class="btn btn-sm btn-danger w-100"
                                                                             onclick="return confirm('ยืนยันการคืนรถ?')">
@@ -367,7 +367,7 @@
                                                                 </form>
                                                                 <!-- ปุ่มยกเลิก (แสดงสำหรับทุกสถานะที่ยังไม่ได้คืนหรือยกเลิก) -->
                                                                 <t t-if="b.state in ['request', 'approved', 'borrowed']">
-                                                                    <form t-attf-action="/automotive/vehicle/cancel/#{b.id}" method="post">
+                                                                    <form t-attf-action="/automotive/cancel/#{b.id}" method="post">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
                                                                                 onclick="return confirm('ยืนยันการยกเลิก?')">
@@ -434,7 +434,7 @@
                         <h1 class="display-4 border-0">ส่งคำขอใช้รถสำเร็จ!</h1>
                         <p class="lead">ระบบได้รับคำขอจองรถของคุณแล้ว โปรดรอการอนุมัติจากผู้จัดการ fleet</p>
                         <div class="mt-5">
-                            <a href="/automotive/vehicle/booking" class="btn btn-outline-primary me-2">ขอใช้รถเพิ่ม</a>
+                            <a href="/automotive/booking" class="btn btn-outline-primary me-2">ขอใช้รถเพิ่ม</a>
                             <a href="/automotive" class="btn btn-primary">กลับสู่หน้าแรก</a>
                         </div>
                     </div>
@@ -451,7 +451,7 @@
                     <div class="container text-center">
                         <h2 class="display-4 fw-bold"><i class="fa fa-history me-3 text-warning"/>ประวัติการใช้งานทั้งหมด</h2>
                         <p class="lead text-white-50">รายการความเคลื่อนไหวการขอยืมและคืนรถทั้งหมดในระบบ</p>
-                        <a href="/automotive/admin/vehicle/dashboard" class="btn btn-outline-light btn-sm mt-3 rounded-pill px-4">
+                        <a href="/automotive/dashboard" class="btn btn-outline-light btn-sm mt-3 rounded-pill px-4">
                             <i class="fa fa-arrow-left me-2"/>กลับสู่แผงควบคุม
                         </a>
                     </div>
@@ -529,7 +529,7 @@
                                                     </td>
                                                     <td class="text-center pe-3">
                                                         <!-- ปุ่มลบรายการจอง -->
-                                                        <form t-attf-action="/automotive/admin/booking/delete/#{r.id}" method="post" class="m-0">
+                                                        <form t-attf-action="/automotive/booking/delete/#{r.id}" method="post" class="m-0">
                                                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                             <button type="submit" class="btn btn-sm btn-outline-danger border-0" 
                                                                     onclick="return confirm('ยืนยันลบข้อมูลการจองนี้?')" title="ลบออกจากประวัติ">
@@ -665,7 +665,7 @@
                                                     <t t-foreach="vehicle_types" t-as="vt">
                                                         <li class="border-bottom border-secondary last-child-border-0">
                                                             <a t-attf-class="dropdown-item py-3 px-4 fw-bold #{'active bg-primary text-white' if vt == selected_type else 'text-white-50'}" 
-                                                               t-attf-href="/automotive/admin/vehicle/dashboard?type=#{vt}"
+                                                               t-attf-href="/automotive/dashboard?type=#{vt}"
                                                                style="transition: all 0.2s ease; font-size: 0.9rem;">
                                                                 <i t-attf-class="fa #{'fa-check-circle' if vt == selected_type else 'fa-circle-o'} me-2"/>
                                                                 <t t-esc="vt"/>
@@ -778,7 +778,7 @@
                                                                  </button>
 
                                                                  <!-- ปุ่มลบ -->
-                                                                 <form t-attf-action="/automotive/admin/vehicle/delete/#{v.id}" method="post" class="m-0">
+                                                                 <form t-attf-action="/automotive/delete/#{v.id}" method="post" class="m-0">
                                                                      <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                      <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle" 
                                                                              style="width: 28px; height: 28px; padding: 0;"
@@ -862,7 +862,7 @@
                                                                 </form>
                                                             </td>
                                                             <td class="text-end pe-3 py-3">
-                                                                <form t-attf-action="/automotive/admin/member/role/#{u.id}/user" method="post" class="d-inline">
+                                                                <form t-attf-action="/automotive/member/role/#{u.id}/user" method="post" class="d-inline">
                                                                      <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                      <div class="dropdown d-inline">
                                                                          <button class="btn btn-sm btn-outline-dark me-1 dropdown-toggle" type="button" data-bs-toggle="dropdown">สิทธิ์</button>
@@ -899,7 +899,7 @@
                                                                          </ul>
                                                                      </div>
                                                                  </form>
-                                                                <form t-attf-action="/automotive/admin/member/delete/#{u.id}" method="post" class="d-inline">
+                                                                <form t-attf-action="/automotive/member/delete/#{u.id}" method="post" class="d-inline">
                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบ?')" title="ลบ"><i class="fa fa-trash"></i></button>
                                                                 </form>
@@ -951,7 +951,7 @@
                                                             <div class="d-flex justify-content-center align-items-center gap-2">
                                                                  <t t-if="tr.state == 'requested'">
                                                                      <t t-if="is_head_admin">
-                                                                         <form t-attf-action="/automotive/admin/vehicle/transfer/approve/#{tr.id}" method="post">
+                                                                         <form t-attf-action="/automotive/transfer/approve/#{tr.id}" method="post">
                                                                              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                              <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
                                                                                  <i class="fa fa-check me-1"></i> อนุมัติการย้าย
@@ -964,7 +964,7 @@
                                                                  </t>
                                                                  <t t-if="tr.state == 'approved'">
                                                                      <t t-if="is_head_admin or user_factory == tr.to_factory">
-                                                                         <form t-attf-action="/automotive/admin/vehicle/transfer/accept/#{tr.id}" method="post">
+                                                                         <form t-attf-action="/automotive/transfer/accept/#{tr.id}" method="post">
                                                                              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                              <button type="submit" class="btn btn-sm btn-info text-white rounded-pill px-3 shadow-sm">
                                                                                  <i class="fa fa-handshake-o me-1"></i> ตอบรับรถเข้าโรงงาน
@@ -977,7 +977,7 @@
                                                                  </t>
                                                                  
                                                                  <t t-if="tr.state == 'requested' or (tr.state == 'approved' and is_head_admin)">
-                                                                    <form t-attf-action="/automotive/admin/vehicle/transfer/cancel/#{tr.id}" method="post">
+                                                                    <form t-attf-action="/automotive/transfer/cancel/#{tr.id}" method="post">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('ยกเลิกรายการนี้?')">
                                                                             <i class="fa fa-times me-1"></i> ยกเลิก
@@ -1061,10 +1061,10 @@
                         <!-- ปุ่มทางลัดไปหน้าประวัติ และ จัดการอะไหล่ -->
                         <div class="row mt-5">
                             <div class="col-12 text-center d-flex justify-content-center gap-3 flex-wrap">
-                                <a href="/automotive/admin/vehicle/bookings" class="btn btn-dark btn-lg px-5 py-3 rounded-pill shadow">
+                                <a href="/automotive/bookings" class="btn btn-dark btn-lg px-5 py-3 rounded-pill shadow">
                                     <i class="fa fa-history me-2"></i> ประวัติการใช้งานรถ
                                 </a>
-                                <a href="/automotive/admin/spare-parts" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow">
+                                <a href="/automotive/spare-parts" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow">
                                     <i class="fa fa-wrench me-2"></i> จัดการสต็อกอะไหล่
                                 </a>
                             </div>
@@ -1076,7 +1076,7 @@
 
                 <!-- Modals -->
                 <div class="modal fade" id="addVehicleModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-                    <form action="/automotive/admin/vehicle/add" method="post" enctype="multipart/form-data">
+                    <form action="/automotive/add" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="modal-header"><h5>เพิ่มรถยนต์ใหม่</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                         <div class="modal-body">
@@ -1122,7 +1122,7 @@
                 </div></div></div>
 
                         <div class="modal fade" id="addMemberModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-                    <form action="/automotive/admin/member/add" method="post">
+                    <form action="/automotive/member/add" method="post">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="modal-header"><h5>เพิ่มพนักงานใหม่</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                         <div class="modal-body">
@@ -1167,7 +1167,7 @@
                 <div class="modal fade" id="editVehicleModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content text-dark">
-                            <form action="/automotive/admin/vehicle/edit" method="post" enctype="multipart/form-data">
+                            <form action="/automotive/edit" method="post" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="vehicle_id" id="edit_vehicle_id"/>
                                 <div class="modal-header bg-primary text-white">
@@ -1207,7 +1207,7 @@
                 <div class="modal fade" id="transferVehicleModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow-lg rounded-4">
-                            <form action="/automotive/admin/vehicle/transfer/submit" method="post">
+                            <form action="/automotive/transfer/submit" method="post">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="vehicle_id" id="transfer_vehicle_id"/>
                                 <div class="modal-header bg-info text-white border-bottom-0 p-4">
@@ -1297,7 +1297,7 @@
                                     <h2 class="fw-bold mb-1 text-primary">ประวัติการใช้งานของฉัน</h2>
                                     <p class="text-muted mb-0">รายการจองรถทั้งหมดที่คุณเคยส่งคำขอ</p>
                                 </div>
-                                <a href="/automotive/vehicle/booking" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                <a href="/automotive/booking" class="btn btn-primary rounded-pill px-4 shadow-sm">
                                     <i class="fa fa-plus me-1"/> ขอใช้รถใหม่
                                 </a>
                             </div>
@@ -1310,7 +1310,7 @@
                                         </div>
                                         <h3 class="fw-bold text-dark">ไม่มีรายการจองของคุณในระบบ</h3>
                                         <p class="text-muted mb-4 fs-5">คุณยังไม่มีรายการขอใช้งานรถในขณะนี้</p>
-                                        <a href="/automotive/vehicle/booking" class="btn btn-success btn-lg px-5 rounded-pill shadow">
+                                        <a href="/automotive/booking" class="btn btn-success btn-lg px-5 rounded-pill shadow">
                                             เริ่มการจองครั้งแรก
                                         </a>
                                     </div>
@@ -1376,14 +1376,14 @@
                                                             <div class="d-flex flex-column align-items-center gap-2">
                                                                 <t t-if="req.state in ['request', 'approved', 'borrowed']">
                                                                     <!-- ปุ่มคืนรถ -->
-                                                                    <form t-attf-action="/automotive/vehicle/return/#{req.id}" method="post" class="w-100" onsubmit="return confirm('ยืนยันระบบจดจำเวลาคืนรถในขณะนี้?')">
+                                                                    <form t-attf-action="/automotive/return/#{req.id}" method="post" class="w-100" onsubmit="return confirm('ยืนยันระบบจดจำเวลาคืนรถในขณะนี้?')">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 w-100">
                                                                             <i class="fa fa-undo me-1"/> คืนรถ
                                                                         </button>
                                                                     </form>
                                                                     <!-- ปุ่มยกเลิก -->
-                                                                    <form t-attf-action="/automotive/vehicle/cancel/#{req.id}" method="post" class="w-100" onsubmit="return confirm('ยืนยันการยกเลิกการจอง?')">
+                                                                    <form t-attf-action="/automotive/cancel/#{req.id}" method="post" class="w-100" onsubmit="return confirm('ยืนยันการยกเลิกการจอง?')">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0 w-100">
                                                                             <i class="fa fa-times me-1"/> ยกเลิก
@@ -1441,7 +1441,7 @@
                                     <div class="alert alert-success mb-4 text-center"><i class="fa fa-check-circle me-1"/>บันทึกการแจ้งซ่อมสำเร็จ</div>
                                 </t>
                                 
-                                <form action="/automotive/admin/vehicle/repair/submit" method="post">
+                                <form action="/automotive/repair/submit" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     
                                     <div class="mb-3">
@@ -1491,7 +1491,7 @@
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                                 <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
                                     <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>ประวัติการแจ้งซ่อมล่าสุด (10 รายการ)</h5>
-                                    <a href="/automotive/admin/vehicle/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
+                                    <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
                                         <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
                                     </a>
                                 </div>
@@ -1584,7 +1584,7 @@
                             <!-- Filters -->
                             <div t-attf-class="collapse #{ 'show' if any([filters.get(f) for f in ['f_vehicle_id', 'f_report_start', 'f_report_end', 'f_finish_start', 'f_finish_end']]) else '' }" id="filterCollapse">
                                 <div class="card-body bg-light border-bottom p-4">
-                                    <form action="/automotive/admin/vehicle/repair" method="get" class="row g-3 align-items-end">
+                                    <form action="/automotive/repair" method="get" class="row g-3 align-items-end">
                                         <div class="col-md-2">
                                             <label class="form-label small fw-bold text-muted text-uppercase">ประเภทรถ</label>
                                             <select name="f_type" class="form-select border-0 shadow-sm">
@@ -1625,7 +1625,7 @@
                                         </div>
                                         <div class="col-md-2 d-flex gap-2 text-nowrap">
                                             <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="fa fa-search me-1"/>ค้นหา</button>
-                                            <a href="/automotive/admin/vehicle/repair" class="btn btn-outline-secondary shadow-sm" title="ล้างค่าตัวกรอง"><i class="fa fa-refresh"/></a>
+                                            <a href="/automotive/repair" class="btn btn-outline-secondary shadow-sm" title="ล้างค่าตัวกรอง"><i class="fa fa-refresh"/></a>
                                         </div>
                                     </form>
                                 </div>
@@ -1726,7 +1726,7 @@
                 <div class="modal fade" id="finishRepairModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow-lg rounded-4">
-                            <form action="/automotive/admin/vehicle/repair/done" method="post">
+                            <form action="/automotive/repair/done" method="post">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="repair_id" id="modal_repair_id"/>
                                 <div class="modal-header bg-success text-white border-0 py-3">
@@ -1860,7 +1860,7 @@
         <div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg rounded-4">
-                    <form action="/automotive/vehicle/report-issue/submit" method="post">
+                    <form action="/automotive/report-issue/submit" method="post">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="modal-header bg-danger text-white border-0 py-3">
                             <h5 class="modal-title fw-bold" id="reportIssueModalLabel">
@@ -2008,7 +2008,7 @@
                     <div class="container text-center">
                         <h1 class="display-4 fw-bold"><i class="fa fa-wrench me-3 text-warning"/>จัดการสต็อกอะไหล่</h1>
                         <p class="lead text-white-50">ควบคุมยอดคงเหลือ การรับเข้า และการเบิกใช้อะไหล่</p>
-                        <a href="/automotive/admin/vehicle/dashboard" class="btn btn-outline-light btn-sm mt-2 rounded-pill px-4">
+                        <a href="/automotive/dashboard" class="btn btn-outline-light btn-sm mt-2 rounded-pill px-4">
                             <i class="fa fa-arrow-left me-1"/>กลับสู่แผงควบคุม
                         </a>
                     </div>
@@ -2063,7 +2063,7 @@
                                     </div>
                                     <div t-attf-class="collapse #{ 'show' if any([filters.get(f) and filters.get(f) != 'all' for f in ['search', 'category_id', 'stock_status']]) else '' }" id="partsFilterCollapse">
                                         <div class="card-body bg-light border-bottom p-4">
-                                            <form action="/automotive/admin/spare-parts" method="get" class="row g-3 align-items-end">
+                                            <form action="/automotive/spare-parts" method="get" class="row g-3 align-items-end">
                                                 <div class="col-md-4">
                                                     <label class="form-label small fw-bold text-muted text-uppercase">ค้นหาอะไหล่</label>
                                                     <div class="input-group shadow-sm">
@@ -2082,7 +2082,7 @@
                                                 </div>
                                                 <div class="col-md-2 d-flex gap-2">
                                                     <button type="submit" class="btn btn-primary w-100 shadow-sm py-2"><i class="fa fa-filter me-1"/> กรอง</button>
-                                                    <a href="/automotive/admin/spare-parts" class="btn btn-outline-secondary shadow-sm py-2" title="ล้างค่าตัวกรอง"><i class="fa fa-refresh"/></a>
+                                                    <a href="/automotive/spare-parts" class="btn btn-outline-secondary shadow-sm py-2" title="ล้างค่าตัวกรอง"><i class="fa fa-refresh"/></a>
                                                 </div>
                                             </form>
                                         </div>
@@ -2160,7 +2160,7 @@
                                                             <!-- ปุ่มสลับสถานะ / ลบ -->
                                                             <t t-if="hasattr(p, 'active') and not p.active">
                                                                 <!-- ถ้าปิดอยู่ ให้แสดงปุ่มเปิดการใช้งาน -->
-                                                                <form t-attf-action="/automotive/admin/spare-parts/toggle-active/#{p.id}" method="post">
+                                                                <form t-attf-action="/automotive/spare-parts/toggle-active/#{p.id}" method="post">
                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                     <button type="submit" class="btn btn-sm btn-success" title="เปิดการใช้งาน">
                                                                         <i class="fa fa-play"/>
@@ -2170,7 +2170,7 @@
                                                             <t t-else="">
                                                                 <t t-if="len(p.movement_ids) &gt; 0">
                                                                     <!-- ถ้ามีประวัติ ให้แสดงปุ่มปิดการใช้งาน -->
-                                                                    <form t-attf-action="/automotive/admin/spare-parts/toggle-active/#{p.id}" method="post" onsubmit="return confirm('ยืนยันการปิดการใช้งานอะไหล่นี้? (จะไม่โชว์ในหน้าเบิก แต่ประวัติยังคงอยู่)')">
+                                                                    <form t-attf-action="/automotive/spare-parts/toggle-active/#{p.id}" method="post" onsubmit="return confirm('ยืนยันการปิดการใช้งานอะไหล่นี้? (จะไม่โชว์ในหน้าเบิก แต่ประวัติยังคงอยู่)')">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-warning text-white" title="ปิดการใช้งาน">
                                                                             <i class="fa fa-pause"/>
@@ -2179,7 +2179,7 @@
                                                                 </t>
                                                                 <t t-else="">
                                                                     <!-- ถ้าไม่มีประวัติเลย ให้ลบได้เลย -->
-                                                                    <form t-attf-action="/automotive/admin/spare-parts/delete/#{p.id}" method="post" onsubmit="return confirm('ยืนยันการลบอะไหล่นี้จากระบบ?')">
+                                                                    <form t-attf-action="/automotive/spare-parts/delete/#{p.id}" method="post" onsubmit="return confirm('ยืนยันการลบอะไหล่นี้จากระบบ?')">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <button type="submit" class="btn btn-sm btn-danger" title="ลบรายการ">
                                                                             <i class="fa fa-trash"/>
@@ -2202,7 +2202,7 @@
                         <!-- Recent Movements -->
                         <div class="row">
                             <div class="col-12 text-center">
-                                <a href="/automotive/admin/spare-parts/history" class="btn btn-outline-dark btn-lg px-5 rounded-pill">
+                                <a href="/automotive/spare-parts/history" class="btn btn-outline-dark btn-lg px-5 rounded-pill">
                                     <i class="fa fa-history me-2"/>ดูประวัติการ รับ-จ่าย อะไหล่ทั้งหมด
                                 </a>
                             </div>
@@ -2272,7 +2272,7 @@
                 <div class="modal fade" id="addPartModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow">
-                            <form action="/automotive/admin/spare-parts/add" method="post" enctype="multipart/form-data">
+                            <form action="/automotive/spare-parts/add" method="post" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <div class="modal-header bg-primary text-white">
                                     <h5 class="modal-title">สร้างรายการอะไหล่ใหม่</h5>
@@ -2319,7 +2319,7 @@
                 <div class="modal fade" id="editPartModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow">
-                            <form action="/automotive/admin/spare-parts/edit" method="post" enctype="multipart/form-data">
+                            <form action="/automotive/spare-parts/edit" method="post" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="part_id" id="edit_part_id"/>
                                 <div class="modal-header bg-info text-white">
@@ -2367,7 +2367,7 @@
                 <div class="modal fade" id="receivePartModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow">
-                            <form action="/automotive/admin/spare-parts/move" method="post">
+                            <form action="/automotive/spare-parts/move" method="post">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="move_type" value="in"/>
                                 <div class="modal-header bg-success text-white">
@@ -2420,7 +2420,7 @@
                 <div class="modal fade" id="issuePartModal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content border-0 shadow">
-                            <form action="/automotive/admin/spare-parts/move" method="post" id="issue_form">
+                            <form action="/automotive/spare-parts/move" method="post" id="issue_form">
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="move_type" value="out"/>
                                 <div class="modal-header bg-danger text-white">
@@ -2701,7 +2701,7 @@
                 <section class="py-5 bg-dark text-white">
                     <div class="container text-center">
                         <h2 class="display-4 fw-bold"><i class="fa fa-history me-3 text-info"/>ประวัติความเคลื่อนไหวอะไหล่</h2>
-                        <a href="/automotive/admin/spare-parts" class="btn btn-outline-light btn-sm mt-3 rounded-pill px-4">
+                        <a href="/automotive/spare-parts" class="btn btn-outline-light btn-sm mt-3 rounded-pill px-4">
                             <i class="fa fa-arrow-left me-2"/>กลับไปหน้าสต็อก
                         </a>
                     </div>
@@ -2719,7 +2719,7 @@
                             </div>
                             <div t-attf-class="collapse #{ 'show' if any(filters.values()) else '' }" id="historyFilterCollapse">
                                 <div class="card-body bg-white p-4">
-                                    <form action="/automotive/admin/spare-parts/history" method="get" class="row g-3">
+                                    <form action="/automotive/spare-parts/history" method="get" class="row g-3">
                                         <div class="col-md-2">
                                             <label class="form-label small fw-bold text-muted text-uppercase">ช่วงวันที่</label>
                                             <div class="input-group">
@@ -2764,7 +2764,7 @@
                                         </div>
                                         <div class="col-md-2 d-flex gap-1 align-items-end">
                                             <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fa fa-search me-1"/>ค้นหา</button>
-                                            <a href="/automotive/admin/spare-parts/history" class="btn btn-outline-secondary btn-sm"><i class="fa fa-refresh"/></a>
+                                            <a href="/automotive/spare-parts/history" class="btn btn-outline-secondary btn-sm"><i class="fa fa-refresh"/></a>
                                         </div>
                                     </form>
                                 </div>
