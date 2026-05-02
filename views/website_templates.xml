@@ -1730,26 +1730,54 @@
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                 <input type="hidden" name="repair_id" id="modal_repair_id"/>
                                 <div class="modal-header bg-success text-white border-0 py-3">
-                                    <h5 class="modal-title fw-bold"><i class="fa fa-check-circle me-2"/>บันทึกรายละเอียดการซ่อม</h5>
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="fa fa-check-circle me-2"/>
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">บันทึกรายละเอียดการซ่อม</t>
+                                        <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြုပြင်မှုအသေးစိတ်ကို သိမ်းဆည်းပါ။</t>
+                                        <t t-else="">Save Repair Details</t>
+                                    </h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body p-4">
                                     <div class="alert alert-info py-2 small mb-4 border-0 shadow-sm">
-                                        <i class="fa fa-info-circle me-1"/> รถยนต์: <span id="modal_vehicle_name" class="fw-bold"/>
+                                        <i class="fa fa-info-circle me-1"/> 
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">รถยนต์:</t>
+                                        <t t-else="">Vehicle:</t>
+                                        <span id="modal_vehicle_name" class="fw-bold"/>
                                     </div>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">รายละเอียดการที่ซ่อม</label>
-                                        <textarea name="repair_details" class="form-control border-light bg-light" rows="3" required="1" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง, เช็คช่วงล่าง..."></textarea>
+                                        <label class="form-label fw-bold small text-uppercase text-muted">
+                                            <t t-if="request.env.lang and request.env.lang.startswith('th')">รายละเอียดการที่ซ่อม</t>
+                                            <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြုပြင်မှုအသေးစိတ်</t>
+                                            <t t-else="">Repair Details</t>
+                                        </label>
+                                        <t t-set="repair_placeholder">
+                                            <t t-if="request.env.lang and request.env.lang.startswith('th')">เช่น เปลี่ยนน้ำมันเครื่อง, เช็คช่วงล่าง...</t>
+                                            <t t-else="">e.g. Change oil, check suspension...</t>
+                                        </t>
+                                        <textarea name="repair_details" class="form-control border-light bg-light" rows="3" required="1" t-att-placeholder="repair_placeholder"></textarea>
                                     </div>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">ข้อมูลอะไหล่ใช้ในการซ่อม</label>
-                                        <textarea name="parts_used" class="form-control border-light bg-light" rows="2" placeholder="ระบุอะไหล่ที่เปลี่ยน (ถ้ามี)..."></textarea>
+                                        <label class="form-label fw-bold small text-uppercase text-muted">
+                                            <t t-if="request.env.lang and request.env.lang.startswith('th')">ข้อมูลอะไหล่ใช้ในการซ่อม</t>
+                                            <t t-elif="request.env.lang and request.env.lang.startswith('my')">အသုံးပြုသော အပိုပစ္စည်းများ</t>
+                                            <t t-else="">Spare Parts Used</t>
+                                        </label>
+                                        <t t-set="parts_placeholder">
+                                            <t t-if="request.env.lang and request.env.lang.startswith('th')">ระบุอะไหล่ที่เปลี่ยน (ถ้ามี)...</t>
+                                            <t t-else="">Specify parts replaced (if any)...</t>
+                                        </t>
+                                        <textarea name="parts_used" class="form-control border-light bg-light" rows="2" t-att-placeholder="parts_placeholder"></textarea>
                                     </div>
                                     
                                     <div class="mb-0">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">ค่าใช้จ่ายในการซ่อม (บาท)</label>
+                                        <label class="form-label fw-bold small text-uppercase text-muted">
+                                            <t t-if="request.env.lang and request.env.lang.startswith('th')">ค่าใช้จ่ายในการซ่อม (บาท)</t>
+                                            <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြုပြင်စရိတ် (ဘတ်)</t>
+                                            <t t-else="">Repair Cost (THB)</t>
+                                        </label>
                                         <div class="input-group">
                                             <span class="input-group-text border-0 bg-light fw-bold text-muted">฿</span>
                                             <input type="number" step="0.01" name="repair_cost" class="form-control border-light bg-light form-control-lg" placeholder="0.00"/>
@@ -1757,9 +1785,15 @@
                                     </div>
                                 </div>
                                 <div class="modal-footer border-0 p-4 pt-0">
-                                    <button type="button" class="btn btn-light rounded-pill px-4 text-muted" data-bs-dismiss="modal">ยกเลิก</button>
+                                    <button type="button" class="btn btn-light rounded-pill px-4 text-muted" data-bs-dismiss="modal">
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">ยกเลิก</t>
+                                        <t t-else="">Cancel</t>
+                                    </button>
                                     <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm fw-bold">
-                                        <i class="fa fa-save me-1"/> บันทึกข้อมูล
+                                        <i class="fa fa-save me-1"/> 
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">บันทึกข้อมูล</t>
+                                        <t t-elif="request.env.lang and request.env.lang.startswith('my')">ဒေတာသိမ်းဆည်းပါ။</t>
+                                        <t t-else="">Save Data</t>
                                     </button>
                                 </div>
                             </form>
@@ -1864,14 +1898,21 @@
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                         <div class="modal-header bg-danger text-white border-0 py-3">
                             <h5 class="modal-title fw-bold" id="reportIssueModalLabel">
-                                <i class="fa fa-wrench me-2"/>แจ้งเสีย / แจ้งซ่อมรถยนต์
+                                <i class="fa fa-wrench me-2"/>
+                                <t t-if="request.env.lang and request.env.lang.startswith('th')">แจ้งเสีย / แจ้งซ่อมรถยนต์</t>
+                                <t t-elif="request.env.lang and request.env.lang.startswith('my')">ယာဉ်ချို့ယွင်းချက်/ပြုပြင်မှုကို အစီရင်ခံပါ။</t>
+                                <t t-else="">Report Vehicle Issue / Repair</t>
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body p-4">
                             <!-- แจ้งซ่อมโดยใคร -->
                             <div class="mb-3">
-                                <label class="form-label fw-bold small text-uppercase text-muted">ผู้แจ้งซ่อม</label>
+                                <label class="form-label fw-bold small text-uppercase text-muted">
+                                    <t t-if="request.env.lang and request.env.lang.startswith('th')">ผู้แจ้งซ่อม</t>
+                                    <t t-elif="request.env.lang and request.env.lang.startswith('my')">အစီရင်ခံသူ</t>
+                                    <t t-else="">Reported By</t>
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-light text-muted"><i class="fa fa-user"/></span>
                                     <input type="text" class="form-control bg-light border-light fw-bold" readonly="1"
@@ -1881,9 +1922,17 @@
 
                             <!-- ประเภทรถ (Dropdown) -->
                             <div class="mb-3">
-                                <label for="modal_vehicle_type" class="form-label fw-bold small text-uppercase text-muted">ประเภทรถ</label>
+                                <label for="modal_vehicle_type" class="form-label fw-bold small text-uppercase text-muted">
+                                    <t t-if="request.env.lang and request.env.lang.startswith('th')">ประเภทรถ</t>
+                                    <t t-elif="request.env.lang and request.env.lang.startswith('my')">ယာဉ်အမျိုးအစား</t>
+                                    <t t-else="">Vehicle Type</t>
+                                </label>
                                 <select id="modal_vehicle_type" class="form-select border-light shadow-sm" required="1">
-                                    <option value="">-- เลือกประเภทรถ --</option>
+                                    <option value="">
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">-- เลือกประเภทรถ --</t>
+                                        <t t-elif="request.env.lang and request.env.lang.startswith('my')">-- ယာဉ်အမျိုးအစားကို ရွေးပါ --</t>
+                                        <t t-else="">-- Select Vehicle Type --</t>
+                                    </option>
                                     <t t-foreach="vehicle_types" t-as="vt">
                                         <option t-att-value="vt"><t t-esc="vt"/></option>
                                     </t>
@@ -1892,9 +1941,17 @@
 
                             <!-- รายการรถ (Dropdown) -->
                             <div class="mb-3">
-                                <label for="modal_vehicle_id" class="form-label fw-bold small text-uppercase text-muted">เลือกรถที่มีปัญหา</label>
+                                <label for="modal_vehicle_id" class="form-label fw-bold small text-uppercase text-muted">
+                                    <t t-if="request.env.lang and request.env.lang.startswith('th')">เลือกรถที่มีปัญหา</t>
+                                    <t t-elif="request.env.lang and request.env.lang.startswith('my')">ယာဉ်ကို ရွေးပါ</t>
+                                    <t t-else="">Select Vehicle</t>
+                                </label>
                                 <select name="vehicle_id" id="modal_vehicle_id" class="form-select border-light shadow-sm" required="1" disabled="1">
-                                    <option value="">-- กรุณาเลือกประเภทรถก่อน --</option>
+                                    <option value="">
+                                        <t t-if="request.env.lang and request.env.lang.startswith('th')">-- กรุณาเลือกประเภทรถก่อน --</t>
+                                        <t t-elif="request.env.lang and request.env.lang.startswith('my')">-- ကျေးဇူးပြု၍ ယာဉ်အမျိုးအစားကို အရင်ရွေးချယ်ပါ --</t>
+                                        <t t-else="">-- Please select vehicle type first --</t>
+                                    </option>
                                     <t t-foreach="vehicles" t-as="v">
                                         <option t-att-value="v.id" t-att-data-type="v.model_id.name">
                                             <t t-esc="v.model_id.name"/> [<t t-esc="v.license_plate"/>]
@@ -1905,15 +1962,31 @@
 
                             <!-- อาการเสีย -->
                             <div class="mb-0">
-                                <label for="modal_description" class="form-label fw-bold small text-uppercase text-muted">รายละเอียดอาการเสีย</label>
+                                <label for="modal_description" class="form-label fw-bold small text-uppercase text-muted">
+                                    <t t-if="request.env.lang and request.env.lang.startswith('th')">รายละเอียดอาการเสีย</t>
+                                    <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြဿနာအသေးစိတ်</t>
+                                    <t t-else="">Issue Description</t>
+                                </label>
+                                <t t-set="desc_placeholder">
+                                    <t t-if="request.env.lang and request.env.lang.startswith('th')">ระบุอาการเสีย หรือปัญหาที่พบ...</t>
+                                    <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြဿနာကို ဖော်ပြပါ...</t>
+                                    <t t-else="">Describe the issue or problem encountered...</t>
+                                </t>
                                 <textarea name="description" id="modal_description" class="form-control border-light shadow-sm" rows="3" 
-                                          required="1" placeholder="ระบุอาการเสีย หรือปัญหาที่พบ..."></textarea>
+                                          required="1" t-att-placeholder="desc_placeholder"></textarea>
                             </div>
                         </div>
                         <div class="modal-footer border-0 p-4 pt-0">
-                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                                <t t-if="request.env.lang and request.env.lang.startswith('th')">ยกเลิก</t>
+                                <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပယ်ဖျက်မည်</t>
+                                <t t-else="">Cancel</t>
+                            </button>
                             <button type="submit" class="btn btn-danger rounded-pill px-5 shadow fw-bold">
-                                <i class="fa fa-save me-1"/> ส่งข้อมูลแจ้งซ่อม
+                                <i class="fa fa-save me-1"/> 
+                                <t t-if="request.env.lang and request.env.lang.startswith('th')">ส่งข้อมูลแจ้งซ่อม</t>
+                                <t t-elif="request.env.lang and request.env.lang.startswith('my')">ပြုပြင်ရန် တောင်းဆိုချက်ကို တင်သွင်းပါ။</t>
+                                <t t-else="">Submit Repair Request</t>
                             </button>
                         </div>
                     </form>
@@ -1931,7 +2004,8 @@
                     const modalOpts = Array.from(modalVehicleSelect.options).slice(1);
                     modalTypeFilter.addEventListener('change', function() {
                         const sel = this.value;
-                        modalVehicleSelect.innerHTML = '<option value="">-- เลือกรถ --</option>';
+                        const initialLabel = modalVehicleSelect.options[0].text;
+                        modalVehicleSelect.innerHTML = `<option value="">${initialLabel}</option>`;
                         if (!sel) { modalVehicleSelect.disabled = true; return; }
                         let count = 0;
                         modalOpts.forEach(o => {
