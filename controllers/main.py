@@ -17,7 +17,7 @@ class VehicleBorrowController(http.Controller):
         )
         return vehicle_types, vehicles, employee
 
-    @http.route(['/automotive/automotive'], type='http', auth="public", website=True)
+    @http.route(['/automotive'], type='http', auth="public", website=True)
     def vehicle_home(self, **post):
         vehicle_types, vehicles, employee = self._get_repair_data()
         return request.render("vehicle_borrow.landing_page_template", {
