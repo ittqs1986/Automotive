@@ -1,0 +1,61 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following module:
+# 	* vehicle_borrow
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-02 06:00+0000\n"
+"PO-Revision-Date: 2026-05-02 06:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: vehicle_borrow
+#: model:website.menu,name:vehicle_borrow.menu_vehicle_booking_website
+msgid "Vehicle Usage Recording"
+msgstr "บันทึกการใช้งานรถ"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Vehicle Usage Recording System"
+msgstr "ระบบบันทึกการใช้งานรถ"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Borrowing and returning a vehicle is easy and takes just a few steps, for all our employees."
+msgstr "ยืม-คืนรถ ง่ายๆ เพียงไม่กี่ขั้นตอน สำหรับพนักงานของเราทุกคน"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Request New Vehicle"
+msgstr "ขอใช้รถใหม่"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "My Usage History"
+msgstr "ประวัติการใช้งานของฉัน"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Report Issue / Repair"
+msgstr "แจ้งเสีย / ซ่อม"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Administrator Menu (Admin Only)"
+msgstr "เมนูสำหรับผู้ดูแลระบบ (เฉพาะแอดมิน)"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "System Control Panel"
+msgstr "แผงควบคุมระบบ"
+
+#. module: vehicle_borrow
+#: model_terms:ir.ui.view,arch_db:vehicle_borrow.landing_page_template
+msgid "Manage Spare Parts Inventory"
+msgstr "จัดการสต็อกอะไหล่"

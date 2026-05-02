@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Record Rule: User can only see their own requests (Personal Access) -->
+        <record id="rule_vehicle_borrow_request_user" model="ir.rule">
+            <field name="name">User: Own Requests Only</field>
+            <field name="model_id" ref="model_vehicle_borrow_request"/>
+            <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+            <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        </record>
+
+        <!-- FACTORY ISOLATION RULES -->
+
+        <!-- Vehicles: TQS -->
+        <record id="rule_fleet_vehicle_tqs" model="ir.rule">
+            <field name="name">Factory: TQS Vehicles</field>
+            <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+            <field name="domain_force">[('factory', '=', 'TQS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tqs')), (4, ref('vehicle_borrow.group_vb_user_tqs'))]"/>
+        </record>
+
+        <!-- Vehicles: CKR -->
+        <record id="rule_fleet_vehicle_ckr" model="ir.rule">
+            <field name="name">Factory: CKR Vehicles</field>
+            <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+            <field name="domain_force">[('factory', '=', 'CKR')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_ckr')), (4, ref('vehicle_borrow.group_vb_user_ckr'))]"/>
+        </record>
+
+        <!-- Vehicles: TPS -->
+        <record id="rule_fleet_vehicle_tps" model="ir.rule">
+            <field name="name">Factory: TPS Vehicles</field>
+            <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+            <field name="domain_force">[('factory', '=', 'TPS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tps')), (4, ref('vehicle_borrow.group_vb_user_tps'))]"/>
+        </record>
+
+        <!-- Borrow Requests: TQS Admin (See all TQS) -->
+        <record id="rule_vb_request_tqs_admin" model="ir.rule">
+            <field name="name">Factory Admin: TQS Requests</field>
+            <field name="model_id" ref="model_vehicle_borrow_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'TQS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tqs'))]"/>
+        </record>
+
+        <!-- Borrow Requests: CKR Admin -->
+        <record id="rule_vb_request_ckr_admin" model="ir.rule">
+            <field name="name">Factory Admin: CKR Requests</field>
+            <field name="model_id" ref="model_vehicle_borrow_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'CKR')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_ckr'))]"/>
+        </record>
+
+        <!-- Borrow Requests: TPS Admin -->
+        <record id="rule_vb_request_tps_admin" model="ir.rule">
+            <field name="name">Factory Admin: TPS Requests</field>
+            <field name="model_id" ref="model_vehicle_borrow_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'TPS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tps')), (4, ref('vehicle_borrow.group_vb_user_tps'))]"/>
+        </record>
+
+        <!-- Repair Requests: TQS -->
+        <record id="rule_vb_repair_tqs" model="ir.rule">
+            <field name="name">Factory: TQS Repair Requests</field>
+            <field name="model_id" ref="model_vehicle_repair_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'TQS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tqs')), (4, ref('vehicle_borrow.group_vb_user_tqs'))]"/>
+        </record>
+
+        <!-- Repair Requests: CKR -->
+        <record id="rule_vb_repair_ckr" model="ir.rule">
+            <field name="name">Factory: CKR Repair Requests</field>
+            <field name="model_id" ref="model_vehicle_repair_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'CKR')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_ckr')), (4, ref('vehicle_borrow.group_vb_user_ckr'))]"/>
+        </record>
+
+        <!-- Repair Requests: TPS -->
+        <record id="rule_vb_repair_tps" model="ir.rule">
+            <field name="name">Factory: TPS Repair Requests</field>
+            <field name="model_id" ref="model_vehicle_repair_request"/>
+            <field name="domain_force">[('vehicle_id.factory', '=', 'TPS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tps')), (4, ref('vehicle_borrow.group_vb_user_tps'))]"/>
+        </record>
+
+        <!-- Head Admin / GLOBAL Access -->
+        <record id="rule_fleet_vehicle_all" model="ir.rule">
+            <field name="name">Manager: All Vehicles</field>
+            <field name="model_id" ref="fleet.model_fleet_vehicle"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_head_admin')), (4, ref('base.group_system'))]"/>
+        </record>
+
+        <record id="rule_vehicle_borrow_request_all" model="ir.rule">
+            <field name="name">Manager: All Requests</field>
+            <field name="model_id" ref="model_vehicle_borrow_request"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_head_admin')), (4, ref('base.group_system'))]"/>
+        </record>
+
+        <record id="rule_vehicle_repair_request_all" model="ir.rule">
+            <field name="name">Manager: All Repair Requests</field>
+            <field name="model_id" ref="model_vehicle_repair_request"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_head_admin')), (4, ref('base.group_system'))]"/>
+        </record>
+
+        <!-- ===== SPARE PARTS FACTORY ISOLATION ===== -->
+
+        <!-- Spare Parts: TQS Admin เห็นเฉพาะอะไหล่ TQS -->
+        <record id="rule_spare_part_tqs" model="ir.rule">
+            <field name="name">Factory: TQS Spare Parts</field>
+            <field name="model_id" ref="model_vehicle_spare_part"/>
+            <field name="domain_force">[('factory', '=', 'TQS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tqs'))]"/>
+        </record>
+
+        <!-- Spare Parts: CKR Admin เห็นเฉพาะอะไหล่ CKR -->
+        <record id="rule_spare_part_ckr" model="ir.rule">
+            <field name="name">Factory: CKR Spare Parts</field>
+            <field name="model_id" ref="model_vehicle_spare_part"/>
+            <field name="domain_force">[('factory', '=', 'CKR')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_ckr'))]"/>
+        </record>
+
+        <!-- Spare Parts: TPS Admin เห็นเฉพาะอะไหล่ TPS -->
+        <record id="rule_spare_part_tps" model="ir.rule">
+            <field name="name">Factory: TPS Spare Parts</field>
+            <field name="model_id" ref="model_vehicle_spare_part"/>
+            <field name="domain_force">[('factory', '=', 'TPS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tps'))]"/>
+        </record>
+
+        <!-- Spare Parts: Head Admin เห็นทุกโรงงาน -->
+        <record id="rule_spare_part_all" model="ir.rule">
+            <field name="name">Manager: All Spare Parts</field>
+            <field name="model_id" ref="model_vehicle_spare_part"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_head_admin')), (4, ref('base.group_system'))]"/>
+        </record>
+
+        <!-- Spare Part Movements: TQS Admin -->
+        <record id="rule_spare_part_movement_tqs" model="ir.rule">
+            <field name="name">Factory: TQS Spare Part Movements</field>
+            <field name="model_id" ref="model_vehicle_spare_part_movement"/>
+            <field name="domain_force">[('factory', '=', 'TQS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tqs'))]"/>
+        </record>
+
+        <!-- Spare Part Movements: CKR Admin -->
+        <record id="rule_spare_part_movement_ckr" model="ir.rule">
+            <field name="name">Factory: CKR Spare Part Movements</field>
+            <field name="model_id" ref="model_vehicle_spare_part_movement"/>
+            <field name="domain_force">[('factory', '=', 'CKR')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_ckr'))]"/>
+        </record>
+
+        <!-- Spare Part Movements: TPS Admin -->
+        <record id="rule_spare_part_movement_tps" model="ir.rule">
+            <field name="name">Factory: TPS Spare Part Movements</field>
+            <field name="model_id" ref="model_vehicle_spare_part_movement"/>
+            <field name="domain_force">[('factory', '=', 'TPS')]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_admin_tps'))]"/>
+        </record>
+
+        <!-- Spare Part Movements: Head Admin เห็นทุกโรงงาน -->
+        <record id="rule_spare_part_movement_all" model="ir.rule">
+            <field name="name">Manager: All Spare Part Movements</field>
+            <field name="model_id" ref="model_vehicle_spare_part_movement"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('vehicle_borrow.group_vb_head_admin')), (4, ref('base.group_system'))]"/>
+        </record>
+    </data>
+</odoo>

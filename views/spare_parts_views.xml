@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Spare Part Search View -->
+    <record id="view_vehicle_spare_part_search" model="ir.ui.view">
+        <field name="name">vehicle.spare.part.search</field>
+        <field name="model">vehicle.spare.part</field>
+        <field name="arch" type="xml">
+            <search string="Search Spare Parts">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="factory"/>
+                <filter string="Low Stock" name="low_stock" domain="[('qty_on_hand', '&lt;', 'min_qty')]"/>
+                <separator/>
+                <filter string="TQS" name="factory_tqs" domain="[('factory', '=', 'TQS')]"/>
+                <filter string="CKR" name="factory_ckr" domain="[('factory', '=', 'CKR')]"/>
+                <filter string="TPS" name="factory_tps" domain="[('factory', '=', 'TPS')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="โรงงาน" name="groupby_factory" context="{'group_by': 'factory'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Spare Part List View -->
+    <record id="view_vehicle_spare_part_list" model="ir.ui.view">
+        <field name="name">vehicle.spare.part.list</field>
+        <field name="model">vehicle.spare.part</field>
+        <field name="arch" type="xml">
+            <list string="Spare Parts" decoration-danger="qty_on_hand &lt; min_qty">
+                <field name="factory" widget="badge"
+                       decoration-success="factory == 'TQS'"
+                       decoration-warning="factory == 'TPS'"
+                       decoration-danger="factory == 'CKR'"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="qty_on_hand" sum="Total Stock"/>
+                <field name="uom"/>
+                <field name="min_qty"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Spare Part Form View -->
+    <record id="view_vehicle_spare_part_form" model="ir.ui.view">
+        <field name="name">vehicle.spare.part.form</field>
+        <field name="model">vehicle.spare.part</field>
+        <field name="arch" type="xml">
+            <form string="Spare Part">
+                <sheet>
+                    <field name="image" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="ชื่ออะไหล่..."/>
+                        </h1>
+                        <h3>
+                            <field name="code" placeholder="รหัสอะไหล่..."/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="factory"/>
+                            <field name="uom"/>
+                        </group>
+                        <group>
+                            <field name="min_qty"/>
+                            <field name="qty_on_hand" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายละเอียด" name="description">
+                            <field name="description"/>
+                        </page>
+                        <page string="ประวัติการเคลื่อนไหว" name="movements">
+                            <field name="movement_ids" readonly="1">
+                                <list>
+                                    <field name="date"/>
+                                    <field name="move_type"/>
+                                    <field name="qty"/>
+                                    <field name="vehicle_id"/>
+                                    <field name="reference"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Movement List View -->
+    <record id="view_vehicle_spare_part_movement_list" model="ir.ui.view">
+        <field name="name">vehicle.spare.part.movement.list</field>
+        <field name="model">vehicle.spare.part.movement</field>
+        <field name="arch" type="xml">
+            <list string="Stock History" create="false">
+                <field name="date"/>
+                <field name="factory" widget="badge"
+                       decoration-success="factory == 'TQS'"
+                       decoration-warning="factory == 'TPS'"
+                       decoration-danger="factory == 'CKR'"/>
+                <field name="part_id"/>
+                <field name="move_type" widget="badge" decoration-success="move_type == 'in'" decoration-info="move_type == 'out'"/>
+                <field name="qty"/>
+                <field name="vehicle_id"/>
+                <field name="reference"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Movement Form View (Simplified) -->
+    <record id="view_vehicle_spare_part_movement_form" model="ir.ui.view">
+        <field name="name">vehicle.spare.part.movement.form</field>
+        <field name="model">vehicle.spare.part.movement</field>
+        <field name="arch" type="xml">
+            <form string="Stock Movement">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="part_id" options="{'no_create': True}"/>
+                            <field name="factory" readonly="1"/>
+                            <field name="move_type" widget="radio"/>
+                            <field name="qty"/>
+                        </group>
+                        <group>
+                            <field name="date"/>
+                            <field name="vehicle_id" invisible="move_type != 'out'"/>
+                            <field name="repair_id" invisible="move_type != 'out'"/>
+                            <field name="reference"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_vehicle_spare_part" model="ir.actions.act_window">
+        <field name="name">คลังอะไหล่</field>
+        <field name="res_model">vehicle.spare.part</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างรายการอะไหล่แรกของคุณที่นี่
+            </p>
+        </field>
+    </record>
+
+    <record id="action_vehicle_spare_part_receive" model="ir.actions.act_window">
+        <field name="name">รับเข้าอะไหล่</field>
+        <field name="res_model">vehicle.spare.part.movement</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_move_type': 'in'}</field>
+    </record>
+
+    <record id="action_vehicle_spare_part_issue" model="ir.actions.act_window">
+        <field name="name">เบิกอะไหล่</field>
+        <field name="res_model">vehicle.spare.part.movement</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_move_type': 'out'}</field>
+    </record>
+
+    <record id="action_vehicle_spare_part_history" model="ir.actions.act_window">
+        <field name="name">ประวัติสต็อก</field>
+        <field name="res_model">vehicle.spare.part.movement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menus - ปรับให้ทุก Admin Factory Groups เข้าถึงได้ -->
+    <menuitem id="menu_spare_parts_root" name="จัดการอะไหล่" parent="menu_vehicle_borrow_root" sequence="30"
+              groups="vehicle_borrow.group_vb_head_admin,vehicle_borrow.group_vb_admin_tqs,vehicle_borrow.group_vb_admin_ckr,vehicle_borrow.group_vb_admin_tps"/>
+    <menuitem id="menu_spare_part_inventory" name="คลังอะไหล่ (เช็คสต๊อก)" parent="menu_spare_parts_root" action="action_vehicle_spare_part" sequence="10"/>
+    <menuitem id="menu_spare_part_receive" name="รับอะไหล่เข้า" parent="menu_spare_parts_root" action="action_vehicle_spare_part_receive" sequence="20"/>
+    <menuitem id="menu_spare_part_issue" name="เบิกอะไหล่" parent="menu_spare_parts_root" action="action_vehicle_spare_part_issue" sequence="30"/>
+    <menuitem id="menu_spare_part_history" name="ประวัติการเคลื่อนไหว" parent="menu_spare_parts_root" action="action_vehicle_spare_part_history" sequence="40"/>
+
+</odoo>

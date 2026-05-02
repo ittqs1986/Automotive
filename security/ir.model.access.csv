@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vehicle_borrow_request_user,vehicle.borrow.request.user,model_vehicle_borrow_request,base.group_user,1,1,1,0
+access_vehicle_borrow_request_manager,vehicle.borrow.request.manager,model_vehicle_borrow_request,fleet.fleet_group_manager,1,1,1,1
+access_fleet_vehicle_user_read,fleet.vehicle.user.read,fleet.model_fleet_vehicle,base.group_user,1,0,0,0
+access_fleet_vehicle_model_user_read,fleet.vehicle.model.user.read,fleet.model_fleet_vehicle_model,base.group_user,1,0,0,0
+access_vehicle_repair_request_manager,vehicle.repair.request.manager,model_vehicle_repair_request,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_repair_request_user,vehicle.repair.request.user,model_vehicle_repair_request,base.group_user,1,1,1,0
+access_vehicle_spare_part_category_manager,vehicle.spare.part.category.manager,model_vehicle_spare_part_category,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_spare_part_manager,vehicle.spare.part.manager,model_vehicle_spare_part,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_spare_part_movement_manager,vehicle.spare.part.movement.manager,model_vehicle_spare_part_movement,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_spare_part_user_read,vehicle.spare.part.user.read,model_vehicle_spare_part,base.group_user,1,0,0,0
+access_vehicle_transfer_request_admin,vehicle.transfer.request.admin,model_vehicle_transfer_request,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_transfer_request_user,vehicle.transfer.request.user,model_vehicle_transfer_request,base.group_user,1,0,0,0

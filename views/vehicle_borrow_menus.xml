@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_vehicle_borrow_root" name="Vehicle Borrowing" web_icon="fleet,static/description/icon.png" sequence="10"/>
+
+    <!-- User Menu: Borrowing Requests -->
+    <menuitem id="menu_vehicle_borrow_user" name="My Borrowing" parent="menu_vehicle_borrow_root" sequence="10"/>
+    <menuitem id="menu_vehicle_borrow_request_user" name="Booking Requests" parent="menu_vehicle_borrow_user" action="action_vehicle_borrow_request" sequence="10"/>
+
+    <!-- Admin Menu: Management -->
+    <menuitem id="menu_vehicle_borrow_admin" name="Admin Management" parent="menu_vehicle_borrow_root" sequence="20" groups="fleet.fleet_group_manager"/>
+    <menuitem id="menu_vehicle_management_admin" name="Manage Vehicles" parent="menu_vehicle_borrow_admin" action="fleet.fleet_vehicle_action" sequence="10"/>
+    <menuitem id="menu_vehicle_borrow_history_admin" name="Booking History" parent="menu_vehicle_borrow_admin" action="action_vehicle_borrow_request" sequence="20"/>
+    <menuitem id="menu_vehicle_repair_history_admin" name="Repair History" parent="menu_vehicle_borrow_admin" action="action_vehicle_repair_request" sequence="30"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_vehicle_borrow_config" name="Configuration" parent="menu_vehicle_borrow_root" sequence="100" groups="fleet.fleet_group_manager"/>
+    <menuitem id="menu_employee_management" name="Employees" parent="menu_vehicle_borrow_config" action="hr.open_view_employee_list_my" sequence="10" groups="hr.group_hr_user"/>
+    <menuitem id="menu_user_management" name="System Users" parent="menu_vehicle_borrow_config" action="base.action_res_users" sequence="20"/>
+
+    <!-- Fleet Integration: Add to Fleet menu too -->
+    <menuitem id="menu_fleet_vehicle_borrow" name="Borrowing Requests" parent="fleet.menu_root" action="action_vehicle_borrow_request" sequence="40"/>
+</odoo>
