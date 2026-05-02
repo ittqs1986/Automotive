@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '1.5',                          # เวอร์ชัน: เพิ่มไฟล์ README.md และปรับปรุงระบบจัดการเวอร์ชัน
+    'version': '1.6',                          # เวอร์ชัน: เปลี่ยน URL Prefix เป็น /automotive
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs
