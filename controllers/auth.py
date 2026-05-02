@@ -77,11 +77,11 @@ class VehicleBorrowAuthController(Home):
 
         if is_allowed:
             _logger.debug(
-                "Login: user %s – factory '%s' validated OK.", uid, selected_factory
+                "Login: user %s – factory '%s' validated OK. Redirecting to /automotive", uid, selected_factory
             )
             # Store factory context in session for frontend filtering
             request.session['selected_factory'] = selected_factory
-            return response
+            return request.redirect('/automotive')
 
         # ──────────────────────────────────────────────────
         # Factory mismatch → log out and show error

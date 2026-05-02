@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '2.1',                          # เวอร์ชัน: แก้ไข 500 Error (hasattr) ในหน้าจัดการอะไหล่
+    'version': '2.2',                          # เวอร์ชัน: ตั้งค่า Redirect ไปยัง /automotive หลัง Login สำเร็จ
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs
