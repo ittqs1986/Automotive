@@ -298,6 +298,108 @@ class VehicleBorrowController(http.Controller):
             domain.append(('factory', '=', user_factory))
         return domain
 
+    @http.route(['/automotive/admin/kpi'], type='http', auth="user", website=True)
+    def admin_kpi_dashboard(self, **post):
+        """
+        หน้าแดชบอร์ดสรุปสถิติและตัวชี้วัดผลงานหลัก (KPI Dashboard) สำหรับ Head Admin และ Admin
+        """
+        if not self._is_admin():
+            return request.render("http_routing.403")
+
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+
+        # --- 1. สถิติตัวรถ (Vehicles Stats) ---
+        # กรองข้อมูลยานพาหนะตามโรงงานของผู้ใช้ (หากมีสิทธิ์เฉพาะโรงงาน)
+        v_domain = [('factory', '=', user_factory)] if user_factory else []
+        vehicles = env_sudo['fleet.vehicle'].search(v_domain)
+        total_vehicles = len(vehicles)
+        active_vehicles = len(vehicles.filtered(lambda v: v.vehicle_status == 'active'))
+        repairing_vehicles = len(vehicles.filtered(lambda v: v.vehicle_status == 'repairing'))
+        broken_vehicles = len(vehicles.filtered(lambda v: v.vehicle_status == 'broken'))
+        retired_vehicles = len(vehicles.filtered(lambda v: v.vehicle_status == 'retired'))
+
+        # --- 2. สถิติการยืมรถ (Borrowing Stats) ---
+        # กรองข้อมูลใบขอจองยืมรถตามโรงงานต้นสังกัดของตัวรถ
+        b_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+        borrows = env_sudo['vehicle.borrow.request'].search(b_domain)
+        total_borrows = len(borrows)
+        pending_borrows = len(borrows.filtered(lambda b: b.state == 'request'))
+        approved_borrows = len(borrows.filtered(lambda b: b.state == 'approved'))
+        borrowed_borrows = len(borrows.filtered(lambda b: b.state == 'borrowed'))
+        returned_borrows = len(borrows.filtered(lambda b: b.state == 'returned'))
+
+        # --- 3. สถิติการแจ้งซ่อม (Repairing Stats) ---
+        # กรองข้อมูลประวัติใบแจ้งซ่อมตามโรงงานของรถยนต์ที่ส่งซ่อม
+        r_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+        repairs = env_sudo['vehicle.repair.request'].search(r_domain)
+        total_repairs = len(repairs)
+        ongoing_repairs = len(repairs.filtered(lambda r: r.state == 'repairing'))
+        done_repairs = len(repairs.filtered(lambda r: r.state == 'done'))
+        total_repair_cost = sum(repairs.mapped('repair_cost'))
+
+        # --- 4. สถิติคลังอะไหล่ (Spare Parts Stats) ---
+        # กรองคลังอะไหล่และสถิติอะไหล่ตามโรงงานที่เก็บ
+        p_domain = [('factory', '=', user_factory)] if user_factory else []
+        parts = env_sudo['vehicle.spare.part'].search(p_domain)
+        total_parts = len(parts)
+        total_qty_on_hand = sum(parts.mapped('qty_on_hand'))
+        low_stock_parts = parts.filtered(lambda p: p.qty_on_hand <= p.min_qty)
+
+        # --- 5. สถิติการส่งย้ายรถยนต์ข้ามโรงงาน (Transfer Stats) ---
+        # กรองใบคำขอส่งย้ายยานพาหนะตามสิทธิ์โรงงาน
+        t_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+        transfers = env_sudo['vehicle.transfer.request'].search(t_domain)
+        total_transfers = len(transfers)
+        pending_transfers = len(transfers.filtered(lambda t: t.state in ('requested', 'approved')))
+        accepted_transfers = len(transfers.filtered(lambda t: t.state == 'accepted'))
+
+        # --- 6. อันดับความนิยมและค่าใช้จ่ายสูงสุด (Rankings & Top Lists) ---
+        # หา 5 อันดับรถยนต์ที่ถูกยืมใช้งานบ่อยที่สุด
+        from collections import Counter
+        borrow_vehicle_ids = borrows.mapped('vehicle_id.id')
+        borrow_counts = Counter(borrow_vehicle_ids)
+        top_borrowed = []
+        for vehicle_id, count in borrow_counts.most_common(5):
+            vehicle = env_sudo['fleet.vehicle'].browse(vehicle_id)
+            if vehicle.exists():
+                top_borrowed.append({
+                    'name': vehicle.display_name or vehicle.name,
+                    'factory': vehicle.factory,
+                    'count': count
+                })
+
+        # ดึง 5 รายการซ่อมที่มีค่าใช้จ่ายสูงที่สุด
+        expensive_repairs = repairs.filtered(lambda r: r.repair_cost > 0).sorted(key=lambda r: r.repair_cost, reverse=True)[:5]
+
+        # จัดเตรียม Context เพื่อส่งไปแสดงผลที่ View QWeb
+        context = {
+            'total_vehicles': total_vehicles,
+            'active_vehicles': active_vehicles,
+            'repairing_vehicles': repairing_vehicles,
+            'broken_vehicles': broken_vehicles,
+            'retired_vehicles': retired_vehicles,
+            'total_borrows': total_borrows,
+            'pending_borrows': pending_borrows,
+            'approved_borrows': approved_borrows,
+            'borrowed_borrows': borrowed_borrows,
+            'returned_borrows': returned_borrows,
+            'total_repairs': total_repairs,
+            'ongoing_repairs': ongoing_repairs,
+            'done_repairs': done_repairs,
+            'total_repair_cost': total_repair_cost,
+            'total_parts': total_parts,
+            'total_qty_on_hand': total_qty_on_hand,
+            'low_stock_parts': low_stock_parts,
+            'total_transfers': total_transfers,
+            'pending_transfers': pending_transfers,
+            'accepted_transfers': accepted_transfers,
+            'top_borrowed': top_borrowed,
+            'expensive_repairs': expensive_repairs,
+            'user_factory': user_factory or 'ทั้งหมด',
+        }
+        return request.render('vehicle_borrow.admin_kpi_dashboard_template', context)
+
     @http.route(['/automotive/dashboard'], type='http', auth="user", website=True)
     def admin_dashboard(self, **post):
         import logging
