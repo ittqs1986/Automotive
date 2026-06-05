@@ -10,57 +10,43 @@
         <!-- Head Admin: สามารถเข้าถึงทุกโรงงาน ทุกส่วน -->
         <record id="group_vb_head_admin" model="res.groups">
             <field name="name">Head Admin</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('fleet.fleet_group_manager'))]"/>
-            <field name="comment">Head Admin สามารถเข้าถึงข้อมูลทุกโรงงาน และทุกส่วนของระบบ</field>
         </record>
 
         <!-- Admin TQS -->
         <record id="group_vb_admin_tqs" model="res.groups">
             <field name="name">Admin Factory TQS</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('fleet.fleet_group_manager'))]"/>
-            <field name="comment">Admin โรงงาน TQS เข้าถึงได้เฉพาะรถและข้อมูลของ TQS</field>
         </record>
 
         <!-- Admin CKR -->
         <record id="group_vb_admin_ckr" model="res.groups">
             <field name="name">Admin Factory CKR</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('fleet.fleet_group_manager'))]"/>
-            <field name="comment">Admin โรงงาน CKR เข้าถึงได้เฉพาะรถและข้อมูลของ CKR</field>
         </record>
 
         <!-- Admin TPS -->
         <record id="group_vb_admin_tps" model="res.groups">
             <field name="name">Admin Factory TPS</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('fleet.fleet_group_manager'))]"/>
-            <field name="comment">Admin โรงงาน TPS เข้าถึงได้เฉพาะรถและข้อมูลของ TPS</field>
         </record>
 
         <!-- User TQS: พนักงานโรงงาน TQS -->
         <record id="group_vb_user_tqs" model="res.groups">
             <field name="name">User Factory TQS</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
-            <field name="comment">User พนักงานโรงงาน TQS เข้าถึงได้เฉพาะระบบยืม-คืนรถของ TQS</field>
         </record>
 
         <!-- User CKR: พนักงานโรงงาน CKR -->
         <record id="group_vb_user_ckr" model="res.groups">
             <field name="name">User Factory CKR</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
-            <field name="comment">User พนักงานโรงงาน CKR เข้าถึงได้เฉพาะระบบยืม-คืนรถของ CKR</field>
         </record>
 
         <!-- User TPS: พนักงานโรงงาน TPS -->
         <record id="group_vb_user_tps" model="res.groups">
             <field name="name">User Factory TPS</field>
-            <field name="category_id" ref="module_vehicle_borrow"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
-            <field name="comment">User พนักงานโรงงาน TPS เข้าถึงได้เฉพาะระบบยืม-คืนรถของ TPS</field>
         </record>
     </data>
 </odoo>

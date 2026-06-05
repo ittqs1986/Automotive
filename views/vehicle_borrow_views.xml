@@ -134,7 +134,7 @@
                 <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="Requested" name="requested" domain="[('state', '=', 'request')]"/>
                 <filter string="Current Borrowing" name="borrowed" domain="[('state', '=', 'borrowed')]"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Employee" name="employee" context="{'group_by': 'employee_id'}"/>
                     <filter string="Vehicle" name="vehicle" context="{'group_by': 'vehicle_id'}"/>
                     <filter string="State" name="state" context="{'group_by': 'state'}"/>

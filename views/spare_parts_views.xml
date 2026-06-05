@@ -15,7 +15,7 @@
                 <filter string="TQS" name="factory_tqs" domain="[('factory', '=', 'TQS')]"/>
                 <filter string="CKR" name="factory_ckr" domain="[('factory', '=', 'CKR')]"/>
                 <filter string="TPS" name="factory_tps" domain="[('factory', '=', 'TPS')]"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="โรงงาน" name="groupby_factory" context="{'group_by': 'factory'}"/>
                 </group>
             </search>

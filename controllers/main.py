@@ -17,11 +17,6 @@ class VehicleBorrowController(http.Controller):
         )
         return vehicle_types, vehicles, employee
 
-    @http.route(['/'], type='http', auth="public", website=True)
-    def index_redirect(self, **kw):
-        """บังคับให้หน้าแรกสุดของเว็บไซต์ Redirect มาที่หน้าหลักของระบบรถ"""
-        return request.redirect('/automotive')
-
     @http.route(['/automotive'], type='http', auth="public", website=True)
     def vehicle_home(self, **post):
         vehicle_types, vehicles, employee = self._get_repair_data()
@@ -290,17 +285,17 @@ class VehicleBorrowController(http.Controller):
         )
 
     def _build_factory_domain(self, base_domain=None):
-        """สร้าง domain กรองรถตาม factory ของ user ที่ล็อกอิน"""
+        """สร้าง domain กรองรถตาม factory ของ user ที่ล็อกอิน (ปรับปรุงแก้ไขให้ใช้ selected_factory จาก session)"""
         domain = list(base_domain or [])
-        factory_id = request.session.get('factory_id')
+        user_factory = self._get_user_factory()
         
-        if self._is_head_admin() and not factory_id:
+        if self._is_head_admin() and not user_factory:
             return domain
             
-        if not factory_id:
+        if not user_factory:
             domain.append(('id', '=', 0))
         else:
-            domain.append(('factory_id', '=', int(factory_id)))
+            domain.append(('factory', '=', user_factory))
         return domain
 
     @http.route(['/automotive/dashboard'], type='http', auth="user", website=True)
@@ -355,12 +350,13 @@ class VehicleBorrowController(http.Controller):
         user_search_domain = [('share', '=', False)]
         if user_factory:
             # ใช้ Domain กรองตรงๆ จาก DB: ค้นหา User ที่มีกลุ่มของโรงงานที่เลือกอย่างน้อย 1 กลุ่ม
+            # เปลี่ยนเป็น group_ids ตามมาตรฐาน Odoo 19 (เดิมคือ groups_id)
             my_role_ids = {
                 'TQS': [admin_tqs_group.id, user_tqs_group.id],
                 'CKR': [admin_ckr_group.id, user_ckr_group.id],
                 'TPS': [admin_tps_group.id, user_tps_group.id],
             }.get(user_factory, [])
-            user_search_domain.append(('groups_id', 'in', my_role_ids))
+            user_search_domain.append(('group_ids', 'in', my_role_ids))
             
         users = env_sudo['res.users'].with_context(active_test=False).search(user_search_domain, order='login')
 
@@ -414,12 +410,12 @@ class VehicleBorrowController(http.Controller):
             password = post.get('password')
             role = post.get('role')  # 'user', 'head_admin', 'admin_tqs', 'admin_ckr', 'admin_tps'
             
-            # สร้าง User
+            # สร้าง User (เปลี่ยนเป็น group_ids เพื่อความเข้ากันได้กับ Odoo 19)
             new_user = request.env['res.users'].sudo().create({
                 'name': name,
                 'login': login,
                 'password': password,
-                'groups_id': [(6, 0, [request.env.ref('base.group_user').id])]
+                'group_ids': [(6, 0, [request.env.ref('base.group_user').id])]
             })
             
             # กำหนด group ตาม role ที่เลือก
@@ -434,7 +430,8 @@ class VehicleBorrowController(http.Controller):
             }
             if role in group_map:
                 group = request.env.ref(group_map[role])
-                new_user.sudo().write({'groups_id': [(4, group.id)]})
+                # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids ตามมาตรฐาน Odoo 19
+                new_user.sudo().write({'group_ids': [(4, group.id)]})
                 
             # สร้าง Employee (ถ้ายังไม่มี)
             request.env['hr.employee'].sudo().create({
@@ -493,8 +490,8 @@ class VehicleBorrowController(http.Controller):
                 request.env.ref('vehicle_borrow.group_vb_user_tps'),
                 request.env.ref('fleet.fleet_group_manager'),
             ]
-            # ถอด groups เดิมออกทั้งหมด
-            user.sudo().write({'groups_id': [(3, g.id) for g in all_factory_groups]})
+            # ถอด groups เดิมออกทั้งหมด (เปลี่ยนเป็น group_ids ตามมาตรฐาน Odoo 19)
+            user.sudo().write({'group_ids': [(3, g.id) for g in all_factory_groups]})
             
             # เพิ่ม group ใหม่
             group_map = {
@@ -508,7 +505,8 @@ class VehicleBorrowController(http.Controller):
             }
             if role in group_map:
                 group = request.env.ref(group_map[role])
-                user.sudo().write({'groups_id': [(4, group.id)]})
+                # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids สำหรับ Odoo 19
+                user.sudo().write({'group_ids': [(4, group.id)]})
             # role == 'user' = ไม่มี group admin
                 
             return request.redirect('/automotive/dashboard?msg=role_updated')
@@ -804,6 +802,7 @@ class VehicleBorrowController(http.Controller):
 
     @http.route(['/automotive/repair'], type='http', auth="user", website=True)
     def admin_repair_page(self, **post):
+        # หน้าหลักสำหรับจัดการการแจ้งซ่อมและใบงานที่กำลังดำเนินการ (รายการแจ้งซ่อม)
         if not self._is_admin():
             return request.render("http_routing.403")
             
@@ -817,20 +816,60 @@ class VehicleBorrowController(http.Controller):
         factory_domain = [('factory', '=', user_factory)] if user_factory else []
         repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
 
-        # Fetch all vehicle models and vehicles for the form
+        # ดึงข้อมูลโมเดลรถและรายการรถสำหรับฟอร์มส่งซ่อม
         models = env_sudo['fleet.vehicle.model'].search([])
-        # กรองรถเฉพาะในโรงงาน
         vehicles = env_sudo['fleet.vehicle'].search(list(factory_domain) + [('active', '=', True)])
         vehicle_types = sorted(list(set([m.name for m in models if m.name])))
         
-        # Recent repairs (those currently repairing or recently added)
-        # กรองเฉพาะในโรงงาน
-        recent_repairs = env_sudo['vehicle.repair.request'].search(list(repair_factory_domain) + [('state', '=', 'repairing')], limit=10, order='create_date desc')
+        # รายการรถที่อยู่ระหว่างดำเนินการซ่อม (กำลังซ่อม)
+        recent_repairs = env_sudo['vehicle.repair.request'].search(
+            list(repair_factory_domain) + [('state', '=', 'repairing')], 
+            limit=50, 
+            order='create_date desc'
+        )
         
-        # --- Full Repair History Logic ---
-        history_domain = list(repair_factory_domain) + [('state', '=', 'done')]
+        # ดึงกลุ่มสิทธิ์สำหรับแสดง Badge ใน Template
+        head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
+        admin_tqs_group = request.env.ref('vehicle_borrow.group_vb_admin_tqs')
+        admin_ckr_group = request.env.ref('vehicle_borrow.group_vb_admin_ckr')
+        admin_tps_group = request.env.ref('vehicle_borrow.group_vb_admin_tps')
+        user_tqs_group = request.env.ref('vehicle_borrow.group_vb_user_tqs')
+        user_ckr_group = request.env.ref('vehicle_borrow.group_vb_user_ckr')
+        user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
+
+        return request.render("vehicle_borrow.admin_repair_template", {
+            'vehicle_types': vehicle_types,
+            'vehicles': vehicles,
+            'current_employee': employee,
+            'recent_repairs': recent_repairs,
+            'msg': post.get('msg'),
+            'error': post.get('error'),
+            'user_factory': user_factory,
+            'is_head_admin': self._is_head_admin(),
+            'head_admin_group': head_admin_group,
+            'admin_tqs_group': admin_tqs_group,
+            'admin_ckr_group': admin_ckr_group,
+            'admin_tps_group': admin_tps_group,
+            'user_tqs_group': user_tqs_group,
+            'user_ckr_group': user_ckr_group,
+            'user_tps_group': user_tps_group,
+        })
+
+    @http.route(['/automotive/repair/history'], type='http', auth="user", website=True)
+    def admin_repair_history_page(self, **post):
+        # หน้าแสดงประวัติการซ่อมบำรุงรถยนต์ทั้งหมดที่เสร็จสิ้นหรือยกเลิกแล้ว (ประวัติการซ่อม)
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        factory_domain = [('factory', '=', user_factory)] if user_factory else []
+        repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+
+        # ประวัติการซ่อมที่มีสถานะเสร็จสิ้น (done) หรือยกเลิก (cancelled)
+        history_domain = list(repair_factory_domain) + [('state', 'in', ['done', 'cancelled'])]
         
-        # Extract filters from post
+        # คัดกรองข้อมูลประวัติตามฟิลเตอร์
         f_vehicle_id = post.get('f_vehicle_id')
         f_type = post.get('f_type')
         f_report_start = post.get('f_report_start')
@@ -854,10 +893,14 @@ class VehicleBorrowController(http.Controller):
         if f_finish_end:
             history_domain.append(('finish_date', '<=', f_finish_end + ' 23:59:59'))
             
-        repair_history = env_sudo['vehicle.repair.request'].search(history_domain, order='finish_date desc')
+        repair_history = env_sudo['vehicle.repair.request'].search(history_domain, order='finish_date desc, id desc')
         
-        # All vehicles for the history filter (filtered by factory)
+        # รายการรถทั้งหมดในโรงงานสำหรับฟิลเตอร์
         all_vehicles_history = env_sudo['fleet.vehicle'].search(factory_domain)
+        
+        # ประเภทรถทั้งหมดสำหรับฟิลเตอร์
+        models = env_sudo['fleet.vehicle.model'].search([])
+        vehicle_types = sorted(list(set([m.name for m in models if m.name])))
         
         # ดึงกลุ่มสิทธิ์สำหรับแสดง Badge ใน Template
         head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
@@ -868,16 +911,11 @@ class VehicleBorrowController(http.Controller):
         user_ckr_group = request.env.ref('vehicle_borrow.group_vb_user_ckr')
         user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
 
-        return request.render("vehicle_borrow.admin_repair_template", {
-            'vehicle_types': vehicle_types,
-            'vehicles': vehicles,
-            'current_employee': employee,
-            'recent_repairs': recent_repairs,
+        return request.render("vehicle_borrow.admin_repair_history_list_template", {
             'repair_history': repair_history,
             'all_vehicles_history': all_vehicles_history,
-            'filters': post, # Pass back to maintain states
-            'msg': post.get('msg'),
-            'error': post.get('error'),
+            'vehicle_types': vehicle_types,
+            'filters': post, # รักษาฟิลเตอร์ที่ผู้ใช้กรองไว้
             'user_factory': user_factory,
             'is_head_admin': self._is_head_admin(),
             'head_admin_group': head_admin_group,
