@@ -6,10 +6,10 @@ class VehicleBorrowController(http.Controller):
     def _get_repair_data(self):
         """Helper to get data needed for the Report Issue Modal"""
         env_sudo = request.env(su=True)
-        models = env_sudo['fleet.vehicle.model'].search([])
+        # ดึงประเภทรถเฉพาะที่มีตัวรถจริงและสถานะ Active ในระบบตามสิทธิ์โรงงาน
         v_domain = self._build_factory_domain([('active', '=', True)])
         vehicles = env_sudo['fleet.vehicle'].search(v_domain)
-        vehicle_types = sorted(list(set([m.name for m in models if m.name])))
+        vehicle_types = sorted(list(set([v.model_id.name for v in vehicles if v.model_id and v.model_id.name])))
         
         current_user = request.env.user
         employee = request.env['hr.employee'].sudo().search(
@@ -63,9 +63,12 @@ class VehicleBorrowController(http.Controller):
         ])
         vehicles = request.env['fleet.vehicle'].sudo().search(v_domain)
         
-        # รายการประเภทรถทั้งหมดสำหรับ Dropdown ตัวกรอง (ดึงจาก DB จริง)
-        all_models = request.env['fleet.vehicle.model'].sudo().search([])
-        vehicle_types = sorted(list(set([m.name for m in all_models if m.name])))
+        # ดึงข้อมูลสถานะรถทั้งหมด (เพื่อใช้กับ Dropdown ตัวกรองประเภทรถ และ Modal แจ้งเสีย)
+        v_all_domain = self._build_factory_domain([('active', '=', True)])
+        all_vehicles = request.env['fleet.vehicle'].sudo().search(v_all_domain)
+
+        # รายการประเภทรถทั้งหมดสำหรับ Dropdown (ดึงเฉพาะรุ่นรถที่มีอยู่จริงตามสิทธิ์โรงงาน)
+        vehicle_types = sorted(list(set([v.model_id.name for v in all_vehicles if v.model_id and v.model_id.name])))
         
         # รายการที่ผู้ใช้กำลังยืมอยู่ (สำหรับปุ่มคืนรถ)
         my_borrows = []
@@ -81,10 +84,6 @@ class VehicleBorrowController(http.Controller):
         error = kw.get('error')
         
         _logger.info("Rendering booking form: employee=%s, vehicles=%d, types=%s", employee.name if employee else "NONE", len(vehicles), vehicle_types)
-        
-        # ดึงข้อมูลสถานะรถทั้งหมด (เพื่อใช้กับ Modal แจ้งเสีย)
-        v_all_domain = self._build_factory_domain([('active', '=', True)])
-        all_vehicles = request.env['fleet.vehicle'].sudo().search(v_all_domain)
 
         return request.render('vehicle_borrow.booking_form_template', {
             'vehicles': vehicles,
@@ -918,10 +917,9 @@ class VehicleBorrowController(http.Controller):
         factory_domain = [('factory', '=', user_factory)] if user_factory else []
         repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
 
-        # ดึงข้อมูลโมเดลรถและรายการรถสำหรับฟอร์มส่งซ่อม
-        models = env_sudo['fleet.vehicle.model'].search([])
+        # ดึงข้อมูลรายการรถและประเภทรถ โดยแสดงเฉพาะประเภทที่มีตัวรถจริงและสถานะ Active ในโรงงาน
         vehicles = env_sudo['fleet.vehicle'].search(list(factory_domain) + [('active', '=', True)])
-        vehicle_types = sorted(list(set([m.name for m in models if m.name])))
+        vehicle_types = sorted(list(set([v.model_id.name for v in vehicles if v.model_id and v.model_id.name])))
         
         # รายการรถที่อยู่ระหว่างดำเนินการซ่อม (กำลังซ่อม)
         recent_repairs = env_sudo['vehicle.repair.request'].search(
@@ -1000,9 +998,8 @@ class VehicleBorrowController(http.Controller):
         # รายการรถทั้งหมดในโรงงานสำหรับฟิลเตอร์
         all_vehicles_history = env_sudo['fleet.vehicle'].search(factory_domain)
         
-        # ประเภทรถทั้งหมดสำหรับฟิลเตอร์
-        models = env_sudo['fleet.vehicle.model'].search([])
-        vehicle_types = sorted(list(set([m.name for m in models if m.name])))
+        # ประเภทรถทั้งหมดสำหรับตัวกรอง (กรองให้แสดงเฉพาะประเภทที่มีรถจริงตามสิทธิ์โรงงาน)
+        vehicle_types = sorted(list(set([v.model_id.name for v in all_vehicles_history if v.model_id and v.model_id.name])))
         
         # ดึงกลุ่มสิทธิ์สำหรับแสดง Badge ใน Template
         head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
@@ -1143,9 +1140,8 @@ class VehicleBorrowController(http.Controller):
         vehicles = env_sudo['fleet.vehicle'].search(vehicle_domain)
         repairs = env_sudo['vehicle.repair.request'].search(repair_domain)
         
-        # ดึงประเภทรถจากฐานข้อมูล
-        all_models = env_sudo['fleet.vehicle.model'].search([])
-        vehicle_types = sorted(list(set([m.name for m in all_models if m.name])))
+        # ดึงประเภทรถจากฐานข้อมูล (กรองเฉพาะประเภทที่มีตัวรถจริงตามสิทธิ์โรงงาน)
+        vehicle_types = sorted(list(set([v.model_id.name for v in vehicles if v.model_id and v.model_id.name])))
         
         # Filtering logic for Inventory
         domain = []
@@ -1338,9 +1334,8 @@ class VehicleBorrowController(http.Controller):
         # กรองรถใน dropdown ให้เห็นเฉพาะโรงงานตัวเอง
         all_vehicles = env_sudo['fleet.vehicle'].search(list(factory_domain) + [('active', '=', True)])
         
-        # ดึงประเภทรถจากฐานข้อมูล
-        all_models = env_sudo['fleet.vehicle.model'].search([])
-        vehicle_types = sorted(list(set([m.name for m in all_models if m.name])))
+        # ดึงประเภทรถจากฐานข้อมูล (กรองเฉพาะที่มีรถจริงตามสิทธิ์โรงงาน)
+        vehicle_types = sorted(list(set([v.model_id.name for v in all_vehicles if v.model_id and v.model_id.name])))
         
         # ดึงกลุ่มสิทธิ์สำหรับ Badge
         head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')

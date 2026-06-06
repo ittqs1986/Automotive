@@ -37,17 +37,20 @@ class VehicleTransferRequest(models.Model):
         ('cancelled', 'ยกเลิก')
     ], string='สถานะ', default='draft', tracking=True)
 
-    @api.model
-    def create(self, vals):
-        if vals.get('name', _('New')) == _('New'):
-            vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.transfer.request') or _('New')
-        
-        # ตรวจสอบ Factory ปัจจุบัน
-        if 'vehicle_id' in vals:
-            vehicle = self.env['fleet.vehicle'].browse(vals['vehicle_id'])
-            vals['from_factory'] = vehicle.factory
+    @api.model_create_multi
+    def create(self, vals_list):
+        # ปรับปรุงให้รองรับ Odoo 19 ในรูปแบบ Multi-record (vals_list)
+        # ทำการวนลูปตั้งค่าเลขเอกสารและโรงงานเริ่มต้นของรถยนต์ทุกรายการ
+        for vals in vals_list:
+            if vals.get('name', _('New')) == _('New'):
+                vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.transfer.request') or _('New')
             
-        return super(VehicleTransferRequest, self).create(vals)
+            # ตรวจสอบ Factory ปัจจุบัน ของรถที่ต้องการโยกย้าย
+            if 'vehicle_id' in vals:
+                vehicle = self.env['fleet.vehicle'].browse(vals['vehicle_id'])
+                vals['from_factory'] = vehicle.factory
+                
+        return super(VehicleTransferRequest, self).create(vals_list)
 
     def action_request(self):
         self.write({'state': 'requested'})

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- ลำดับเลขเอกสารคำขอยืมรถ (หลัก) -->
     <record id="seq_vehicle_borrow_request" model="ir.sequence">
         <field name="name">Vehicle Borrowing Request Sequence</field>
         <field name="code">vehicle.borrow.request</field>
@@ -8,6 +9,34 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <!-- ลำดับเลขเอกสารคำขอยืมรถ - TQS -->
+    <record id="seq_vehicle_borrow_request_tqs" model="ir.sequence">
+        <field name="name">Vehicle Borrowing Request Sequence - TQS</field>
+        <field name="code">vehicle.borrow.request.tqs</field>
+        <field name="prefix">TQS/VBR/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารคำขอยืมรถ - CKR -->
+    <record id="seq_vehicle_borrow_request_ckr" model="ir.sequence">
+        <field name="name">Vehicle Borrowing Request Sequence - CKR</field>
+        <field name="code">vehicle.borrow.request.ckr</field>
+        <field name="prefix">CKR/VBR/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารคำขอยืมรถ - TPS -->
+    <record id="seq_vehicle_borrow_request_tps" model="ir.sequence">
+        <field name="name">Vehicle Borrowing Request Sequence - TPS</field>
+        <field name="code">vehicle.borrow.request.tps</field>
+        <field name="prefix">TPS/VBR/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารแจ้งซ่อมรถ (หลัก) -->
     <record id="seq_vehicle_repair_request" model="ir.sequence">
         <field name="name">Vehicle Repair Request Sequence</field>
         <field name="code">vehicle.repair.request</field>
@@ -16,6 +45,34 @@
         <field name="company_id" eval="False"/>
     </record>
 
+    <!-- ลำดับเลขเอกสารแจ้งซ่อมรถ - TQS -->
+    <record id="seq_vehicle_repair_request_tqs" model="ir.sequence">
+        <field name="name">Vehicle Repair Request Sequence - TQS</field>
+        <field name="code">vehicle.repair.request.tqs</field>
+        <field name="prefix">TQS/REP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารแจ้งซ่อมรถ - CKR -->
+    <record id="seq_vehicle_repair_request_ckr" model="ir.sequence">
+        <field name="name">Vehicle Repair Request Sequence - CKR</field>
+        <field name="code">vehicle.repair.request.ckr</field>
+        <field name="prefix">CKR/REP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารแจ้งซ่อมรถ - TPS -->
+    <record id="seq_vehicle_repair_request_tps" model="ir.sequence">
+        <field name="name">Vehicle Repair Request Sequence - TPS</field>
+        <field name="code">vehicle.repair.request.tps</field>
+        <field name="prefix">TPS/REP/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <!-- ลำดับเลขเอกสารโอนย้ายรถ -->
     <record id="seq_vehicle_transfer_request" model="ir.sequence">
         <field name="name">Vehicle Transfer Request Sequence</field>
         <field name="code">vehicle.transfer.request</field>

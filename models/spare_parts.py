@@ -73,10 +73,13 @@ class VehicleSparePartMovement(models.Model):
             if rec.qty <= 0:
                 raise ValidationError(_("จำนวนต้องมากกว่า 0"))
 
-    @api.model
-    def create(self, vals):
-        if vals.get('move_type') == 'out':
-            part = self.env['vehicle.spare.part'].browse(vals.get('part_id'))
-            if part.qty_on_hand < vals.get('qty', 0):
-                raise ValidationError(_("สินค้าคงเหลือไม่เพียงพอ (คงเหลือ %s %s)") % (part.qty_on_hand, part.uom or ''))
-        return super().create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        # ปรับปรุงให้รองรับ Odoo 19 ในรูปแบบ Multi-record (vals_list) 
+        # ทำการวนลูปตรวจสอบจำนวนอะไหล่คงเหลือก่อนทำการสร้างรายการเบิกออก
+        for vals in vals_list:
+            if vals.get('move_type') == 'out':
+                part = self.env['vehicle.spare.part'].browse(vals.get('part_id'))
+                if part.qty_on_hand < vals.get('qty', 0):
+                    raise ValidationError(_("สินค้าคงเหลือไม่เพียงพอ (คงเหลือ %s %s)") % (part.qty_on_hand, part.uom or ''))
+        return super().create(vals_list)

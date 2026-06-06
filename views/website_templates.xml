@@ -182,6 +182,15 @@
                 </main>
             </div>
 
+            <!-- ปุ่มเมนูลอยสำหรับจอมือถือ (Mobile Floating Menu Button) เพื่อให้ผู้ใช้สามารถเรียกเปิดเมนูสไลด์ (Sidebar) ได้จากทุกตำแหน่งของหน้าเว็บเมื่อเลื่อนหน้าจอลงมา -->
+            <button class="btn rounded-circle d-lg-none d-flex align-items-center justify-content-center mobile-menu-fab" 
+                    type="button" 
+                    data-bs-toggle="offcanvas" 
+                    data-bs-target="#vbMobileSidebar" 
+                    aria-controls="vbMobileSidebar">
+                <i class="fa fa-bars text-dark"/>
+            </button>
+
             <!-- โหลด Modal แจ้งเสีย / ซ่อม สำหรับใช้งานร่วมกันในทุกหน้า -->
             <t t-call="vehicle_borrow.report_issue_modal_snippet"/>
 
@@ -245,6 +254,94 @@
 
             <!-- CSS เสริมแต่งสไตล์ให้กับ Sidebar แบบพรีเมียม -->
             <style>
+                /* ซ่อน Header และ Footer หลักของ Odoo ในระบบยืมรถ เพื่อให้แสดงผลแบบแยกเฉพาะส่วน (Fullscreen App) */
+                #wrapheader, header, footer {
+                    display: none !important;
+                }
+                body {
+                    padding-top: 0 !important;
+                    margin-top: 0 !important;
+                }
+                /* สไตล์ปุ่มเมนูลอยขวาล่างสำหรับโทรศัพท์มือถือ (ปรับปรุง z-index เป็น 1030 เพื่อหลบ modal backdrop) */
+                .mobile-menu-fab {
+                    position: fixed !important;
+                    bottom: 20px !important;
+                    right: 20px !important;
+                    width: 56px !important;
+                    height: 56px !important;
+                    z-index: 1030 !important;
+                    background-color: #ffc107 !important;
+                    border: 2px solid #ffffff !important;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                }
+                .mobile-menu-fab i {
+                    font-size: 1.3rem !important;
+                }
+                .mobile-menu-fab:hover {
+                    background-color: #e0a800 !important;
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+                }
+                .mobile-menu-fab:active {
+                    transform: scale(0.9) !important;
+                }
+
+                /* ปรับปรุงโครงสร้างตารางและการแสดงผลในโหมดโทรศัพท์มือถือ */
+                @media (max-width: 991.98px) {
+                    /* ทำให้ตารางทั้งหมดในระบบเลื่อนแนวนอนได้ในจอมือถือโดยอัตโนมัติเพื่อป้องกันจอล้น */
+                    .vb-content table {
+                        display: block !important;
+                        width: 100% !important;
+                        overflow-x: auto !important;
+                        -webkit-overflow-scrolling: touch !important;
+                    }
+                    /* ปรับขนาดระยะห่างขอบและพาร์ทต่างๆ ให้กะทัดรัดยิ่งขึ้น */
+                    .vb-content .container, .vb-content .container-fluid {
+                        padding-left: 12px !important;
+                        padding-right: 12px !important;
+                    }
+                    .vb-content .px-5 {
+                        padding-left: 12px !important;
+                        padding-right: 12px !important;
+                    }
+                    .vb-content .py-5 {
+                        padding-top: 1.5rem !important;
+                        padding-bottom: 1.5rem !important;
+                    }
+                    .vb-content .p-5 {
+                        padding: 12px !important;
+                    }
+                    .vb-content .p-4 {
+                        padding: 12px !important;
+                    }
+                    .vb-content .pt120 {
+                        padding-top: 3rem !important;
+                    }
+                    .vb-content .pb120 {
+                        padding-bottom: 3rem !important;
+                    }
+                    /* ปรับฟอนต์หัวข้อของระบบไม่ให้ใหญ่ล้นจอ */
+                    .vb-content .display-1 {
+                        font-size: 2.2rem !important;
+                        line-height: 1.2 !important;
+                    }
+                    .vb-content .display-3 {
+                        font-size: 1.8rem !important;
+                        line-height: 1.2 !important;
+                    }
+                    .vb-content h1 {
+                        font-size: 1.8rem !important;
+                    }
+                    .vb-content h2 {
+                        font-size: 1.5rem !important;
+                    }
+                    /* ปรับแต่งเมนูสำหรับการจองรถและการ์ดข้อมูลในมือถือให้ดูเรียบร้อย */
+                    .vb-content .card {
+                        margin-bottom: 1rem !important;
+                    }
+                }
+
                 .vb-sidebar .nav-link, .offcanvas .nav-link {
                     color: rgba(255,255,255,0.65) !important;
                     font-weight: 500;
@@ -1383,6 +1480,7 @@
                                     <option value="รถบรรทุก">รถบรรทุก</option>
                                     <option value="รถไถ">รถไถ</option>
                                     <option value="รถไฟฟ้า">รถไฟฟ้า</option>
+                                    <option value="รถแบคโฮ">รถแบคโฮ</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -1393,23 +1491,29 @@
                                 <label class="form-label">แนบรูปภาพรถ</label>
                                 <input type="file" name="image" class="form-control" accept="image/*"/>
                             </div>
-                            <t t-if="is_head_admin">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">โรงงาน</label>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">โรงงาน</label>
+                                <t t-if="is_head_admin">
+                                    <!-- สำหรับ Head Admin: เลือกโรงงานใดก็ได้ กำหนดค่าเริ่มต้นตามเซสชัน -->
                                     <select name="factory" class="form-select" required="1">
-                                        <option value="TQS">TQS</option>
-                                        <option value="CKR">CKR</option>
-                                        <option value="TPS">TPS</option>
+                                        <option value="TQS" t-att-selected="user_factory == 'TQS' or (not user_factory and 'TQS')">TQS</option>
+                                        <option value="CKR" t-att-selected="user_factory == 'CKR'">CKR</option>
+                                        <option value="TPS" t-att-selected="user_factory == 'TPS'">TPS</option>
                                     </select>
-                                </div>
-                            </t>
-                            <t t-else="">
-                                <!--  Factory Admin: auto-set to own factory -->
-                                <input type="hidden" name="factory" t-att-value="user_factory or 'TQS'"/>
-                                <div class="alert alert-info py-2 small mb-0">
-                                    <i class="fa fa-info-circle me-1"/>รถนี้จะถูกเพิ่มในโรงงาน <strong t-esc="user_factory or 'TQS'"/>
-                                </div>
-                            </t>
+                                </t>
+                                <t t-else="">
+                                    <!-- สำหรับ Factory Admin: แสดงโรงงานของตนเองและปิดการแก้ไขพร้อมส่งค่า hidden input -->
+                                    <select name="factory" class="form-select" disabled="1">
+                                        <option value="TQS" t-att-selected="user_factory == 'TQS'">TQS</option>
+                                        <option value="CKR" t-att-selected="user_factory == 'CKR'">CKR</option>
+                                        <option value="TPS" t-att-selected="user_factory == 'TPS'">TPS</option>
+                                    </select>
+                                    <input type="hidden" name="factory" t-att-value="user_factory or 'TQS'"/>
+                                    <div class="form-text text-muted mt-1">
+                                        <i class="fa fa-info-circle me-1"/>เข้าใช้งานด้วยสิทธิ์โรงงาน <strong t-esc="user_factory or 'TQS'"/> (ล็อกการแก้ไข)
+                                    </div>
+                                </t>
+                            </div>
                         </div>
                         <div class="modal-footer"><button type="submit" class="btn btn-primary w-100">บันทึกรถยนต์</button></div>
                     </form>
@@ -1961,7 +2065,12 @@
         </t>
     </template>
 
-    <!-- Nav Menu -->
+    <!-- 
+        [รีเซ็ตเมนูบาร์ด้านบนหน้าเว็บ]
+        คอมเมนต์ปิดใช้งานการสร้างเมนูย่อยใน Website Menu ด้านล่างนี้ เพื่อให้เมนูบาร์หลักด้านบนสุดของหน้าเว็บ Odoo แสดงผลเป็นแบบค่าเริ่มต้น (Default Website Menu)
+        และได้ทำความสะอาดข้อมูลที่สร้างไปแล้วในฐานข้อมูลผ่าน SQL เรียบร้อยแล้ว
+    -->
+    <!--
     <record id="menu_vehicle_booking_website" model="website.menu">
         <field name="name">Vehicle Usage Recording</field>
         <field name="url">/vehicle/booking</field>
@@ -1996,11 +2105,12 @@
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence" type="int">35</field>
     </record>
+    -->
 
     <!-- Snippet: Report Issue Modal (Reusable) -->
     <template id="report_issue_modal_snippet" name="Report Issue Modal">
         <div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg rounded-4">
                     <form action="/automotive/report-issue/submit" method="post">
                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
@@ -2013,12 +2123,11 @@
                         <div class="modal-body p-4">
                             <!-- โหลดข้อมูลผู้ใช้และยานพาหนะจากฐานข้อมูลโดยตรงเพื่อความมั่นคงและหลีกเลี่ยงการส่งค่าว่างจากคอนโทรลเลอร์ -->
                             <t t-set="modal_employee" t-value="request.env['hr.employee'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)"/>
-                            <!-- ค้นหาโมเดลรถทั้งหมด เรียงลำดับตามชื่อเพื่อใช้ใน dropdown -->
-                            <t t-set="modal_vehicle_models" t-value="request.env['fleet.vehicle.model'].sudo().search([], order='name')"/>
-                            
                             <t t-set="modal_user_factory" t-value="request.session.get('selected_factory') or ( 'TQS' if request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs') else 'CKR' if request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr') else 'TPS' if request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps') else None )"/>
                             <t t-set="modal_vehicles_domain" t-value="[('active', '=', True)] + ([('factory', '=', modal_user_factory)] if modal_user_factory else [])"/>
                             <t t-set="modal_vehicles" t-value="request.env['fleet.vehicle'].sudo().search(modal_vehicles_domain)"/>
+                            <!-- ค้นหาประเภทรถเฉพาะที่มีตัวรถจริงในระบบตามโรงงาน เพื่อแสดงเฉพาะประเภทรถที่มีอยู่ในระบบจริง ป้องกันการกดเลือกพลาด -->
+                            <t t-set="modal_vehicle_models" t-value="modal_vehicles.mapped('model_id').sorted(key=lambda m: m.name)"/>
 
                             <!-- แจ้งซ่อมโดยใคร -->
                             <div class="mb-3">

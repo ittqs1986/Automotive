@@ -73,12 +73,25 @@ class VehicleBorrowRequest(models.Model):
     ], string='สถานะ', default='draft', tracking=True)
     active = fields.Boolean(default=True)
 
-    @api.model
-    def create(self, vals):
-        """ ฟังก์ชันรันเลขที่เอกสารอัตโนมัติ (VBR/ปี/เลขรัน) """
-        if vals.get('name', _('New')) == _('New'):
-            vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.borrow.request') or _('New')
-        return super(VehicleBorrowRequest, self).create(vals)
+    @api.model_create_multi
+    def create(self, vals_list):
+        # ปรับปรุงให้รองรับ Odoo 19 ในรูปแบบ Multi-record (vals_list) เพื่อหลีกเลี่ยงข้อผิดพลาด 'list' object has no attribute 'get'
+        # โดยทำการวนลูปประมวลผลข้อมูลแต่ละรายการใน list พร้อมค้นหา Sequence ตามโรงงาน (TQS, CKR, TPS)
+        for vals in vals_list:
+            if vals.get('name', _('New')) == _('New'):
+                seq_code = 'vehicle.borrow.request'
+                vehicle_id = vals.get('vehicle_id')
+                if vehicle_id:
+                    vehicle = self.env['fleet.vehicle'].browse(vehicle_id)
+                    if vehicle.exists() and vehicle.factory:
+                        seq_code = f'vehicle.borrow.request.{vehicle.factory.lower()}'
+                
+                try:
+                    vals['name'] = self.env['ir.sequence'].next_by_code(seq_code) or _('New')
+                except Exception:
+                    # ป้องกันการ Error หาก sequence ย่อยไม่มีอยู่จริง ให้ถอยกลับมาใช้ Sequence หลัก
+                    vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.borrow.request') or _('New')
+        return super(VehicleBorrowRequest, self).create(vals_list)
 
     # ฟังก์ชันปุ่มกดเปลี่ยนสถานะงาน
     def action_request(self): self.write({'state': 'request'})   # ส่งคำขอ

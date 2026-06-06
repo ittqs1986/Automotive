@@ -31,15 +31,30 @@ class VehicleRepairRequest(models.Model):
         ('cancelled', 'ยกเลิก'),
     ], string='สถานะ', default='repairing', tracking=True)
 
-    @api.model
-    def create(self, vals):
-        if vals.get('name', _('New')) == _('New'):
-            vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.repair.request') or _('New')
-        result = super().create(vals)
-        # เมื่อแจ้งซ่อม ให้เปลี่ยนสถานะรถเป็น "กำลังซ่อม"
-        if result.vehicle_id:
-            result.vehicle_id.sudo().write({'vehicle_status': 'repairing'})
-        return result
+    @api.model_create_multi
+    def create(self, vals_list):
+        # ปรับปรุงให้รองรับ Odoo 19 ในรูปแบบ Multi-record (vals_list) เพื่อป้องกันการ Error ตอนแจ้งซ่อม
+        # ทำการวนลูปประมวลผลเพื่อตั้งเลขที่เอกสารตามโรงงาน TQS, CKR, TPS
+        for vals in vals_list:
+            if vals.get('name', _('New')) == _('New'):
+                seq_code = 'vehicle.repair.request'
+                vehicle_id = vals.get('vehicle_id')
+                if vehicle_id:
+                    vehicle = self.env['fleet.vehicle'].browse(vehicle_id)
+                    if vehicle.exists() and vehicle.factory:
+                        seq_code = f'vehicle.repair.request.{vehicle.factory.lower()}'
+                
+                try:
+                    vals['name'] = self.env['ir.sequence'].next_by_code(seq_code) or _('New')
+                except Exception:
+                    # กรณีหา Sequence ย่อยไม่เจอ ให้ถอยกลับมาใช้ Sequence หลัก
+                    vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.repair.request') or _('New')
+        results = super().create(vals_list)
+        # เมื่อสร้างเอกสารแจ้งซ่อมสำเร็จ ให้เขียนอัปเดตสถานะรถยนต์เป็น "กำลังซ่อม"
+        for result in results:
+            if result.vehicle_id:
+                result.vehicle_id.sudo().write({'vehicle_status': 'repairing'})
+        return results
 
     def action_done(self, vals=None):
         """ซ่อมเสร็จ → คืนสถานะรถเป็น active"""
