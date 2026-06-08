@@ -3593,7 +3593,8 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <span class="text-muted small text-uppercase fw-bold d-block">ระยะเวลาที่ใช้ในการซ่อม</span>
-                                                <span id="modalRepairDuration" class="text-warning small fw-bold"><i class="fa fa-clock-o me-1"/>-</span>
+                                                <!-- ปรับขนาดตัวหนังสือให้ใหญ่ขึ้น (fs-5) และเปลี่ยนสีเป็นสีน้ำเงิน (text-primary) ตามความต้องการของผู้ใช้งาน -->
+                                                <span id="modalRepairDuration" class="text-primary fs-5 fw-bold"><i class="fa fa-clock-o me-1"/>-</span>
                                             </div>
                                         </div>
                                     </div>
