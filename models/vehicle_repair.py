@@ -32,6 +32,7 @@ class VehicleRepairRequest(models.Model):
     auto_parts_used = fields.Text(string='อะไหล่ที่เบิกจากคลัง (ระบบ)', compute='_compute_auto_parts_used')
     auto_parts_cost = fields.Float(string='ราคารวมอะไหล่ที่เบิกใช้ (ระบบ)', compute='_compute_auto_parts_cost') # คำนวณราคาอะไหล่อัตโนมัติ
     auto_parts_json = fields.Text(string='ข้อมูลอะไหล่เบิกคลัง (JSON)', compute='_compute_auto_parts_json') # ข้อมูล JSON สำหรับใช้ใน frontend
+    repair_duration = fields.Char(string='ระยะเวลาที่ใช้ซ่อม', compute='_compute_repair_duration') # ฟิลด์สำหรับเก็บระยะเวลาที่ใช้ซ่อมบำรุง
 
     @api.depends('movement_ids', 'movement_ids.qty', 'movement_ids.unit_price')
     def _compute_auto_parts_cost(self):
@@ -71,6 +72,28 @@ class VehicleRepairRequest(models.Model):
                 rec.auto_parts_used = "\n".join(parts_list)
             else:
                 rec.auto_parts_used = ""
+
+    @api.depends('report_date', 'finish_date')
+    def _compute_repair_duration(self):
+        # คำนวณระยะเวลาระหว่างวันที่แจ้งและวันที่เสร็จสิ้น ออกมาในรูปแบบ วัน ชั่วโมง และนาที ภาษาไทย
+        for rec in self:
+            if rec.report_date and rec.finish_date:
+                diff = rec.finish_date - rec.report_date
+                days = diff.days
+                hours, remainder = divmod(diff.seconds, 3600)
+                minutes, _ = divmod(remainder, 60)
+                
+                parts = []
+                if days > 0:
+                    parts.append(f"{days} วัน")
+                if hours > 0:
+                    parts.append(f"{hours} ชั่วโมง")
+                if minutes > 0:
+                    parts.append(f"{minutes} นาที")
+                
+                rec.repair_duration = " ".join(parts) if parts else "น้อยกว่า 1 นาที"
+            else:
+                rec.repair_duration = "-"
 
     state = fields.Selection([
         ('repairing', 'กำลังซ่อม'),

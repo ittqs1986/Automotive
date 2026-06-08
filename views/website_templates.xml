@@ -3480,7 +3480,8 @@
                                                     t-att-data-auto-parts-cost="rep.auto_parts_cost"
                                                     t-att-data-additional-cost="rep.additional_cost"
                                                     t-att-data-total-cost="rep.repair_cost"
-                                                    t-att-data-state="rep.state">
+                                                    t-att-data-state="rep.state"
+                                                    t-att-data-repair-duration="rep.repair_duration">
                                                     <td class="ps-4">
                                                         <div class="d-flex align-items-center">
                                                             <!-- แสดงหมายเลขรถ/ทะเบียนแทนชื่อเต็มเพื่อความกระชับ -->
@@ -3589,6 +3590,10 @@
                                             <div class="col-md-6">
                                                 <span class="text-muted small text-uppercase fw-bold d-block">วันเวลาซ่อมเสร็จ</span>
                                                 <span id="modalRepairFinishDate" class="text-success small fw-semibold"/>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <span class="text-muted small text-uppercase fw-bold d-block">ระยะเวลาที่ใช้ในการซ่อม</span>
+                                                <span id="modalRepairDuration" class="text-warning small fw-bold"><i class="fa fa-clock-o me-1"/>-</span>
                                             </div>
                                         </div>
                                     </div>
@@ -3737,6 +3742,14 @@
                                     detailModal.querySelector('#modalRepairReporter').textContent = reporter || 'ระบบอัตโนมัติ';
                                     detailModal.querySelector('#modalRepairReportDate').textContent = reportDate || '-';
                                     detailModal.querySelector('#modalRepairFinishDate').textContent = finishDate || '-';
+                                    
+                                    // ดึงและแสดงผลระยะเวลาที่ใช้ในการซ่อมบำรุง
+                                    const repairDuration = row.getAttribute('data-repair-duration');
+                                    const durationEl = detailModal.querySelector('#modalRepairDuration');
+                                    if (durationEl) {
+                                        durationEl.innerHTML = '<i class="fa fa-clock-o me-1"></i>' + (repairDuration || '-');
+                                    }
+                                    
                                     detailModal.querySelector('#modalRepairDescription').textContent = description || '-';
                                     detailModal.querySelector('#modalRepairDetails').textContent = repairDetails || '-';
                                     
