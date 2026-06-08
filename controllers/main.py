@@ -362,8 +362,9 @@ class VehicleBorrowController(http.Controller):
         for vehicle_id, count in borrow_counts.most_common(5):
             vehicle = env_sudo['fleet.vehicle'].browse(vehicle_id)
             if vehicle.exists():
+                # ปรับแก้ให้ใช้หมายเลขทะเบียน/ชื่อรถยนต์สั้นกระชับ เพื่อป้องกัน UI ตกหล่นในแดชบอร์ด KPI
                 top_borrowed.append({
-                    'name': vehicle.display_name or vehicle.name,
+                    'name': vehicle.license_plate or vehicle.name,
                     'factory': vehicle.factory,
                     'count': count
                 })
@@ -1099,10 +1100,22 @@ class VehicleBorrowController(http.Controller):
         repair = request.env['vehicle.repair.request'].sudo().browse(int(repair_id))
         
         if repair.exists():
+            # ดึงรายการไอดีการเบิกอะไหล่คลังที่ต้องการลบ (คืนสต็อก) จากหน้า Modal
+            deleted_moves_str = post.get('deleted_movement_ids', '')
+            if deleted_moves_str:
+                move_ids = [int(m_id) for m_id in deleted_moves_str.split(',') if m_id.strip()]
+                if move_ids:
+                    moves_to_delete = request.env['vehicle.spare.part.movement'].sudo().browse(move_ids)
+                    # ลบรายการเคลื่อนไหวแบบเบิกออก เพื่อให้สต็อกคงเหลือของอะไหล่นั้นเพิ่มกลับคืนมาโดยอัตโนมัติ
+                    moves_to_delete.unlink()
+
             vals = {
                 'repair_details': post.get('repair_details'),
                 'parts_used': post.get('parts_used'),
+                # รับค่าข้อมูลอะไหล่นอกสต็อกและค่าใช้จ่ายเพิ่มเติมที่กรอกจากหน้าฟอร์มเพื่อบันทึกลงในระบบ
+                'non_stock_parts': post.get('non_stock_parts'),
                 'repair_cost': float(post.get('repair_cost') or 0),
+                'additional_cost': float(post.get('additional_cost') or 0),
             }
             repair.action_done(vals)
         return request.redirect('/automotive/repair?msg=status_updated')
@@ -1189,12 +1202,16 @@ class VehicleBorrowController(http.Controller):
             if p_id not in lot_details:
                 lot_details[p_id] = {}
             if lot not in lot_details[p_id]:
-                lot_details[p_id][lot] = {'qty': 0, 'price': 0.0}
+                # เพิ่มฟิลด์ in_date เริ่มต้นเพื่อบันทึกวันที่นำเข้าของล็อต
+                lot_details[p_id][lot] = {'qty': 0, 'price': 0.0, 'in_date': '-'}
             
             if move.move_type == 'in':
                 lot_details[p_id][lot]['qty'] += move.qty
                 if move.unit_price > 0:
                     lot_details[p_id][lot]['price'] = move.unit_price
+                # เก็บข้อมูลวันที่นำเข้าของล็อตการผลิตนี้ (เมื่อวนลูป date asc จะได้วันล่าสุดของการนำเข้า)
+                if move.date:
+                    lot_details[p_id][lot]['in_date'] = move.date.strftime('%d/%m/%Y')
             else:
                 lot_details[p_id][lot]['qty'] -= move.qty
 
