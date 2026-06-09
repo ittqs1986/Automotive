@@ -80,6 +80,13 @@
                                     <span>ประวัติการซ่อม</span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <!-- ลิงก์เมนูย่อยใหม่ สำหรับหน้ารายการแจ้งซ่อมล่าสุด 10 รายการ -->
+                                <a href="/automotive/repair/latest" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
+                                    <i class="fa fa-history text-center" style="width: 15px;"/>
+                                    <span>การแจ้งซ่อมล่าสุด</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>
@@ -1830,9 +1837,9 @@
         <t t-call="vehicle_borrow.vb_layout">
             <div class="oe_structure oe_empty bg-light py-5">
                 <div class="container pb-5">
-                    <div class="row">
-                        <!-- Left: Side Menu/Stats (Optional) -->
-                        <div class="col-lg-4 mb-4">
+                    <div class="row justify-content-center">
+                        <!-- ปรับขนาดเป็น col-lg-6 mx-auto และจัดกึ่งกลางจออย่างสมดุล สวยงามหรูหรา -->
+                        <div class="col-lg-6">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                                 <div class="card-header bg-danger text-white py-3">
                                     <h5 class="mb-0 fw-bold"><i class="fa fa-wrench me-2"/>แจ้งซ่อมรถยนต์ (Admin)</h5>
@@ -1841,12 +1848,12 @@
                                     <div class="display-1 text-danger opacity-25 mb-3">
                                         <i class="fa fa-cogs"/>
                                     </div>
-                                    <p class="text-muted">ใช้สำหรับบันทึกอาการเสียและส่งรถเข้าซ่อม โดยระบบจะเปลี่ยนสถานะรถเป็น "กำลังซ่อม" ทันที</p>
+                                    <p class="text-muted mb-0">ใช้สำหรับบันทึกอาการเสียและส่งรถเข้าตรวจสอบ โดยระบบจะส่งรายการแจ้งซ่อมไปยังหน้ารายการแจ้งซ่อมเพื่อรอการอนุมัติซ่อมจากช่าง</p>
                                 </div>
                             </div>
                             
                             <!-- Repair Form -->
-                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                                 <t t-if="error">
                                     <div class="alert alert-danger mb-4"><t t-esc="error"/></div>
                                 </t>
@@ -1858,15 +1865,7 @@
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                     
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold text-muted small text-uppercase">ผู้แจ้งซ่อม (ชื่อคุณ)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text border-0 bg-light"><i class="fa fa-user text-muted"/></span>
-                                            <input type="text" class="form-control border-light bg-light" t-att-value="current_employee.name if current_employee else request.env.user.name" readonly="1"/>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold text-muted small text-uppercase">ประเภทรถ</label>
+                                        <label class="form-label fw-bold text-muted small text-uppercase">ประเภทรถยนต์</label>
                                         <select id="repair_type_filter" class="form-select form-select-lg" required="1">
                                             <option value="">-- เลือกประเภทรถ --</option>
                                             <t t-foreach="vehicle_types" t-as="vt">
@@ -1880,6 +1879,7 @@
                                         <select name="vehicle_id" id="repair_vehicle_id" class="form-select form-select-lg" required="1" disabled="1">
                                             <option value="">-- เลือกคัน --</option>
                                             <t t-foreach="vehicles" t-as="car">
+                                                <!-- ปรับปรุงให้แสดงชื่อรุ่นและทะเบียนรถยนต์แบบสั้นกระชับ เพื่อป้องกันชื่อยาวล้นหน้าจอ -->
                                                 <option t-att-value="car.id" t-att-data-type="car.model_id.name">
                                                     <t t-esc="car.model_id.name"/> — [<t t-esc="car.license_plate"/>]
                                                 </option>
@@ -1897,163 +1897,19 @@
                                     </button>
                                 </form>
                             </div>
-                        </div>
 
-                        <!-- Right: Repair History -->
-                        <div class="col-lg-8">
-                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                                <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-                                    <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>การแจ้งซ่อมล่าสุด (10 รายการ)</h5>
-                                    <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
-                                        <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
-                                    </a>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="bg-light">
-                                            <tr>
-                                                    <th class="ps-4">รถยนต์ / เลขรับแจ้ง</th>
-                                                    <th>วันเวลาที่แจ้ง</th>
-                                                    <th>ผู้แจ้งซ่อม</th>
-                                                    <th>อาการเสีย</th>
-                                                    <th class="text-center">สถานะ</th>
-                                                    <th class="pe-4 text-center">จัดการ</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-if="not recent_repairs">
-                                                <tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่พบข้อมูลการแจ้งซ่อม</td></tr>
-                                            </t>
-                                            <t t-foreach="recent_repairs" t-as="rep">
-                                                <tr>
-                                                        <td class="ps-4">
-                                                            <div class="d-flex align-items-center">
-                                                                <!-- แสดงหมายเลขรถ/ทะเบียนแทนชื่อเต็มเพื่อความกระชับ -->
-                                                                <div class="fw-bold text-dark"><t t-esc="rep.vehicle_id.license_plate"/></div>
-                                                                <span t-if="rep.vehicle_id.factory == 'TQS'" class="badge ms-2" style="background-color: #16a34a; color: white; font-size: 0.6rem;">TQS</span>
-                                                                <span t-elif="rep.vehicle_id.factory == 'CKR'" class="badge ms-2" style="background-color: #880808; color: white; font-size: 0.6rem;">CKR</span>
-                                                                <span t-elif="rep.vehicle_id.factory == 'TPS'" class="badge ms-2" style="background-color: #d97706; color: white; font-size: 0.6rem;">TPS</span>
-                                                            </div>
-                                                            <div class="text-muted extra-small"><t t-esc="rep.name"/></div>
-                                                        </td>
-                                                        <td class="small"><t t-esc="rep.report_date.strftime('%d/%m/%Y %H:%M') if rep.report_date else '-'"/></td>
-                                                        <td class="small fw-semibold">
-                                                            <div><t t-esc="rep.reported_by_id.name or 'ระบบอัตโนมัติ'"/></div>
-                                                            <t t-set="u_rep" t-value="rep.reported_by_id"/>
-                                                            <t t-if="u_rep and head_admin_group in u_rep.group_ids">
-                                                                <span class="badge extra-small p-1" style="background-color: #dc3545; color: white; font-size: 0.55rem;">แอดมินสูงสุด</span>
-                                                            </t>
-                                                            <t t-elif="u_rep and admin_tqs_group in u_rep.group_ids">
-                                                                <span class="badge extra-small p-1" style="background-color: #16a34a; color: white; font-size: 0.55rem;">แอดมิน TQS</span>
-                                                            </t>
-                                                            <t t-elif="u_rep and admin_ckr_group in u_rep.group_ids">
-                                                                <span class="badge extra-small p-1" style="background-color: #880808; color: white; font-size: 0.55rem;">แอดมิน CKR</span>
-                                                            </t>
-                                                            <t t-elif="u_rep and admin_tps_group in u_rep.group_ids">
-                                                                <span class="badge extra-small p-1" style="background-color: #d97706; color: white; font-size: 0.55rem;">แอดมิน TPS</span>
-                                                            </t>
-                                                        </td>
-                                                        <td class="small text-truncate" style="max-width: 150px;"><t t-esc="rep.description"/></td>
-                                                    <td class="text-center">
-                                                        <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-danger text-white' if rep.state == 'repairing' else 'bg-success text-white' if rep.state == 'done' else 'bg-secondary text-white'}">
-                                                            <t t-if="rep.state == 'repairing'">กำลังซ่อม</t>
-                                                            <t t-if="rep.state == 'done'">เสร็จสิ้น</t>
-                                                            <t t-if="rep.state == 'cancelled'">ยกเลิก</t>
-                                                        </span>
-                                                    </td>
-                                                    <td class="pe-4 text-center">
-                                                        <t t-if="rep.state == 'repairing'">
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-success rounded-pill px-3 finish-repair-btn"
-                                                                    data-bs-toggle="modal" data-bs-target="#finishRepairModal"
-                                                                    t-att-data-id="rep.id"
-                                                                    t-att-data-name="rep.vehicle_id.license_plate"
-                                                                    t-att-data-parts-used="rep.auto_parts_used"
-                                                                    t-att-data-parts-cost="rep.auto_parts_cost"
-                                                                    t-att-data-parts-json="rep.auto_parts_json">
-                                                                <i class="fa fa-check me-1"/> จบงานซ่อม
-                                                            </button>
-                                                        </t>
-                                                    </td>
-                                                </tr>
-                                            </t>
-                                        </tbody>
-                                    </table>
-                                </div>
+                            <!-- Back Button -->
+                            <div class="text-center">
+                                <a href="/automotive" class="btn btn-link text-muted">
+                                    <i class="fa fa-arrow-left me-1"/> กลับหน้าหลัก
+                                </a>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Finish Repair Modal -->
-                <div class="modal fade" id="finishRepairModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content border-0 shadow-lg rounded-4">
-                            <form action="/automotive/repair/done" method="post">
-                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                <input type="hidden" name="repair_id" id="modal_repair_id"/>
-                                <div class="modal-header bg-success text-white border-0 py-3">
-                                    <h5 class="modal-title fw-bold"><i class="fa fa-check-circle me-2"/>บันทึกรายละเอียดการซ่อม</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body p-4">
-                                    <div class="alert alert-info py-2 small mb-4 border-0 shadow-sm">
-                                        <i class="fa fa-info-circle me-1"/> รถยนต์: <span id="modal_vehicle_name" class="fw-bold"/>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">รายละเอียดการที่ซ่อม</label>
-                                        <textarea name="repair_details" class="form-control border-light bg-light" rows="3" required="1" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง, เช็คช่วงล่าง..."></textarea>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">ข้อมูลอะไหล่ใช้ในการซ่อม</label>
-                                        <!-- รายการแสดงอะไหล่ที่เบิกใช้พร้อมปุ่มลบ [x] -->
-                                        <div id="modal_auto_parts_list" class="border rounded p-3 bg-light mb-2" style="max-height: 150px; overflow-y: auto;">
-                                            <div class="text-muted small py-2">ไม่มีข้อมูลอะไหล่ที่เบิกจากคลัง</div>
-                                        </div>
-                                        <input type="hidden" name="deleted_movement_ids" id="modal_deleted_movement_ids" value=""/>
-                                        
-                                        <!-- ช่องรายละเอียดเพิ่มเติม -->
-                                        <textarea name="parts_used" class="form-control border-light bg-light" rows="2" placeholder="ระบุรายละเอียดอะไหล่เพิ่มเติม (ถ้ามี)..."></textarea>
-                                     </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold small text-uppercase text-muted">ค่าใช้จ่ายในการซ่อม (บาท)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text border-0 bg-light fw-bold text-muted">฿</span>
-                                            <input type="number" step="0.01" name="repair_cost" class="form-control border-light bg-light form-control-lg" placeholder="0.00"/>
-                                         </div>
-                                     </div>
-                                     
-                                     <div class="mb-3">
-                                         <label class="form-label fw-bold small text-uppercase text-muted">ข้อมูลอะไหล่นอกสต๊อก</label>
-                                         <textarea name="non_stock_parts" class="form-control border-light bg-light" rows="2" placeholder="ระบุอะไหล่นอกคลัง/ร้านภายนอก (ถ้ามี)..."></textarea>
-                                    </div>
-                                    
-                                     <!-- ช่องกรอกค่าใช้จ่ายเพิ่มเติม -->
-                                     <div class="mb-0">
-                                         <label class="form-label fw-bold small text-uppercase text-muted">ค่าใช้จ่ายเพิ่มเติม (บาท)</label>
-                                         <div class="input-group">
-                                             <span class="input-group-text border-0 bg-light fw-bold text-muted">฿</span>
-                                             <input type="number" step="0.01" name="additional_cost" class="form-control border-light bg-light form-control-lg" placeholder="0.00"/>
-                                         </div>
-                                        </div>
-                                     <!-- ปิด modal-body -->
-                                    </div>
-                                <div class="modal-footer border-0 p-4 pt-0">
-                                    <button type="button" class="btn btn-light rounded-pill px-4 text-muted" data-bs-dismiss="modal">ยกเลิก</button>
-                                    <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm fw-bold">
-                                        <i class="fa fa-save me-1"/> บันทึกข้อมูล
-                                    </button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- JS For Filtering and Modal -->
+            <!-- JS For Filtering -->
             <script type="text/javascript">
                 document.addEventListener('DOMContentLoaded', function() {
                     const typeFilter = document.getElementById('repair_type_filter');
@@ -2080,38 +1936,229 @@
                             vehicleSelect.disabled = count === 0;
                         });
                     }
+                });
+            </script>
+        </t>
+    </template>
 
-                    // Handle Finish Repair Modal Data Filling
+    <!-- หน้าต่างใหม่สำหรับแสดงการแจ้งซ่อมล่าสุด 10 รายการ พร้อมปุ่มจบงานซ่อม (ตามความต้องการของผู้ใช้งาน) -->
+    <template id="admin_repair_latest_template" name="Admin Latest Repair">
+        <t t-call="vehicle_borrow.vb_layout">
+            <div class="oe_structure oe_empty bg-light py-5">
+                <div class="container pb-5">
+                    <!-- แสดงกล่องข้อความ Alert แจ้งเตือนผลลัพธ์การจัดการแบบพรีเมียม -->
+                    <t t-if="error">
+                        <div class="alert alert-danger mb-4 rounded-4 shadow-sm border-0"><t t-esc="error"/></div>
+                    </t>
+                    <t t-if="request.params.get('msg') == 'repair_approved'">
+                        <div class="alert alert-success mb-4 rounded-4 shadow-sm border-0 text-center"><i class="fa fa-check-circle me-1"/>อนุมัติการแจ้งซ่อมและล็อกรถยนต์เพื่อเตรียมซ่อมแซมเรียบร้อยแล้ว</div>
+                    </t>
+                    <t t-if="request.params.get('msg') == 'repair_cancelled'">
+                        <div class="alert alert-warning mb-4 rounded-4 shadow-sm border-0 text-center"><i class="fa fa-exclamation-circle me-1"/>ยกเลิกการแจ้งซ่อมเรียบร้อยแล้ว</div>
+                    </t>
+                    <t t-if="request.params.get('msg') == 'repair_done'">
+                        <div class="alert alert-success mb-4 rounded-4 shadow-sm border-0 text-center"><i class="fa fa-check-circle me-1"/>บันทึกปิดงานซ่อมและคืนสถานะตัวรถยนต์ให้พร้อมใช้งานสำเร็จ</div>
+                    </t>
+                    <!-- ส่วนหัวหน้าจอแสดงผลเต็มหน้าจอสวยงามพรีเมียม -->
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+                        <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>การแจ้งซ่อมล่าสุด (10 รายการ)</h5>
+                            <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
+                                <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">รถยนต์ / เลขรับแจ้ง</th>
+                                        <th>วันเวลาที่แจ้ง</th>
+                                        <th>ผู้แจ้งซ่อม</th>
+                                        <th>อาการเสีย</th>
+                                        <th class="text-center">สถานะ</th>
+                                        <th class="pe-4 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="not recent_repairs">
+                                        <tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่พบข้อมูลการแจ้งซ่อม</td></tr>
+                                    </t>
+                                    <t t-foreach="recent_repairs" t-as="rep">
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <!-- แสดงหมายเลขรถ/ทะเบียนแทนชื่อเต็มเพื่อความกระชับ -->
+                                                    <div class="fw-bold text-dark"><t t-esc="rep.vehicle_id.license_plate"/></div>
+                                                    <span t-if="rep.vehicle_id.factory == 'TQS'" class="badge ms-2" style="background-color: #16a34a; color: white; font-size: 0.6rem;">TQS</span>
+                                                    <span t-elif="rep.vehicle_id.factory == 'CKR'" class="badge ms-2" style="background-color: #880808; color: white; font-size: 0.6rem;">CKR</span>
+                                                    <span t-elif="rep.vehicle_id.factory == 'TPS'" class="badge ms-2" style="background-color: #d97706; color: white; font-size: 0.6rem;">TPS</span>
+                                                </div>
+                                                <div class="text-muted extra-small"><t t-esc="rep.name"/></div>
+                                            </td>
+                                            <td class="small"><t t-esc="rep.report_date.strftime('%d/%m/%Y %H:%M') if rep.report_date else '-'"/></td>
+                                            <td class="small fw-semibold">
+                                                <div><t t-esc="rep.reported_by_id.name or 'ระบบอัตโนมัติ'"/></div>
+                                                <t t-set="u_rep" t-value="rep.reported_by_id"/>
+                                                <t t-if="u_rep and head_admin_group in u_rep.group_ids">
+                                                    <span class="badge extra-small p-1" style="background-color: #dc3545; color: white; font-size: 0.55rem;">แอดมินสูงสุด</span>
+                                                </t>
+                                                <t t-elif="u_rep and admin_tqs_group in u_rep.group_ids">
+                                                    <span class="badge extra-small p-1" style="background-color: #16a34a; color: white; font-size: 0.55rem;">แอดมิน TQS</span>
+                                                </t>
+                                                <t t-elif="u_rep and admin_ckr_group in u_rep.group_ids">
+                                                    <span class="badge extra-small p-1" style="background-color: #880808; color: white; font-size: 0.55rem;">แอดมิน CKR</span>
+                                                </t>
+                                                <t t-elif="u_rep and admin_tps_group in u_rep.group_ids">
+                                                    <span class="badge extra-small p-1" style="background-color: #d97706; color: white; font-size: 0.55rem;">แอดมิน TPS</span>
+                                                </t>
+                                            </td>
+                                            <td class="small text-truncate" style="max-width: 250px;"><t t-esc="rep.description"/></td>
+                                            <td class="text-center">
+                                                <!-- แสดง Badge สถานะด้วยโทนสีที่เหมาะสม (เพิ่มสีเหลืองสำหรับสถานะรอตรวจสอบ) -->
+                                                <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-warning text-dark' if rep.state == 'reported' else 'bg-danger text-white' if rep.state == 'repairing' else 'bg-success text-white' if rep.state == 'done' else 'bg-secondary text-white'}">
+                                                    <t t-if="rep.state == 'reported'">รอตรวจสอบ</t>
+                                                    <t t-if="rep.state == 'repairing'">กำลังซ่อม</t>
+                                                    <t t-if="rep.state == 'done'">เสร็จสิ้น</t>
+                                                    <t t-if="rep.state == 'cancelled'">ยกเลิก</t>
+                                                </span>
+                                            </td>
+                                            <td class="pe-4 text-center">
+                                                <!-- หากยังไม่ผ่านการอนุมัติ (reported) ให้แสดงปุ่ม อนุมัติซ่อม และ ยกเลิก -->
+                                                <t t-if="rep.state == 'reported'">
+                                                    <div class="d-flex justify-content-center gap-1">
+                                                        <form t-attf-action="/automotive/repair/approve/#{rep.id}" method="post" class="d-inline">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                                <i class="fa fa-wrench me-1"/> อนุมัติซ่อม
+                                                            </button>
+                                                        </form>
+                                                        <form t-attf-action="/automotive/repair/cancel/#{rep.id}" method="post" class="d-inline">
+                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="return confirm('คุณต้องการยกเลิกการแจ้งซ่อมนี้ใช่หรือไม่?')">
+                                                                <i class="fa fa-times me-1"/> ยกเลิก
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </t>
+                                                <!-- หากได้รับอนุมัติแล้ว (repairing) ให้แสดงปุ่ม จบงานซ่อม -->
+                                                <t t-elif="rep.state == 'repairing'">
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-success rounded-pill px-3 finish-repair-btn"
+                                                            data-bs-toggle="modal" data-bs-target="#finishRepairModal"
+                                                            t-att-data-id="rep.id"
+                                                            t-att-data-name="rep.vehicle_id.license_plate"
+                                                            t-att-data-parts-used="rep.auto_parts_used"
+                                                            t-att-data-parts-cost="rep.auto_parts_cost"
+                                                            t-att-data-parts-json="rep.auto_parts_json">
+                                                        <i class="fa fa-check me-1"/> จบงานซ่อม
+                                                    </button>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Back Button -->
+                    <div class="mt-4 text-center">
+                        <a href="/automotive" class="btn btn-link text-muted">
+                            <i class="fa fa-arrow-left me-1"/> กลับหน้าหลัก
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Finish Repair Modal -->
+            <div class="modal fade" id="finishRepairModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <form action="/automotive/repair/done" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="repair_id" id="modal_repair_id"/>
+                            <div class="modal-header bg-success text-white border-0 py-3">
+                                <h5 class="modal-title fw-bold"><i class="fa fa-check-circle me-2"/>บันทึกรายละเอียดการซ่อม</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="alert alert-info py-2 small mb-4 border-0 shadow-sm">
+                                    <i class="fa fa-info-circle me-1"/> รถยนต์: <span id="modal_vehicle_name" class="fw-bold"/>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">รายละเอียดการที่ซ่อม</label>
+                                    <textarea name="repair_details" class="form-control border-light bg-light" rows="3" required="1" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง, เช็คช่วงล่าง..."></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">ข้อมูลอะไหล่ใช้ในการซ่อม</label>
+                                    <!-- รายการแสดงอะไหล่ที่เบิกใช้พร้อมปุ่มลบ [x] -->
+                                    <div id="modal_auto_parts_list" class="border rounded p-3 bg-light mb-2" style="max-height: 150px; overflow-y: auto;">
+                                        <div class="text-muted small py-2">ไม่มีข้อมูลอะไหล่ที่เบิกจากคลัง</div>
+                                    </div>
+                                    <input type="hidden" name="deleted_movement_ids" id="modal_deleted_movement_ids" value=""/>
+                                    
+                                    <!-- ช่องรายละเอียดเพิ่มเติม -->
+                                    <textarea name="parts_used" class="form-control border-light bg-light" rows="2" placeholder="ระบุรายละเอียดอะไหล่เพิ่มเติม (ถ้ามี)..."></textarea>
+                                 </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">ค่าใช้จ่ายในการซ่อม (บาท)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text border-0 bg-light fw-bold text-muted">฿</span>
+                                        <input type="number" step="0.01" name="repair_cost" class="form-control border-light bg-light form-control-lg" placeholder="0.00"/>
+                                     </div>
+                                 </div>
+                                 
+                                 <div class="mb-3">
+                                     <label class="form-label fw-bold small text-uppercase text-muted">ข้อมูลอะไหล่นอกสต๊อก</label>
+                                     <textarea name="non_stock_parts" class="form-control border-light bg-light" rows="2" placeholder="ระบุอะไหล่นอกคลัง/ร้านภายนอก (ถ้ามี)..."></textarea>
+                                </div>
+                                
+                                 <!-- ช่องกรอกค่าใช้จ่ายเพิ่มเติม -->
+                                 <div class="mb-0">
+                                     <label class="form-label fw-bold small text-uppercase text-muted">ค่าใช้จ่ายเพิ่มเติม (บาท)</label>
+                                     <div class="input-group">
+                                         <span class="input-group-text border-0 bg-light fw-bold text-muted">฿</span>
+                                         <input type="number" step="0.01" name="additional_cost" class="form-control border-light bg-light form-control-lg" placeholder="0.00"/>
+                                     </div>
+                                    </div>
+                                 <!-- ปิด modal-body -->
+                                </div>
+                            <div class="modal-footer border-0 p-4 pt-0">
+                                <button type="button" class="btn btn-light rounded-pill px-4 text-muted" data-bs-dismiss="modal">ยกเลิก</button>
+                                <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm fw-bold">
+                                    <i class="fa fa-save me-1"/> บันทึกข้อมูล
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JS For Repair Modal Data Handling -->
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function() {
                     const finishRepairModal = document.getElementById('finishRepairModal');
                     if (finishRepairModal) {
                         finishRepairModal.addEventListener('show.bs.modal', function (event) {
-                            // ดึงปุ่มที่ถูกคลิกเพื่อเปิด Modal
                             const button = event.relatedTarget;
-                            // ดึงข้อมูลผ่านแอตทริบิวต์ data-bs-*
                             const repairId = button.getAttribute('data-id');
                             const vehicleName = button.getAttribute('data-name');
-                            // ดึงรายการอะไหล่คลังที่เป็น JSON
                             const autoPartsJsonStr = button.getAttribute('data-parts-json');
-                            // ดึงราคาอะไหล่รวม
                             const autoPartsCost = parseFloat(button.getAttribute('data-parts-cost') || 0);
                             
-                            // ค้นหาองค์ประกอบอินพุตและช่องกรอกใน Modal
                             const modalIdInput = finishRepairModal.querySelector('#modal_repair_id');
                             const modalVehicleName = finishRepairModal.querySelector('#modal_vehicle_name');
                             const modalDeletedMovementIds = finishRepairModal.querySelector('#modal_deleted_movement_ids');
                             const modalRepairCost = finishRepairModal.querySelector('input[name="repair_cost"]');
                             const modalPartsUsedTextarea = finishRepairModal.querySelector('textarea[name="parts_used"]');
-                            const modalPartsAlert = finishRepairModal.querySelector('#modal_parts_alert');
                             
                             if (modalIdInput) modalIdInput.value = repairId;
                             if (modalVehicleName) modalVehicleName.textContent = vehicleName;
                             if (modalDeletedMovementIds) modalDeletedMovementIds.value = '';
                             if (modalPartsUsedTextarea) modalPartsUsedTextarea.value = '';
-                            if (modalPartsAlert) {
-                                modalPartsAlert.style.display = 'none';
-                                modalPartsAlert.textContent = '';
-                            }
-                            
                             // ตัวแปรราคาปัจจุบันที่แสดงใน Modal
                             let currentTotalCost = autoPartsCost;
                             if (modalRepairCost) {

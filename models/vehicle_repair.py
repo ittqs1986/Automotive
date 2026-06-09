@@ -96,10 +96,11 @@ class VehicleRepairRequest(models.Model):
                 rec.repair_duration = "-"
 
     state = fields.Selection([
+        ('reported', 'รอตรวจสอบ'),
         ('repairing', 'กำลังซ่อม'),
         ('done', 'ซ่อมเสร็จแล้ว'),
         ('cancelled', 'ยกเลิก'),
-    ], string='สถานะ', default='repairing', tracking=True)
+    ], string='สถานะ', default='reported', tracking=True)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -120,11 +121,15 @@ class VehicleRepairRequest(models.Model):
                     # กรณีหา Sequence ย่อยไม่เจอ ให้ถอยกลับมาใช้ Sequence หลัก
                     vals['name'] = self.env['ir.sequence'].next_by_code('vehicle.repair.request') or _('New')
         results = super().create(vals_list)
-        # เมื่อสร้างเอกสารแจ้งซ่อมสำเร็จ ให้เขียนอัปเดตสถานะรถยนต์เป็น "กำลังซ่อม"
-        for result in results:
-            if result.vehicle_id:
-                result.vehicle_id.sudo().write({'vehicle_status': 'repairing'})
+        # นำส่วนอัปเดตรถยนต์เป็น "กำลังซ่อม" ในฟังก์ชัน create ออก เพื่อให้รถยนต์ยังจองได้อยู่ จนกว่าช่างจะกดอนุมัติซ่อม
         return results
+
+    def action_approve(self):
+        """อนุมัติซ่อม → เปลี่ยนสถานะใบแจ้งซ่อมเป็น 'กำลังซ่อม' และปรับสถานะรถยนต์เป็น 'repairing' เพื่อล็อกไม่ให้จองได้"""
+        for rec in self:
+            rec.write({'state': 'repairing'})
+            if rec.vehicle_id:
+                rec.vehicle_id.sudo().write({'vehicle_status': 'repairing'})
 
     def action_done(self, vals=None):
         """ซ่อมเสร็จ → คืนสถานะรถเป็น active"""

@@ -968,6 +968,90 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
+    @http.route(['/automotive/repair/latest'], type='http', auth="user", website=True)
+    def admin_repair_latest_page(self, **post):
+        # หน้าสำหรับจัดการการแจ้งซ่อมล่าสุด (10 รายการ) ที่กำลังดำเนินการซ่อม
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        current_user = request.env.user
+        employee = request.env['hr.employee'].sudo().search(
+            [('user_id', '=', current_user.id)], limit=1
+        )
+        
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+
+        # ดึงรายการซ่อมที่อยู่ในสถานะรอตรวจสอบ (reported) หรือกำลังดำเนินการซ่อมอยู่ (repairing) จำกัดการแสดงผลไว้ที่ 10 รายการล่าสุด
+        recent_repairs = env_sudo['vehicle.repair.request'].search(
+            list(repair_factory_domain) + [('state', 'in', ['reported', 'repairing'])], 
+            limit=10, 
+            order='create_date desc'
+        )
+        
+        # ดึงกลุ่มสิทธิ์ระดับต่างๆ เพื่อส่งไปจัดการสิทธิ์และแสดงผล Badge บนหน้าต่าง Template
+        head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
+        admin_tqs_group = request.env.ref('vehicle_borrow.group_vb_admin_tqs')
+        admin_ckr_group = request.env.ref('vehicle_borrow.group_vb_admin_ckr')
+        admin_tps_group = request.env.ref('vehicle_borrow.group_vb_admin_tps')
+        user_tqs_group = request.env.ref('vehicle_borrow.group_vb_user_tqs')
+        user_ckr_group = request.env.ref('vehicle_borrow.group_vb_user_ckr')
+        user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
+
+        return request.render("vehicle_borrow.admin_repair_latest_template", {
+            'current_employee': employee,
+            'recent_repairs': recent_repairs,
+            'msg': post.get('msg'),
+            'error': post.get('error'),
+            'user_factory': user_factory,
+            'is_head_admin': self._is_head_admin(),
+            'head_admin_group': head_admin_group,
+            'admin_tqs_group': admin_tqs_group,
+            'admin_ckr_group': admin_ckr_group,
+            'admin_tps_group': admin_tps_group,
+            'user_tqs_group': user_tqs_group,
+            'user_ckr_group': user_ckr_group,
+            'user_tps_group': user_tps_group,
+        })
+
+    @http.route(['/automotive/repair/approve/<int:repair_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    def admin_repair_approve(self, repair_id, **post):
+        # ฟังก์ชันสำหรับอนุมัติซ่อมและเปลี่ยนสถานะรถยนต์เป็นกำลังซ่อม (ล็อกการจอง)
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        repair = request.env['vehicle.repair.request'].sudo().browse(repair_id)
+        if repair.exists():
+            # เรียกใช้ฟังก์ชันอนุมัติซ่อมในโมเดลเพื่อล็อกรถยนต์และปรับเป็นสถานะกำลังซ่อม
+            repair.action_approve()
+            # ส่งผู้ใช้งานกลับไปที่หน้าเดิมพร้อมส่งข้อความแจ้งเตือนผลลัพธ์
+            redirect_url = request.httprequest.referrer or '/automotive/repair/latest'
+            if '?' in redirect_url:
+                redirect_url += "&msg=repair_approved"
+            else:
+                redirect_url += "?msg=repair_approved"
+            return request.redirect(redirect_url)
+        return request.redirect('/automotive/repair/latest?error=ไม่พบรายการแจ้งซ่อม')
+
+    @http.route(['/automotive/repair/cancel/<int:repair_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    def admin_repair_cancel(self, repair_id, **post):
+        # ฟังก์ชันสำหรับยกเลิกใบแจ้งซ่อม
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        repair = request.env['vehicle.repair.request'].sudo().browse(repair_id)
+        if repair.exists():
+            # เรียกใช้ฟังก์ชันยกเลิกในโมเดลเพื่อเปลี่ยนสถานะเป็นยกเลิก (และคืนสถานะรถเป็น active หากมี)
+            repair.action_cancel()
+            redirect_url = request.httprequest.referrer or '/automotive/repair/latest'
+            if '?' in redirect_url:
+                redirect_url += "&msg=repair_cancelled"
+            else:
+                redirect_url += "?msg=repair_cancelled"
+            return request.redirect(redirect_url)
+        return request.redirect('/automotive/repair/latest?error=ไม่พบรายการแจ้งซ่อม')
+
     @http.route(['/automotive/repair/history'], type='http', auth="user", website=True)
     def admin_repair_history_page(self, **post):
         # หน้าแสดงประวัติการซ่อมบำรุงรถยนต์ทั้งหมดที่เสร็จสิ้นหรือยกเลิกแล้ว (ประวัติการซ่อม)
