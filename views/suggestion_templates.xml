@@ -81,17 +81,32 @@
                                         <thead class="table-dark">
                                             <tr>
                                                 <th class="ps-4 py-3" style="width: 20%;">วันเวลาที่ส่ง</th>
+                                                <th class="py-3" style="width: 15%;">กลุ่มโรงงาน / Role</th>
                                                 <th class="py-3">ข้อเสนอแนะ</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <t t-if="not suggestions">
-                                                <tr><td colspan="2" class="text-center py-5 text-muted">ยังไม่มีข้อเสนอแนะ</td></tr>
+                                                <tr><td colspan="3" class="text-center py-5 text-muted">ยังไม่มีข้อเสนอแนะ</td></tr>
                                             </t>
                                             <t t-foreach="suggestions" t-as="s">
                                                 <tr class="bg-white">
                                                     <td class="ps-4 small text-muted">
                                                         <i class="fa fa-clock-o me-1 text-primary"></i> <t t-esc="s.date.strftime('%d/%m/%Y %H:%M') if s.date else '-'"/>
+                                                    </td>
+                                                    <td class="small">
+                                                        <t t-if="s.factory == 'TQS'">
+                                                            <span class="badge bg-primary px-3 py-2 rounded-pill"><i class="fa fa-industry me-1"/>TQS</span>
+                                                        </t>
+                                                        <t t-elif="s.factory == 'CKR'">
+                                                            <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa fa-industry me-1"/>CKR</span>
+                                                        </t>
+                                                        <t t-elif="s.factory == 'TPS'">
+                                                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa fa-industry me-1"/>TPS</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="fa fa-question-circle me-1"/>อื่นๆ</span>
+                                                        </t>
                                                     </td>
                                                     <td class="py-3 pe-4">
                                                         <div class="text-dark bg-light p-3 rounded-3 border" style="white-space: pre-wrap;" t-esc="s.content"/>

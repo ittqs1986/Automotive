@@ -574,7 +574,11 @@ class VehicleBorrowController(http.Controller):
         
         return request.redirect('/automotive/dashboard?msg=member_deleted')
 
-    @http.route(['/automotive/member/role/<int:user_id>/<string:role>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    # รองรับทั้ง URL /automotive และ /admin เพื่อป้องกันปัญหา Error 404
+    @http.route([
+        '/automotive/member/role/<int:user_id>/<string:role>',
+        '/admin/member/role/<int:user_id>/<string:role>'
+    ], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_role(self, user_id, role, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -615,7 +619,11 @@ class VehicleBorrowController(http.Controller):
         except Exception as e:
             return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/member/status/<int:user_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    # รองรับทั้ง URL /automotive และ /admin เพื่อป้องกันปัญหา Error 404
+    @http.route([
+        '/automotive/member/status/<int:user_id>/<string:status>',
+        '/admin/member/status/<int:user_id>/<string:status>'
+    ], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_status(self, user_id, status, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -711,7 +719,11 @@ class VehicleBorrowController(http.Controller):
         except Exception as e:
             return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/status/<int:vehicle_id>/<string:status>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    # รองรับทั้ง URL /automotive และ /admin เพื่อป้องกันปัญหา Error 404
+    @http.route([
+        '/automotive/status/<int:vehicle_id>/<string:status>',
+        '/admin/vehicle/status/<int:vehicle_id>/<string:status>'
+    ], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_status(self, vehicle_id, status, **post):
         if not self._is_admin():
             return request.render("http_routing.403")
@@ -1093,6 +1105,7 @@ class VehicleBorrowController(http.Controller):
 
     @http.route(['/automotive/repair/done'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_repair_done(self, **post):
+        # ตรวจสอบสิทธิ์แอดมินก่อนดำเนินการ
         if not self._is_admin():
             return request.render("http_routing.403")
         
@@ -1106,8 +1119,10 @@ class VehicleBorrowController(http.Controller):
                 move_ids = [int(m_id) for m_id in deleted_moves_str.split(',') if m_id.strip()]
                 if move_ids:
                     moves_to_delete = request.env['vehicle.spare.part.movement'].sudo().browse(move_ids)
-                    # ลบรายการเคลื่อนไหวแบบเบิกออก เพื่อให้สต็อกคงเหลือของอะไหล่นั้นเพิ่มกลับคืนมาโดยอัตโนมัติ
-                    moves_to_delete.unlink()
+                    # ตรวจสอบเอาเฉพาะอันที่ยังคงอยู่ในระบบ (exists) เพื่อป้องกัน error ในกรณีที่ถูกลบทันทีผ่าน AJAX ไปก่อนหน้าแล้ว
+                    existing_moves = moves_to_delete.exists()
+                    if existing_moves:
+                        existing_moves.unlink()
 
             vals = {
                 'repair_details': post.get('repair_details'),
@@ -1119,6 +1134,39 @@ class VehicleBorrowController(http.Controller):
             }
             repair.action_done(vals)
         return request.redirect('/automotive/repair?msg=status_updated')
+
+    @http.route(['/automotive/repair/parts/delete_item'], type='json', auth="user", methods=['POST'], website=True, csrf=False)
+    def admin_repair_parts_delete_item(self, movement_id, **post):
+        """
+        ยกเลิกการเบิกใช้อะไหล่รายชิ้นทันทีเมื่อกดยืนยัน (AJAX)
+        และเพิ่มจำนวนอะไหล่กลับเข้าคลังสต็อกในระบบ (Real-time Stock Return)
+        """
+        # ตรวจสอบสิทธิ์ผู้ดูแลระบบ
+        if not self._is_admin():
+            return {'success': False, 'error': 'คุณไม่มีสิทธิ์เข้าถึงระบบนี้'}
+        
+        try:
+            # ค้นหารายการเบิกอะไหล่ในระบบ
+            movement = request.env['vehicle.spare.part.movement'].sudo().browse(int(movement_id))
+            if not movement.exists():
+                return {'success': False, 'error': 'ไม่พบรายการเบิกอะไหล่ในระบบ'}
+            
+            repair = movement.repair_id
+            
+            # ลบรายการเคลื่อนไหวซึ่งจะเพิ่มจำนวนคงเหลือในคลังกลับคืนโดย compute อัตโนมัติ
+            movement.unlink()
+            
+            # ล้างแคชเพื่อให้ Odoo ทำการคำนวณราคารวมและรายการอะไหล่ล่าสุด
+            repair.invalidate_recordset()
+            
+            return {
+                'success': True,
+                'auto_parts_cost': repair.auto_parts_cost,
+                'auto_parts_json': repair.auto_parts_json,
+                'auto_parts_used': repair.auto_parts_used,
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 
 
     # --- SPARE PARTS FRONTEND ---
@@ -1547,6 +1595,83 @@ class VehicleBorrowController(http.Controller):
             transfer.action_accept()
             return request.redirect('/automotive/dashboard?msg=transfer_accepted')
         return request.redirect('/automotive/dashboard')
+
+    # === หน้าข้อเสนอแนะ (Suggestion Feature) ===
+
+    @http.route(['/automotive/suggestion'], type='http', auth="user", website=True)
+    def vehicle_suggestion_form(self, **post):
+        """
+        แสดงหน้าฟอร์มกรอกข้อเสนอแนะของพนักงาน
+        """
+        current_user = request.env.user
+        employee = request.env['hr.employee'].sudo().search(
+            [('user_id', '=', current_user.id)], limit=1
+        )
+        return request.render("vehicle_borrow.suggestion_form_template", {
+            'current_employee': employee,
+        })
+
+    @http.route(['/automotive/suggestion/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    def vehicle_suggestion_submit(self, **post):
+        """
+        บันทึกข้อเสนอแนะแบบไม่ระบุตัวตน (Anonymous) ลงในฐานข้อมูล
+        โดยจะตรวจสอบและแยกประเภท Role/โรงงาน สังกัดของผู้ส่ง
+        และใช้ sudo() ในการสร้างเพื่อป้องกันการเก็บบันทึกรหัสผู้ใช้ (create_uid)
+        """
+        try:
+            content = post.get('content')
+            if not content:
+                return request.redirect('/automotive/suggestion?error=กรุณากรอกข้อความข้อเสนอแนะ')
+
+            current_user = request.env.user
+            employee = request.env['hr.employee'].sudo().search(
+                [('user_id', '=', current_user.id)], limit=1
+            )
+            
+            # ตรวจสอบสังกัดโรงงานของพนักงานเพื่อแยกประเภท Role
+            factory_val = 'other'
+            if employee and employee.factory:
+                # แปลงค่าให้ตรงกับ Selection ในฟิลด์ factory ของโมเดล vehicle.suggestion
+                factory_val = employee.factory
+
+            # บันทึกข้อมูลแบบ Anonymous (ใช้ sudo().create เพื่อบายพาส create_uid และ write_uid ให้เป็นระบบ ID: 1)
+            request.env['vehicle.suggestion'].sudo().create({
+                'content': content,
+                'factory': factory_val,
+            })
+            return request.redirect('/automotive/suggestion?msg=suggestion_added')
+        except Exception as e:
+            return request.redirect('/automotive/suggestion?error=' + str(e))
+
+    @http.route(['/automotive/admin/suggestions'], type='http', auth="user", website=True)
+    def admin_suggestions(self, **post):
+        """
+        หน้าแสดงรายการข้อเสนอแนะสำหรับผู้ดูแลระบบ
+        โดยจะแยกคัดกรองตามกลุ่มโรงงาน (Role) ของ Admin คนนั้นๆ
+        - Admin TQS: เห็นข้อเสนอแนะของ TQS
+        - Admin CKR: เห็นข้อเสนอแนะของ CKR
+        - Admin TPS: เห็นข้อเสนอแนะของ TPS
+        - Head Admin: เห็นข้อเสนอแนะทั้งหมด
+        """
+        if not self._is_admin():
+            return request.render("http_routing.403")
+
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+
+        # สร้าง domain กรองตามกลุ่มโรงงานของผู้ใช้ปัจจุบัน
+        domain = []
+        if not self._is_head_admin() and user_factory:
+            domain.append(('factory', '=', user_factory))
+
+        # ดึงข้อเสนอแนะตามเงื่อนไข (เรียงจากล่าสุดไปหาเก่าสุด)
+        suggestions = env_sudo['vehicle.suggestion'].search(domain, order='date desc')
+
+        return request.render("vehicle_borrow.admin_suggestions_template", {
+            'suggestions': suggestions,
+            'user_factory': user_factory or 'ทั้งหมด',
+        })
+
 
 
 

@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '2.31',                         # เวอร์ชัน 2.31: ปรับแต่งสไตล์และขนาดตัวอักษรของระยะเวลาการซ่อมบำรุงใน Modal
+    'version': '2.40',                         # เวอร์ชัน 2.40: เพิ่มระบบยืนยันยกเลิกอะไหล่ซ่อมบำรุงและคืนสต็อกทันที (Real-time Stock Return)
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs
@@ -14,6 +14,7 @@
         'views/vehicle_borrow_menus.xml',       # โครงสร้างเมนูทางลัด
         'views/website_templates.xml',         # หน้าตาเว็บไซต์สำหรับการจองออนไลน์
         'views/spare_parts_views.xml',          # ระบบจัดการอะไหล่
+        'views/suggestion_templates.xml',       # หน้าจอระบบข้อเสนอแนะและ Admin Panel ของข้อเสนอแนะ
     ],
     'assets': {
         # โหลดใน frontend ทุกหน้า (รวม /web/login)

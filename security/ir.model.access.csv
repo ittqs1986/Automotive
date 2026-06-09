@@ -11,3 +11,5 @@ access_vehicle_spare_part_movement_manager,vehicle.spare.part.movement.manager,m
 access_vehicle_spare_part_user_read,vehicle.spare.part.user.read,model_vehicle_spare_part,base.group_user,1,0,0,0
 access_vehicle_transfer_request_admin,vehicle.transfer.request.admin,model_vehicle_transfer_request,fleet.fleet_group_manager,1,1,1,1
 access_vehicle_transfer_request_user,vehicle.transfer.request.user,model_vehicle_transfer_request,base.group_user,1,0,0,0
+access_vehicle_suggestion_manager,vehicle.suggestion.manager,model_vehicle_suggestion,fleet.fleet_group_manager,1,1,1,1
+access_vehicle_suggestion_user,vehicle.suggestion.user,model_vehicle_suggestion,base.group_user,1,1,1,0

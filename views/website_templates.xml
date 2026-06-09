@@ -31,6 +31,13 @@
                     <span>แจ้งเสีย / ซ่อม</span>
                 </button>
             </li>
+            <!-- เมนูส่งข้อเสนอแนะ -->
+            <li class="nav-item">
+                <a href="/automotive/suggestion" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                    <i class="fa fa-bullhorn fs-5 w-20 text-center"/>
+                    <span>กล่องรับความคิดเห็น</span>
+                </a>
+            </li>
             
             <!-- ส่วนของผู้ดูแลระบบ (Admin Only) -->
             <t t-if="request.env.user.has_group('fleet.fleet_group_manager')">
@@ -42,13 +49,6 @@
                     <a href="/automotive/dashboard" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
                         <i class="fa fa-dashboard fs-5 w-20 text-center"/>
                         <span>แผงควบคุมระบบ</span>
-                    </a>
-                </li>
-                <!-- แดชบอร์ด KPI -->
-                <li class="nav-item">
-                    <a href="/automotive/admin/kpi" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
-                        <i class="fa fa-bar-chart fs-5 w-20 text-center"/>
-                        <span>แดชบอร์ด KPI</span>
                     </a>
                 </li>
                 <!-- จัดการงานซ่อม (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้สำหรับ Odoo 19) -->
@@ -115,6 +115,20 @@
                             </li>
                         </ul>
                     </div>
+                </li>
+                <!-- แดชบอร์ด KPI -->
+                <li class="nav-item">
+                    <a href="/automotive/admin/kpi" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-bar-chart fs-5 w-20 text-center"/>
+                        <span>แดชบอร์ด KPI</span>
+                    </a>
+                </li>
+                <!-- เมนูรายงานข้อเสนอแนะผู้ใช้งานสำหรับแอดมิน -->
+                <li class="nav-item">
+                    <a href="/automotive/admin/suggestions" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-comments-o fs-5 w-20 text-center"/>
+                        <span>ข้อเสนอแนะจากผู้ใช้</span>
+                    </a>
                 </li>
             </t>
         </ul>
@@ -1150,7 +1164,7 @@
                                                                     <form method="post" class="m-0">
                                                                         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                         <select class="form-select form-select-sm border-0 bg-light fw-bold" 
-                                                                                onchange="this.form.action='/admin/vehicle/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
+                                                                                onchange="this.form.action='/automotive/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
                                                                                 t-att-data-id="v.id"
                                                                                 t-attf-style="width: 100px; font-size: 0.7rem; color: #{'#198754' if v.vehicle_status == 'active' else '#6c757d' if v.vehicle_status == 'retired' else '#dc3545'}; cursor: pointer; box-shadow: none;">
                                                                             <option value="active" t-att-selected="v.vehicle_status == 'active'">พร้อมใช้</option>
@@ -1245,7 +1259,7 @@
                                                                 <form method="post" class="m-0">
                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                                                                     <select class="form-select form-select-sm border-0 bg-light fw-bold" 
-                                                                            onchange="this.form.action='/admin/member/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
+                                                                            onchange="this.form.action='/automotive/member/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
                                                                             t-att-data-id="u.id"
                                                                             t-attf-style="width: 100px; font-size: 0.75rem; color: #{'#198754' if u.active else '#dc3545'}; cursor: pointer;">
                                                                         <option value="active" t-att-selected="u.active">ปกติ</option>
@@ -1261,32 +1275,32 @@
                                                                          <ul class="dropdown-menu shadow border-0">
                                                                               <t t-if="is_head_admin">
                                                                                   <li class="dropdown-header text-uppercase small fw-bold text-danger">Head Admin Roles</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/head_admin'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-star me-2 text-danger"/>Head Admin (ทุกโรงงาน)</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/head_admin'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-star me-2 text-danger"/>Head Admin (ทุกโรงงาน)</a></li>
                                                                                   <li><hr class="dropdown-divider"/></li>
                                                                               </t>
                                                                               
                                                                               <t t-if="is_head_admin or user_factory == 'TQS'">
                                                                                   <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold text-success">TQS Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/admin_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #16a34a;"/>Admin TQS</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/user_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #16a34a;"/>User TQS</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #16a34a;"/>Admin TQS</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #16a34a;"/>User TQS</a></li>
                                                                               </t>
                                                                               
                                                                               <t t-if="is_head_admin or user_factory == 'CKR'">
                                                                                   <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold" style="color: #880808;">CKR Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/admin_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #880808;"/>Admin CKR</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/user_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #880808;"/>User CKR</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #880808;"/>Admin CKR</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #880808;"/>User CKR</a></li>
                                                                               </t>
                                                                               
                                                                               <t t-if="is_head_admin or user_factory == 'TPS'">
                                                                                   <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold" style="color: #d97706;">TPS Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/admin_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #d97706;"/>Admin TPS</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/user_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #d97706;"/>User TPS</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #d97706;"/>Admin TPS</a></li>
+                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #d97706;"/>User TPS</a></li>
                                                                               </t>
 
                                                                               <t t-if="is_head_admin">
                                                                                   <li><hr class="dropdown-divider"/></li>
                                                                                   <li class="dropdown-header text-uppercase small fw-bold text-muted">General Roles</li>
-                                                                                  <li><a class="dropdown-item text-muted" onclick="this.closest('form').action='/admin/member/role/'+this.dataset.uid+'/user'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user-secret me-2"/>User General (ทุกโรงงาน)</a></li>
+                                                                                  <li><a class="dropdown-item text-muted" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user-secret me-2"/>User General (ทุกโรงงาน)</a></li>
                                                                               </t>
                                                                          </ul>
                                                                      </div>
@@ -1971,8 +1985,6 @@
                     </div>
                 </div>
 
-                <!-- ย้ายส่วนประวัติการซ่อมทั้งหมดไปยังหน้าต่างใหม่ /automotive/repair/history แล้วเพื่อความเป็นระเบียบและเพิ่มความเร็วในการโหลด -->
-
                 <!-- Finish Repair Modal -->
                 <div class="modal fade" id="finishRepairModal" tabindex="-1">
                     <div class="modal-dialog">
@@ -2129,32 +2141,60 @@
                                                 partsListContainer.appendChild(itemDiv);
                                             });
                                             
-                                            // ตั้งเหตุการณ์คลิกสำหรับการลบอะไหล่
+                                            // ตั้งเหตุการณ์คลิกสำหรับการลบอะไหล่พร้อมการยืนยันและคืนสต็อกทันที (Real-time Stock Return)
                                             const deleteButtons = partsListContainer.querySelectorAll('.delete-part-btn');
                                             deleteButtons.forEach(delBtn => {
                                                 delBtn.addEventListener('click', function() {
                                                     const mId = this.getAttribute('data-id');
-                                                    const itemCost = parseFloat(this.getAttribute('data-cost') || 0);
+                                                    const parentElement = this.closest('.d-flex');
                                                     
-                                                    // เก็บไอดีที่จะลบลง hidden input (comma-separated)
-                                                    let deletedIds = modalDeletedMovementIds.value ? modalDeletedMovementIds.value.split(',') : [];
-                                                    if (!deletedIds.includes(mId)) {
-                                                        deletedIds.push(mId);
-                                                    }
-                                                    modalDeletedMovementIds.value = deletedIds.join(',');
-                                                    
-                                                    // ปรับลดราคาอะไหล่รวมในหน้าจออัตโนมัติ
-                                                    currentTotalCost = Math.max(0, currentTotalCost - itemCost);
-                                                    if (modalRepairCost) {
-                                                        modalRepairCost.value = currentTotalCost.toFixed(2);
-                                                    }
-                                                    
-                                                    // ลบรายการออกจาก DOM
-                                                    this.closest('.d-flex').remove();
-                                                    
-                                                    // แสดงข้อความหากลบออกจนหมด
-                                                    if (partsListContainer.children.length === 0) {
-                                                        partsListContainer.innerHTML = '<div class="text-muted small py-2">ไม่มีข้อมูลอะไหล่ที่เบิกจากคลัง</div>';
+                                                    // แสดงหน้าต่างป๊อปอัปยืนยันการยกเลิกการใช้อะไหล่และคืนสต็อก
+                                                    if (confirm("คุณต้องการยกเลิกการใช้อะไหล่รายการนี้และคืนสต็อกใช่หรือไม่?")) {
+                                                        // ส่งคำขอไปยัง Backend เพื่อลบข้อมูลการเบิกและคืนสต็อกทันที
+                                                        fetch('/automotive/repair/parts/delete_item', {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                            },
+                                                            body: JSON.stringify({
+                                                                jsonrpc: '2.0',
+                                                                params: {
+                                                                    movement_id: parseInt(mId)
+                                                                }
+                                                            })
+                                                        })
+                                                        .then(response => response.json())
+                                                        .then(data => {
+                                                            if (data.result &amp;&amp; data.result.success) {
+                                                                // ลบรายการออกจาก DOM ทันที
+                                                                parentElement.remove();
+                                                                
+                                                                // อัปเดตราคารวมอะไหล่ในหน้าจอ
+                                                                currentTotalCost = parseFloat(data.result.auto_parts_cost || 0);
+                                                                if (modalRepairCost) {
+                                                                    modalRepairCost.value = currentTotalCost.toFixed(2);
+                                                                }
+                                                                
+                                                                // อัปเดตข้อมูลรายละเอียด (metadata) บนปุ่มต้นทางนอก Modal เพื่อป้องกันข้อมูลไม่สอดคล้อง
+                                                                button.setAttribute('data-parts-cost', data.result.auto_parts_cost);
+                                                                button.setAttribute('data-parts-json', data.result.auto_parts_json);
+                                                                button.setAttribute('data-parts-used', data.result.auto_parts_used);
+                                                                
+                                                                // แสดงข้อความแจ้งเตือนหากไม่มีอะไหล่คลังเหลืออยู่แล้ว
+                                                                if (partsListContainer.children.length === 0) {
+                                                                    partsListContainer.innerHTML = '<div class="text-muted small py-2">ไม่มีข้อมูลอะไหล่ที่เบิกจากคลัง</div>';
+                                                                }
+                                                                
+                                                                alert("ระบบได้ทำการยกเลิกรายการเบิกและคืนอะไหล่กลับเข้าสต็อกเรียบร้อยแล้ว");
+                                                            } else {
+                                                                const errMsg = (data.result &amp;&amp; data.result.error) ? data.result.error : 'เกิดข้อผิดพลาดจากระบบในการลบรายการ';
+                                                                alert("ไม่สามารถดำเนินการได้: " + errMsg);
+                                                            }
+                                                        })
+                                                        .catch(err => {
+                                                            console.error('Error deleting parts:', err);
+                                                            alert("เกิดข้อผิดพลาดในการติดต่อสื่อสารกับเซิร์ฟเวอร์");
+                                                        });
                                                     }
                                                 });
                                             });
@@ -3522,8 +3562,9 @@
                                                         <!-- ลบการแสดงอะไหล่ที่ใช้ออกจากคอลัมน์นี้เพื่อให้ตารางสะอาดขึ้น และนำไปโชว์ในรายละเอียดของ Modal แทนเมื่อคลิก -->
                                                     </td>
                                                     <td class="text-end fw-bold text-dark pe-3">
-                                                        <t t-if="rep.repair_cost">
-                                                            ฿ <t t-esc="'{:,.2f}'.format(rep.repair_cost)"/>
+                                                        <t t-set="row_total" t-value="(rep.auto_parts_cost or 0.0) + (rep.additional_cost or 0.0)"/>
+                                                        <t t-if="row_total > 0">
+                                                            ฿ <t t-esc="'{:,.2f}'.format(row_total)"/>
                                                         </t>
                                                         <t t-else="">
                                                             ฿ 0.00
@@ -3544,7 +3585,7 @@
                                             <tr class="table-light fw-bold text-dark border-top">
                                                 <td colspan="4" class="text-end ps-4 py-3">รวมค่าใช้จ่ายในการซ่อมทั้งหมด:</td>
                                                 <td class="text-end text-danger fs-5 py-3 pe-3">
-                                                    ฿ <t t-esc="'{:,.2f}'.format(sum(rep.repair_cost or 0.0 for rep in repair_history))"/>
+                                                    ฿ <t t-esc="'{:,.2f}'.format(sum((rep.auto_parts_cost or 0.0) + (rep.additional_cost or 0.0) for rep in repair_history))"/>
                                                 </td>
                                                 <td></td>
                                             </tr>
@@ -3627,11 +3668,11 @@
                                         <div class="row g-3">
                                             <div class="col-md-6 border-end">
                                                 <span class="text-muted small text-uppercase fw-bold d-block mb-2">อะไหล่จากคลังสต๊อก (ระบบ)</span>
-                                                <div id="modalRepairPartsUsed" class="text-dark small text-wrap" style="white-space: pre-wrap; font-family: monospace; line-height: 1.5;"/>
+                                                <div id="modalRepairPartsUsed" class="text-dark small text-wrap" style="line-height: 1.5;"/>
                                             </div>
                                             <div class="col-md-6">
                                                 <span class="text-muted small text-uppercase fw-bold d-block mb-2">อะไหล่นอกสต๊อก (ร้านภายนอก)</span>
-                                                <div id="modalRepairNonStockParts" class="text-muted small text-wrap" style="white-space: pre-wrap; line-height: 1.5;"/>
+                                                <div id="modalRepairNonStockParts" class="text-muted small text-wrap" style="line-height: 1.5;"/>
                                             </div>
                                         </div>
                                     </div>
@@ -3754,15 +3795,86 @@
                                     detailModal.querySelector('#modalRepairDescription').textContent = description || '-';
                                     detailModal.querySelector('#modalRepairDetails').textContent = repairDetails || '-';
                                     
-                                    // แสดงรายการอะไหล่และข้อมูลอะไหล่นอกคลัง
+                                    // จัดเรียงและแสดงผลข้อมูลอะไหล่คลังระบบให้สวยงามพรีเมียม
+                                    const formatAutoPartsHTML = (partsText) => {
+                                        const fallback = `<div class="text-muted small py-3 px-3 bg-light rounded border border-dashed text-center text-opacity-50"><i class="fa fa-info-circle me-1"></i>ไม่มีการเบิกอะไหล่จากคลังระบบ</div>`;
+                                        if (!partsText || !partsText.trim()) return fallback;
+                                        
+                                        const lines = partsText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                        if (lines.length === 0) return fallback;
+                                        
+                                        let html = '<div class="d-flex flex-column gap-2">';
+                                        // ใช้ Regular Expression ในการแยกรายละเอียด: ชื่อ, รหัส, จำนวน, หน่วยนับ, ล็อต
+                                        const regex = /^-\s*(.+?)\s*\((.+?)\)\s+จำนวน\s+(\d+)\s+(.+?)\s*\[ล็อต:\s*(.+?)\]$/;
+                                        
+                                        lines.forEach(line => {
+                                            const match = line.match(regex);
+                                            if (match) {
+                                                const name = match[1];
+                                                const code = match[2];
+                                                const qty = match[3];
+                                                const uom = match[4];
+                                                const lot = match[5];
+                                                
+                                                html += `
+                                                    <div class="p-2.5 bg-light rounded border d-flex align-items-center justify-content-between hover-shadow-sm transition-all" style="border-left: 4px solid #0dcaf0 !important;">
+                                                        <div class="d-flex flex-column">
+                                                            <span class="text-dark fw-bold" style="font-size: 0.85rem;">${name}</span>
+                                                            <span class="text-muted extra-small" style="font-size: 0.72rem;">รหัส: ${code} | ล็อต: ${lot}</span>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <span class="badge bg-info text-dark fw-bold px-2 py-1" style="font-size: 0.75rem;">${qty} ${uom}</span>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            } else {
+                                                // กรณีไม่เข้า regex ให้จัดแสดงผลแบบยืดหยุ่นธรรมดา
+                                                let clean = line;
+                                                if (clean.startsWith('- ')) clean = clean.substring(2);
+                                                html += `
+                                                    <div class="p-2.5 bg-light rounded border d-flex align-items-center justify-content-between" style="border-left: 4px solid #0dcaf0 !important;">
+                                                        <span class="text-dark fw-medium" style="font-size: 0.82rem;">${clean}</span>
+                                                    </div>
+                                                `;
+                                            }
+                                        });
+                                        html += '</div>';
+                                        return html;
+                                    };
+
+                                    // จัดเรียงและแสดงผลข้อมูลอะไหล่นอกคลังให้สวยงามพรีเมียม
+                                    const formatNonStockPartsHTML = (partsText) => {
+                                        const fallback = `<div class="text-muted small py-3 px-3 bg-light rounded border border-dashed text-center text-opacity-50"><i class="fa fa-info-circle me-1"></i>ไม่มีรายการอะไหล่นอกสต๊อก</div>`;
+                                        if (!partsText || !partsText.trim()) return fallback;
+                                        
+                                        const lines = partsText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                        if (lines.length === 0) return fallback;
+                                        
+                                        let html = '<div class="d-flex flex-column gap-2">';
+                                        lines.forEach(line => {
+                                            let clean = line;
+                                            if (clean.startsWith('- ')) clean = clean.substring(2);
+                                            
+                                            html += `
+                                                <div class="p-2.5 bg-light rounded border d-flex align-items-center gap-2 hover-shadow-sm transition-all" style="border-left: 4px solid #ffc107 !important; font-size: 0.82rem;">
+                                                    <i class="fa fa-shopping-bag text-warning"></i>
+                                                    <span class="text-dark fw-medium">${clean}</span>
+                                                </div>
+                                            `;
+                                        });
+                                        html += '</div>';
+                                        return html;
+                                    };
+
+                                    // เรนเดอร์ข้อมูลแบบโครงสร้าง HTML ลงใน Element
                                     const partsUsedEl = detailModal.querySelector('#modalRepairPartsUsed');
                                     if (partsUsedEl) {
-                                        partsUsedEl.textContent = autoPartsUsed || 'ไม่มีการเบิกอะไหล่จากคลังระบบ';
+                                        partsUsedEl.innerHTML = formatAutoPartsHTML(autoPartsUsed);
                                     }
                                     
                                     const nonStockEl = detailModal.querySelector('#modalRepairNonStockParts');
                                     if (nonStockEl) {
-                                        nonStockEl.textContent = nonStockPartsText || 'ไม่มีรายการอะไหล่นอกสต๊อก';
+                                        nonStockEl.innerHTML = formatNonStockPartsHTML(nonStockPartsText);
                                     }
                                     
                                     // จัดรูปแบบการแสดงผลตัวเลขค่าใช้จ่าย
@@ -3770,9 +3882,12 @@
                                         return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
                                     };
                                     
+                                    // คำนวณยอดรวมสุทธิ (ราคารวมอะไหล่ระบบ + ค่าใช้จ่ายเพิ่มเติม)
+                                    const calculatedTotal = autoPartsCost + additionalCost;
+                                    
                                     detailModal.querySelector('#modalRepairAutoPartsCost').textContent = formatMoney(autoPartsCost);
                                     detailModal.querySelector('#modalRepairAdditionalCost').textContent = formatMoney(additionalCost);
-                                    detailModal.querySelector('#modalRepairTotalCost').textContent = formatMoney(totalCost);
+                                    detailModal.querySelector('#modalRepairTotalCost').textContent = formatMoney(calculatedTotal);
                                     
                                     // เปลี่ยนสีสถานะใบแจ้งซ่อมตามประเภทสถานะ
                                     const stateBadge = detailModal.querySelector('#modalRepairState');
