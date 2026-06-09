@@ -934,9 +934,9 @@ class VehicleBorrowController(http.Controller):
         vehicles = env_sudo['fleet.vehicle'].search(list(factory_domain) + [('active', '=', True)])
         vehicle_types = sorted(list(set([v.model_id.name for v in vehicles if v.model_id and v.model_id.name])))
         
-        # รายการรถที่อยู่ระหว่างดำเนินการซ่อม (กำลังซ่อม)
-        recent_repairs = env_sudo['vehicle.repair.request'].search(
-            list(repair_factory_domain) + [('state', '=', 'repairing')], 
+        # รายการแจ้งซ่อมที่ส่งเข้ามาใหม่และอยู่ระหว่างรอตรวจสอบ (รอช่างตรวจเช็ค)
+        pending_repairs = env_sudo['vehicle.repair.request'].search(
+            list(repair_factory_domain) + [('state', '=', 'reported')], 
             limit=50, 
             order='create_date desc'
         )
@@ -954,7 +954,7 @@ class VehicleBorrowController(http.Controller):
             'vehicle_types': vehicle_types,
             'vehicles': vehicles,
             'current_employee': employee,
-            'recent_repairs': recent_repairs,
+            'pending_repairs': pending_repairs,
             'msg': post.get('msg'),
             'error': post.get('error'),
             'user_factory': user_factory,
@@ -983,9 +983,9 @@ class VehicleBorrowController(http.Controller):
         user_factory = self._get_user_factory()
         repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
 
-        # ดึงรายการซ่อมที่อยู่ในสถานะรอตรวจสอบ (reported) หรือกำลังดำเนินการซ่อมอยู่ (repairing) จำกัดการแสดงผลไว้ที่ 10 รายการล่าสุด
+        # ดึงรายการซ่อมที่ได้รับอนุมัติและกำลังดำเนินการซ่อมอยู่ (state = 'repairing') จำกัดการแสดงผลไว้ที่ 10 รายการล่าสุด
         recent_repairs = env_sudo['vehicle.repair.request'].search(
-            list(repair_factory_domain) + [('state', 'in', ['reported', 'repairing'])], 
+            list(repair_factory_domain) + [('state', '=', 'repairing')], 
             limit=10, 
             order='create_date desc'
         )

@@ -1858,7 +1858,13 @@
                                     <div class="alert alert-danger mb-4"><t t-esc="error"/></div>
                                 </t>
                                 <t t-if="request.params.get('msg') == 'repair_added'">
-                                    <div class="alert alert-success mb-4 text-center"><i class="fa fa-check-circle me-1"/>บันทึกการแจ้งซ่อมสำเร็จ</div>
+                                    <div class="alert alert-success mb-4 text-center"><i class="fa fa-check-circle me-1"/>บันทึกการแจ้งซ่อมและส่งเข้าตรวจสอบสำเร็จ</div>
+                                </t>
+                                <t t-if="request.params.get('msg') == 'repair_approved'">
+                                    <div class="alert alert-success mb-4 text-center"><i class="fa fa-check-circle me-1"/>อนุมัติการแจ้งซ่อมและส่งข้อมูลไปยังรายการซ่อมแซมพร้อมล็อกตัวรถยนต์เรียบร้อยแล้ว</div>
+                                </t>
+                                <t t-if="request.params.get('msg') == 'repair_cancelled'">
+                                    <div class="alert alert-warning mb-4 text-center"><i class="fa fa-exclamation-circle me-1"/>ยกเลิกการแจ้งซ่อมเรียบร้อยแล้ว</div>
                                 </t>
                                 
                                 <form action="/automotive/repair/submit" method="post">
@@ -1903,6 +1909,86 @@
                                 <a href="/automotive" class="btn btn-link text-muted">
                                     <i class="fa fa-arrow-left me-1"/> กลับหน้าหลัก
                                 </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ตารางแสดงรายการแจ้งซ่อม รอตรวจสอบ เพื่อให้แสดงผลในสัดส่วนกว้างเต็มหน้าจอสวยงามนอกขอบเขตฟอร์มเดิม -->
+                    <div class="row justify-content-center mt-5">
+                        <div class="col-lg-12">
+                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+                                <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
+                                    <h5 class="mb-0 fw-bold"><i class="fa fa-clock-o me-2"/>รายการแจ้งซ่อม รอตรวจสอบ</h5>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="ps-4">รถยนต์ / เลขรับแจ้ง</th>
+                                                <th>วันเวลาที่แจ้ง</th>
+                                                <th>ผู้แจ้งซ่อม</th>
+                                                <th>อาการเสีย</th>
+                                                <th class="text-center">สถานะ</th>
+                                                <th class="pe-4 text-center">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-if="not pending_repairs">
+                                                <tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่พบข้อมูลการแจ้งซ่อมที่รอการตรวจสอบ</td></tr>
+                                            </t>
+                                            <t t-foreach="pending_repairs" t-as="rep">
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="fw-bold text-dark"><t t-esc="rep.vehicle_id.license_plate"/></div>
+                                                            <span t-if="rep.vehicle_id.factory == 'TQS'" class="badge ms-2" style="background-color: #16a34a; color: white; font-size: 0.6rem;">TQS</span>
+                                                            <span t-elif="rep.vehicle_id.factory == 'CKR'" class="badge ms-2" style="background-color: #880808; color: white; font-size: 0.6rem;">CKR</span>
+                                                            <span t-elif="rep.vehicle_id.factory == 'TPS'" class="badge ms-2" style="background-color: #d97706; color: white; font-size: 0.6rem;">TPS</span>
+                                                        </div>
+                                                        <div class="text-muted extra-small"><t t-esc="rep.name"/></div>
+                                                    </td>
+                                                    <td class="small"><t t-esc="rep.report_date.strftime('%d/%m/%Y %H:%M') if rep.report_date else '-'"/></td>
+                                                    <td class="small fw-semibold">
+                                                        <div><t t-esc="rep.reported_by_id.name or 'ระบบอัตโนมัติ'"/></div>
+                                                        <t t-set="u_rep" t-value="rep.reported_by_id"/>
+                                                        <t t-if="u_rep and head_admin_group in u_rep.group_ids">
+                                                            <span class="badge extra-small p-1" style="background-color: #dc3545; color: white; font-size: 0.55rem;">แอดมินสูงสุด</span>
+                                                        </t>
+                                                        <t t-elif="u_rep and admin_tqs_group in u_rep.group_ids">
+                                                            <span class="badge extra-small p-1" style="background-color: #16a34a; color: white; font-size: 0.55rem;">แอดมิน TQS</span>
+                                                        </t>
+                                                        <t t-elif="u_rep and admin_ckr_group in u_rep.group_ids">
+                                                            <span class="badge extra-small p-1" style="background-color: #880808; color: white; font-size: 0.55rem;">แอดมิน CKR</span>
+                                                        </t>
+                                                        <t t-elif="u_rep and admin_tps_group in u_rep.group_ids">
+                                                            <span class="badge extra-small p-1" style="background-color: #d97706; color: white; font-size: 0.55rem;">แอดมิน TPS</span>
+                                                        </t>
+                                                    </td>
+                                                    <td class="small text-truncate" style="max-width: 250px;"><t t-esc="rep.description"/></td>
+                                                    <td class="text-center">
+                                                        <span class="badge rounded-pill px-3 py-2 bg-warning text-dark">รอตรวจสอบ</span>
+                                                    </td>
+                                                    <td class="pe-4 text-center">
+                                                        <div class="d-flex justify-content-center gap-1">
+                                                            <form t-attf-action="/automotive/repair/approve/#{rep.id}" method="post" class="d-inline">
+                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                                    <i class="fa fa-wrench me-1"/> อนุมัติซ่อม
+                                                                </button>
+                                                            </form>
+                                                            <form t-attf-action="/automotive/repair/cancel/#{rep.id}" method="post" class="d-inline">
+                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="return confirm('คุณต้องการยกเลิกการแจ้งซ่อมนี้ใช่หรือไม่?')">
+                                                                    <i class="fa fa-times me-1"/> ยกเลิก
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2014,34 +2100,16 @@
                                             </td>
                                             <td class="small text-truncate" style="max-width: 250px;"><t t-esc="rep.description"/></td>
                                             <td class="text-center">
-                                                <!-- แสดง Badge สถานะด้วยโทนสีที่เหมาะสม (เพิ่มสีเหลืองสำหรับสถานะรอตรวจสอบ) -->
-                                                <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-warning text-dark' if rep.state == 'reported' else 'bg-danger text-white' if rep.state == 'repairing' else 'bg-success text-white' if rep.state == 'done' else 'bg-secondary text-white'}">
-                                                    <t t-if="rep.state == 'reported'">รอตรวจสอบ</t>
+                                                <!-- แสดง Badge สถานะ -->
+                                                <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-danger text-white' if rep.state == 'repairing' else 'bg-success text-white' if rep.state == 'done' else 'bg-secondary text-white'}">
                                                     <t t-if="rep.state == 'repairing'">กำลังซ่อม</t>
                                                     <t t-if="rep.state == 'done'">เสร็จสิ้น</t>
                                                     <t t-if="rep.state == 'cancelled'">ยกเลิก</t>
                                                 </span>
                                             </td>
                                             <td class="pe-4 text-center">
-                                                <!-- หากยังไม่ผ่านการอนุมัติ (reported) ให้แสดงปุ่ม อนุมัติซ่อม และ ยกเลิก -->
-                                                <t t-if="rep.state == 'reported'">
-                                                    <div class="d-flex justify-content-center gap-1">
-                                                        <form t-attf-action="/automotive/repair/approve/#{rep.id}" method="post" class="d-inline">
-                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
-                                                                <i class="fa fa-wrench me-1"/> อนุมัติซ่อม
-                                                            </button>
-                                                        </form>
-                                                        <form t-attf-action="/automotive/repair/cancel/#{rep.id}" method="post" class="d-inline">
-                                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="return confirm('คุณต้องการยกเลิกการแจ้งซ่อมนี้ใช่หรือไม่?')">
-                                                                <i class="fa fa-times me-1"/> ยกเลิก
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </t>
-                                                <!-- หากได้รับอนุมัติแล้ว (repairing) ให้แสดงปุ่ม จบงานซ่อม -->
-                                                <t t-elif="rep.state == 'repairing'">
+                                                <!-- ในหน้าแจ้งซ่อมล่าสุด จะแสดงผลเฉพาะปุ่ม จบงานซ่อม เนื่องจากถูกอนุมัติซ่อมเข้ามาแล้ว -->
+                                                <t t-if="rep.state == 'repairing'">
                                                     <button type="button" 
                                                             class="btn btn-sm btn-success rounded-pill px-3 finish-repair-btn"
                                                             data-bs-toggle="modal" data-bs-target="#finishRepairModal"
