@@ -1903,7 +1903,7 @@
                         <div class="col-lg-8">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                                 <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-                                    <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>ประวัติการแจ้งซ่อมล่าสุด (10 รายการ)</h5>
+                                    <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>การแจ้งซ่อมล่าสุด (10 รายการ)</h5>
                                     <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
                                         <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
                                     </a>
