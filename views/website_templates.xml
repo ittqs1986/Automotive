@@ -1881,7 +1881,7 @@
                                             <option value="">-- เลือกคัน --</option>
                                             <t t-foreach="vehicles" t-as="car">
                                                 <option t-att-value="car.id" t-att-data-type="car.model_id.name">
-                                                    <t t-esc="car.display_name"/> — [<t t-esc="car.license_plate"/>]
+                                                    <t t-esc="car.model_id.name"/> — [<t t-esc="car.license_plate"/>]
                                                 </option>
                                             </t>
                                         </select>
@@ -3263,7 +3263,7 @@
                                             <select name="f_vehicle_id" id="hist_vehicle_id" class="form-select form-select-sm">
                                                 <option value="all">-- ทั้งหมด --</option>
                                                 <t t-foreach="vehicles" t-as="v">
-                                                    <option t-att-value="v.id" t-att-selected="str(v.id) == str(filters.get('f_vehicle_id'))" t-att-data-type="v.model_id.name"><t t-esc="v.display_name"/></option>
+                                                    <option t-att-value="v.id" t-att-selected="str(v.id) == str(filters.get('f_vehicle_id'))" t-att-data-type="v.model_id.name"><t t-esc="v.model_id.name"/> [<t t-esc="v.license_plate"/>]</option>
                                                 </t>
                                             </select>
                                         </div>
@@ -3443,7 +3443,7 @@
                                                 <option value="">-- ทั้งหมด --</option>
                                                 <t t-foreach="all_vehicles_history" t-as="v">
                                                     <option t-att-value="v.id" t-att-selected="str(v.id) == str(filters.get('f_vehicle_id'))" t-att-data-type="v.model_id.name">
-                                                        <t t-esc="v.display_name"/> [<t t-esc="v.license_plate"/>]
+                                                        <t t-esc="v.model_id.name"/> [<t t-esc="v.license_plate"/>]
                                                     </option>
                                                 </t>
                                             </select>
