@@ -520,20 +520,26 @@ class VehicleBorrowController(http.Controller):
                 'group_ids': [(6, 0, [request.env.ref('base.group_user').id])]
             })
             
-            # กำหนด group ตาม role ที่เลือก
+            # กำหนด group ตาม role ที่เลือก (รองรับบทบาท 'user' ที่ต้องเข้าถึงได้ทุกโรงงานโดยการเพิ่มเข้าไปในทุกกลุ่มของพนักงาน)
             group_map = {
-                'head_admin': 'vehicle_borrow.group_vb_head_admin',
-                'admin_tqs': 'vehicle_borrow.group_vb_admin_tqs',
-                'admin_ckr': 'vehicle_borrow.group_vb_admin_ckr',
-                'admin_tps': 'vehicle_borrow.group_vb_admin_tps',
-                'user_tqs': 'vehicle_borrow.group_vb_user_tqs',
-                'user_ckr': 'vehicle_borrow.group_vb_user_ckr',
-                'user_tps': 'vehicle_borrow.group_vb_user_tps',
+                'head_admin': ['vehicle_borrow.group_vb_head_admin'],
+                'admin_tqs': ['vehicle_borrow.group_vb_admin_tqs'],
+                'admin_ckr': ['vehicle_borrow.group_vb_admin_ckr'],
+                'admin_tps': ['vehicle_borrow.group_vb_admin_tps'],
+                'user_tqs': ['vehicle_borrow.group_vb_user_tqs'],
+                'user_ckr': ['vehicle_borrow.group_vb_user_ckr'],
+                'user_tps': ['vehicle_borrow.group_vb_user_tps'],
+                'user': [
+                    'vehicle_borrow.group_vb_user_tqs',
+                    'vehicle_borrow.group_vb_user_ckr',
+                    'vehicle_borrow.group_vb_user_tps'
+                ],
             }
             if role in group_map:
-                group = request.env.ref(group_map[role])
-                # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids ตามมาตรฐาน Odoo 19
-                new_user.sudo().write({'group_ids': [(4, group.id)]})
+                for group_xmlid in group_map[role]:
+                    group = request.env.ref(group_xmlid)
+                    # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids ตามมาตรฐาน Odoo 19
+                    new_user.sudo().write({'group_ids': [(4, group.id)]})
                 
             # สร้าง Employee (ถ้ายังไม่มี)
             request.env['hr.employee'].sudo().create({
@@ -599,21 +605,26 @@ class VehicleBorrowController(http.Controller):
             # ถอด groups เดิมออกทั้งหมด (เปลี่ยนเป็น group_ids ตามมาตรฐาน Odoo 19)
             user.sudo().write({'group_ids': [(3, g.id) for g in all_factory_groups]})
             
-            # เพิ่ม group ใหม่
+            # เพิ่ม group ใหม่ (รองรับบทบาท 'user' ที่ต้องเข้าถึงได้ทุกโรงงานโดยการเพิ่มเข้าไปในทุกกลุ่มของพนักงาน)
             group_map = {
-                'head_admin': 'vehicle_borrow.group_vb_head_admin',
-                'admin_tqs': 'vehicle_borrow.group_vb_admin_tqs',
-                'admin_ckr': 'vehicle_borrow.group_vb_admin_ckr',
-                'admin_tps': 'vehicle_borrow.group_vb_admin_tps',
-                'user_tqs': 'vehicle_borrow.group_vb_user_tqs',
-                'user_ckr': 'vehicle_borrow.group_vb_user_ckr',
-                'user_tps': 'vehicle_borrow.group_vb_user_tps',
+                'head_admin': ['vehicle_borrow.group_vb_head_admin'],
+                'admin_tqs': ['vehicle_borrow.group_vb_admin_tqs'],
+                'admin_ckr': ['vehicle_borrow.group_vb_admin_ckr'],
+                'admin_tps': ['vehicle_borrow.group_vb_admin_tps'],
+                'user_tqs': ['vehicle_borrow.group_vb_user_tqs'],
+                'user_ckr': ['vehicle_borrow.group_vb_user_ckr'],
+                'user_tps': ['vehicle_borrow.group_vb_user_tps'],
+                'user': [
+                    'vehicle_borrow.group_vb_user_tqs',
+                    'vehicle_borrow.group_vb_user_ckr',
+                    'vehicle_borrow.group_vb_user_tps'
+                ],
             }
             if role in group_map:
-                group = request.env.ref(group_map[role])
-                # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids สำหรับ Odoo 19
-                user.sudo().write({'group_ids': [(4, group.id)]})
-            # role == 'user' = ไม่มี group admin
+                for group_xmlid in group_map[role]:
+                    group = request.env.ref(group_xmlid)
+                    # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids สำหรับ Odoo 19
+                    user.sudo().write({'group_ids': [(4, group.id)]})
                 
             return request.redirect('/automotive/dashboard?msg=role_updated')
         except Exception as e:

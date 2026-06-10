@@ -68,23 +68,24 @@
                     <div t-attf-class="collapse #{ 'show' if request.httprequest.path.startswith('/automotive/repair') else '' }" id="submenuRepair">
                         <ul class="nav flex-column ps-4 gap-1 mt-1 border-start border-secondary ms-3" style="border-width: 2px !important; border-color: rgba(255,255,255,0.1) !important;">
                             <li class="nav-item">
+                                <!-- ลิงก์เมนูย่อย: รายการแจ้งซ่อมใหม่ (ปรับเปลี่ยนชื่อปุ่มตามความต้องการของผู้ใช้งาน) -->
                                 <a href="/automotive/repair" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
                                     <i class="fa fa-wrench text-center" style="width: 15px;"/>
-                                    <span>รายการแจ้งซ่อม</span>
+                                    <span>รายการแจ้งซ่อมใหม่</span>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <!-- อัปเดตลิงก์ไปยังหน้าประวัติการซ่อมแยกเฉพาะตามมาตรฐาน Odoo 19 -->
+                                <!-- ลิงก์เมนูย่อย: รายการแจ้งซ่อมคงค้าง (ย้ายขึ้นมาเป็นอันดับสองและเปลี่ยนชื่อปุ่มตามความต้องการล่าสุดของผู้ใช้) -->
+                                <a href="/automotive/repair/latest" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
+                                    <i class="fa fa-history text-center" style="width: 15px;"/>
+                                    <span>รายการแจ้งซ่อมคงค้าง</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <!-- ลิงก์เมนูย่อย: ประวัติการซ่อม (ย้ายลงมาเป็นอันดับสามเพื่อให้ปุ่มเรียงลำดับอย่างสวยงามและเป็นขั้นตอน) -->
                                 <a href="/automotive/repair/history" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
                                     <i class="fa fa-list-alt text-center" style="width: 15px;"/>
                                     <span>ประวัติการซ่อม</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <!-- ลิงก์เมนูย่อยใหม่ สำหรับหน้ารายการแจ้งซ่อมล่าสุด 10 รายการ -->
-                                <a href="/automotive/repair/latest" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
-                                    <i class="fa fa-history text-center" style="width: 15px;"/>
-                                    <span>การแจ้งซ่อมล่าสุด</span>
                                 </a>
                             </li>
                         </ul>
@@ -1837,9 +1838,10 @@
         <t t-call="vehicle_borrow.vb_layout">
             <div class="oe_structure oe_empty bg-light py-5">
                 <div class="container pb-5">
-                    <div class="row justify-content-center">
-                        <!-- ปรับขนาดเป็น col-lg-6 mx-auto และจัดกึ่งกลางจออย่างสมดุล สวยงามหรูหรา -->
-                        <div class="col-lg-6">
+                    <!-- ปรับโครงสร้างแถวใหม่ (row g-4) เพื่อแสดงผลแบบ 2 คอลัมน์คู่กัน (Side-by-side) ตามความต้องการของผู้ใช้ -->
+                    <div class="row g-4">
+                        <!-- คอลัมน์ซ้าย: ฟอร์มแจ้งซ่อมรถยนต์ (Admin) ขนาด col-lg-4 เพื่อความเหมาะสมและสมดุล -->
+                        <div class="col-lg-4">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                                 <div class="card-header bg-danger text-white py-3">
                                     <h5 class="mb-0 fw-bold"><i class="fa fa-wrench me-2"/>แจ้งซ่อมรถยนต์ (Admin)</h5>
@@ -1911,14 +1913,12 @@
                                 </a>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ตารางแสดงรายการแจ้งซ่อม รอตรวจสอบ เพื่อให้แสดงผลในสัดส่วนกว้างเต็มหน้าจอสวยงามนอกขอบเขตฟอร์มเดิม -->
-                    <div class="row justify-content-center mt-5">
-                        <div class="col-lg-12">
+                        <!-- คอลัมน์ขวา: ตารางแสดงรายการแจ้งซ่อม รอตรวจสอบ ขนาด col-lg-8 เพื่อให้มีพื้นที่แสดงข้อมูลตารางกว้างเพียงพอ -->
+                        <div class="col-lg-8">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
                                 <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-                                    <h5 class="mb-0 fw-bold"><i class="fa fa-clock-o me-2"/>รายการแจ้งซ่อม รอตรวจสอบ</h5>
+                                    <h5 class="mb-0 fw-bold"><i class="fa fa-clock-o me-2"/>รายการแจ้งซ่อมใหม่ รอตรวจสอบ</h5>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0">
@@ -1994,8 +1994,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- JS For Filtering -->
+    <!-- JS For Filtering -->
             <script type="text/javascript">
                 document.addEventListener('DOMContentLoaded', function() {
                     const typeFilter = document.getElementById('repair_type_filter');
@@ -2047,8 +2046,9 @@
                     </t>
                     <!-- ส่วนหัวหน้าจอแสดงผลเต็มหน้าจอสวยงามพรีเมียม -->
                     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
+                        <!-- ส่วนหัวหน้าจอ: ปรับเปลี่ยนเป็น รายการแจ้งซ่อมคงค้าง (10 รายการ) ตามปุ่มกดและคำร้องขอของผู้ใช้ เพื่อความสอดคล้องกัน -->
                         <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-                            <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>การแจ้งซ่อมล่าสุด (10 รายการ)</h5>
+                            <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>รายการแจ้งซ่อมคงค้าง (10 รายการ)</h5>
                             <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
                                 <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
                             </a>
@@ -2990,9 +2990,15 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label fw-bold">เลือกอะไหล่</label>
-                                        <select name="part_id" class="form-select form-select-lg" required="1">
+                                        <!-- ช่องอินพุตหลักพิมพ์ค้นหาแบบ Auto Complete แทนที่ Dropdown ขนาดใหญ่เดิมเพื่อความสวยงามพรีเมียม -->
+                                        <input type="text" id="receive_part_autocomplete" class="form-control form-control-lg" placeholder="พิมพ์ชื่อเพื่อค้นหาอะไหล่..." autocomplete="off" required="1"/>
+                                        <!-- กล่องแสดงรายการผลลัพธ์ที่จะแสดงขึ้นใต้กล่องพิมพ์ค้นหา -->
+                                        <div id="receive_part_results" class="dropdown-menu w-100 shadow-lg overflow-auto py-1" style="max-height: 250px; display: none; z-index: 1060; position: absolute; left: 0; right: 0;"></div>
+                                        
+                                        <!-- ซ่อน Dropdown จริงไว้ด้านหลังเพื่อให้ทำงานร่วมกับฟอร์มหลักได้อย่างเสถียร -->
+                                        <select name="part_id" id="receive_part_select" style="display: none !important;" required="1">
                                             <option value="">-- เลือกอะไหล่ --</option>
                                             <t t-foreach="parts" t-as="p">
                                                 <t t-if="'active' not in p._fields or p.active">
@@ -3043,9 +3049,15 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <div class="mb-3">
+                                    <div class="mb-3 position-relative">
                                         <label class="form-label fw-bold">เลือกอะไหล่</label>
-                                        <select name="part_id" id="issue_part_select" class="form-select form-select-lg" required="1">
+                                        <!-- ช่องอินพุตหลักพิมพ์ค้นหาแบบ Auto Complete แทนที่ Dropdown ขนาดใหญ่เดิมเพื่อความสวยงามพรีเมียม -->
+                                        <input type="text" id="issue_part_autocomplete" class="form-control form-control-lg" placeholder="พิมพ์ชื่อเพื่อค้นหาอะไหล่..." autocomplete="off" required="1"/>
+                                        <!-- กล่องแสดงรายการผลลัพธ์ที่จะแสดงขึ้นใต้กล่องพิมพ์ค้นหา -->
+                                        <div id="issue_part_results" class="dropdown-menu w-100 shadow-lg overflow-auto py-1" style="max-height: 250px; display: none; z-index: 1060; position: absolute; left: 0; right: 0;"></div>
+                                        
+                                        <!-- ซ่อน Dropdown จริงไว้ด้านหลังเพื่อให้ทำงานร่วมกับฟอร์มหลักและฟังก์ชันคำนวณราคา/สต็อกเดิมได้อย่างเสถียร -->
+                                        <select name="part_id" id="issue_part_select" style="display: none !important;" required="1">
                                             <option value="">-- เลือกอะไหล่ --</option>
                                             <t t-foreach="parts" t-as="p">
                                                 <t t-if="'active' not in p._fields or p.active">
@@ -3102,10 +3114,15 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">เชื่อมโยงใบแจ้งซ่อม</label>
-                                        <select name="repair_id" class="form-select">
+                                        <!-- เพิ่ม id เพื่ออ้างอิงและ data attributes สำหรับใช้ในการดึงข้อมูลรถยนต์กรอกกลับอัตโนมัติ -->
+                                        <select name="repair_id" id="issue_repair_id" class="form-select">
                                             <option value="">-- ไม่ระบุ --</option>
                                             <t t-foreach="repairs" t-as="r">
-                                                <option t-att-value="r.id"><t t-esc="r.name"/> - <t t-esc="r.vehicle_id.license_plate"/></option>
+                                                <option t-att-value="r.id"
+                                                        t-att-data-vehicle-id="r.vehicle_id.id"
+                                                        t-att-data-vehicle-type="r.vehicle_id.model_id.name">
+                                                    <t t-esc="r.name"/> - <t t-esc="r.vehicle_id.license_plate"/>
+                                                </option>
                                             </t>
                                         </select>
                                     </div>
@@ -3188,9 +3205,90 @@
                                     if (partSelect) partSelect.addEventListener('change', checkStock);
                                     if (qtyInput) qtyInput.addEventListener('input', checkStock);
 
+                                    // ระบบค้นหาอัตโนมัติ Auto Complete (แทนที่ Dropdown ดั้งเดิม) ใน Modal รับและเบิกอะไหล่
+                                    const makeAutocomplete = (inputId, resultsId, selectId) => {
+                                        const inputEl = document.getElementById(inputId);
+                                        const resultsEl = document.getElementById(resultsId);
+                                        const selectEl = document.getElementById(selectId);
+                                        if (!inputEl || !resultsEl || !selectEl) return;
+
+                                        // ดึงข้อมูลตัวเลือกทั้งหมดจาก select ที่ซ่อนอยู่มาเก็บไว้ใน Array เพื่อสืบค้นข้อมูล
+                                        const optionsData = Array.from(selectEl.options)
+                                            .filter(opt => opt.value !== "")
+                                            .map(opt => ({
+                                                id: opt.value,
+                                                text: opt.textContent.trim()
+                                            }));
+
+                                        const showResults = (filterText = '') => {
+                                            resultsEl.innerHTML = '';
+                                            const normalizedFilter = filterText.toLowerCase().trim();
+                                            
+                                            // กรองรายการ
+                                            const matches = optionsData.filter(item => 
+                                                item.text.toLowerCase().includes(normalizedFilter)
+                                            );
+
+                                            if (matches.length === 0) {
+                                                const noMatch = document.createElement('div');
+                                                noMatch.className = 'dropdown-item text-muted small py-2 px-3';
+                                                noMatch.textContent = 'ไม่พบข้อมูลอะไหล่';
+                                                resultsEl.appendChild(noMatch);
+                                            } else {
+                                                matches.forEach(item => {
+                                                    const btn = document.createElement('button');
+                                                    btn.type = 'button';
+                                                    btn.className = 'dropdown-item text-start py-2 px-3 w-100 border-0 bg-transparent';
+                                                    btn.style.outline = 'none';
+                                                    btn.textContent = item.text;
+                                                    btn.addEventListener('click', () => {
+                                                        // เมื่อคลิกเลือก: ตั้งค่าอินพุต คีย์ค่าลง select และสั่งยิงอีเวนต์ change
+                                                        inputEl.value = item.text;
+                                                        selectEl.value = item.id;
+                                                        selectEl.dispatchEvent(new Event('change'));
+                                                        resultsEl.style.display = 'none';
+                                                    });
+                                                    resultsEl.appendChild(btn);
+                                                });
+                                            }
+                                            resultsEl.style.display = 'block';
+                                        };
+
+                                        // ดักจับการพิมพ์
+                                        inputEl.addEventListener('input', function() {
+                                            showResults(this.value);
+                                            // หากพิมพ์แก้ข้อความ ให้รีเซ็ตค่า select ต้นทางชั่วคราว
+                                            if (selectEl.value !== "") {
+                                                selectEl.value = "";
+                                                selectEl.dispatchEvent(new Event('change'));
+                                            }
+                                        });
+
+                                        // เมื่อโฟกัส
+                                        inputEl.addEventListener('focus', function() {
+                                            showResults(this.value);
+                                        });
+
+                                        // ซ่อนกล่องเมื่อคลิกข้างนอก
+                                        document.addEventListener('click', function(e) {
+                                            if (e.target !== inputEl &amp;&amp; e.target !== resultsEl &amp;&amp; !resultsEl.contains(e.target)) {
+                                                resultsEl.style.display = 'none';
+                                                // หากไม่ได้เลือกอะไหล่จริง ให้ล้างข้อความออก
+                                                if (selectEl.value === "") {
+                                                    inputEl.value = "";
+                                                }
+                                            }
+                                        });
+                                    };
+
+                                    // เริ่มต้นใช้งานระบบ Auto Complete
+                                    makeAutocomplete('receive_part_autocomplete', 'receive_part_results', 'receive_part_select');
+                                    makeAutocomplete('issue_part_autocomplete', 'issue_part_results', 'issue_part_select');
+
                                     // เพิ่มระบบกรองรถในหน้าเบิกอะไหล่
                                     const issueTypeFilter = document.getElementById('issue_vehicle_type');
                                     const issueVehicleSelect = document.getElementById('issue_vehicle_id');
+                                    const issueRepairSelect = document.getElementById('issue_repair_id');
                                     
                                     if (issueTypeFilter &amp;&amp; issueVehicleSelect) {
                                         const allIssueOptions = Array.from(issueVehicleSelect.options).slice(1);
@@ -3204,7 +3302,34 @@
                                                 }
                                             });
                                         });
+
+                                        // เพิ่มระบบดึงข้อมูลรถยนต์อัตโนมัติเมื่อเลือกเชื่อมโยงใบแจ้งซ่อม
+                                        if (issueRepairSelect) {
+                                            issueRepairSelect.addEventListener('change', function() {
+                                                const selectedOpt = this.options[this.selectedIndex];
+                                                if (selectedOpt &amp;&amp; selectedOpt.value) {
+                                                    const vId = selectedOpt.getAttribute('data-vehicle-id');
+                                                    const vType = selectedOpt.getAttribute('data-vehicle-type');
+                                                    
+                                                    // 1. ตั้งค่าประเภทรถและทริกเกอร์ให้กรองรายการรถยนต์
+                                                    if (vType) {
+                                                        issueTypeFilter.value = vType;
+                                                        issueTypeFilter.dispatchEvent(new Event('change'));
+                                                    }
+                                                    // 2. เลือกคันรถที่ระบุในใบแจ้งซ่อม
+                                                    if (vId) {
+                                                        issueVehicleSelect.value = vId;
+                                                    }
+                                                } else {
+                                                    // หากไม่เลือกใบแจ้งซ่อม ให้คืนค่าเริ่มต้นทั้งหมด
+                                                    issueTypeFilter.value = "";
+                                                    issueTypeFilter.dispatchEvent(new Event('change'));
+                                                    issueVehicleSelect.value = "";
+                                                }
+                                            });
+                                        }
                                     }
+                                    
                                     // ระบบ Modal แสดงรายละเอียดแยกตามล็อต (อ่านจาก JSON window.LOT_DETAILS)
                                     const sparePartRows = document.querySelectorAll('.spare-part-row');
                                     const modalLotBody = document.getElementById('modal_lot_body');
@@ -3621,7 +3746,7 @@
                                                 <!-- ใส่ class clickable-row และ attributes data เพื่อดึงข้อมูลเข้าสู่ Modal รายละเอียด -->
                                                 <tr class="repair-history-row clickable-row" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#repairDetailModal"
                                                     t-att-data-name="rep.name"
-                                                    t-att-data-vehicle="rep.vehicle_id.display_name"
+                                                    t-att-data-vehicle="rep.vehicle_id.model_id.name"
                                                     t-att-data-plate="rep.vehicle_id.license_plate"
                                                     t-att-data-factory="rep.vehicle_id.factory"
                                                     t-att-data-type="rep.vehicle_id.model_id.name"
