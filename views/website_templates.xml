@@ -186,46 +186,49 @@
                 <aside class="vb-sidebar d-none d-lg-flex flex-column bg-dark text-white p-4" style="width: 280px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); border-right: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 1000;">
                     <!-- โลโก้และหัวข้อแถบด้านข้าง -->
                     <div class="sidebar-header pb-4 mb-4 border-bottom text-center" style="border-color: rgba(255,255,255,0.08) !important;">
-                        <a href="/automotive" class="text-white text-decoration-none d-inline-flex align-items-center gap-2">
+                        <a href="/automotive" class="text-white text-decoration-none d-inline-flex align-items-center gap-2 mb-3">
                             <i class="fa fa-car text-warning fs-3"/>
                             <span class="fs-4 fw-bold" style="letter-spacing: 0.05em;">Vehicle System</span>
                         </a>
+                        <!-- ย้ายชื่อ User และรหัสเข้าใช้งานของพนักงานมาแสดงด้านบนพร้อมจัดสไตล์กรอบกล่องแบบโปร่งแสงพรีเมียม -->
+                        <div class="user-info py-2 px-3 rounded bg-black bg-opacity-25 text-white-50 small d-flex align-items-center justify-content-center gap-2 border border-secondary border-opacity-10" style="font-size: 0.8rem;">
+                            <i class="fa fa-user-circle text-warning fs-5"/>
+                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                        </div>
                     </div>
                     
                     <!-- โหลดรายการลิงก์นำทาง -->
                     <t t-call="vehicle_borrow.sidebar_navigation_links"/>
                     
-                    <!-- ส่วนท้ายของ Sidebar (แสดงข้อมูลผู้ล็อกอินปัจจุบันและเวอร์ชันระบบ) -->
+                    <!-- ส่วนท้ายของ Sidebar (ปรับปรุงให้เหลือเฉพาะรุ่นเวอร์ชันของแอปพลิเคชัน) -->
                     <div class="sidebar-footer pt-3 mt-auto border-top text-center" style="border-color: rgba(255,255,255,0.08) !important;">
-                        <div class="user-info mb-2 text-white-50 small d-flex align-items-center justify-content-center gap-2">
-                            <i class="fa fa-user-circle text-warning fs-5"/>
-                            <!-- แสดงชื่อผู้ล็อกอิน และรหัสเข้าใช้งานจาก request.env.user ของ Odoo -->
-                            <span class="fw-semibold text-white"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
-                        </div>
-                        <small class="text-white-50">เวอร์ชัน 2.61</small>
+                        <small class="text-white-50">เวอร์ชัน 2.68</small>
                     </div>
                 </aside>
 
                 <!-- Sidebar แบบ Offcanvas สำหรับจอมือถือและแท็บเล็ต (Mobile Offcanvas Sidebar) -->
                 <div class="offcanvas offcanvas-start bg-dark text-white d-lg-none" tabindex="-1" id="vbMobileSidebar" aria-labelledby="vbMobileSidebarLabel" style="width: 280px;">
-                    <div class="offcanvas-header border-bottom" style="border-color: rgba(255,255,255,0.08) !important;">
-                        <h5 class="offcanvas-title d-flex align-items-center gap-2" id="vbMobileSidebarLabel">
-                            <i class="fa fa-car text-warning"/>
-                            <span class="fw-bold text-white">Vehicle System</span>
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    <!-- ปรับโครงสร้าง Offcanvas Header เพื่อแสดงชื่อผู้ใช้งานด้านบนของเมนูมือถือ -->
+                    <div class="offcanvas-header border-bottom d-flex flex-column align-items-stretch" style="border-color: rgba(255,255,255,0.08) !important;">
+                        <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+                            <h5 class="offcanvas-title d-flex align-items-center gap-2" id="vbMobileSidebarLabel">
+                                <i class="fa fa-car text-warning"/>
+                                <span class="fw-bold text-white">Vehicle System</span>
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <!-- ย้ายชื่อพนักงานมาแสดงในส่วนหัวของ Offcanvas มือถือ -->
+                        <div class="user-info py-2 px-3 rounded bg-black bg-opacity-25 text-white-50 small d-flex align-items-center justify-content-center gap-2 border border-secondary border-opacity-10" style="font-size: 0.8rem;">
+                            <i class="fa fa-user-circle text-warning fs-5"/>
+                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                        </div>
                     </div>
                     <div class="offcanvas-body d-flex flex-column p-4">
                         <!-- โหลดรายการลิงก์นำทาง -->
                         <t t-call="vehicle_borrow.sidebar_navigation_links"/>
-                        <!-- ส่วนท้ายของ Offcanvas Mobile Sidebar (แสดงชื่อผู้ใช้งานและเวอร์ชันระบบปัจจุบัน) -->
+                        <!-- ส่วนท้ายของ Offcanvas Mobile Sidebar (คงเหลือเฉพาะเวอร์ชันระบบ) -->
                         <div class="mt-auto pt-3 border-top text-center text-white-50" style="border-color: rgba(255,255,255,0.08) !important;">
-                            <div class="user-info mb-2 small d-flex align-items-center justify-content-center gap-2">
-                                <i class="fa fa-user-circle text-warning fs-5"/>
-                                <!-- แสดงชื่อและรหัสพนักงานของผู้ล็อกอินปัจจุบันในเวอร์ชันมือถือ -->
-                                <span class="fw-semibold text-white"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
-                            </div>
-                            <small>เวอร์ชัน 2.61</small>
+                            <small>เวอร์ชัน 2.68</small>
                         </div>
                     </div>
                 </div>
