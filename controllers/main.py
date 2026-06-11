@@ -1143,6 +1143,206 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
+    @http.route(['/automotive/repair/history/export'], type='http', auth="user", website=True)
+    def admin_repair_history_export(self, **post):
+        # ฟังก์ชันตรวจสอบสิทธิ์แอดมิน
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        
+        # คัดกรองข้อมูลประวัติตามสิทธิ์ของโรงงาน
+        repair_factory_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
+        history_domain = list(repair_factory_domain) + [('state', 'in', ['done', 'cancelled'])]
+        
+        # คัดกรองข้อมูลเพิ่มเติมตามตัวกรองที่ส่งมาจาก Form ค้นหา
+        f_vehicle_id = post.get('f_vehicle_id')
+        f_type = post.get('f_type')
+        f_report_start = post.get('f_report_start')
+        f_report_end = post.get('f_report_end')
+        f_finish_start = post.get('f_finish_start')
+        f_finish_end = post.get('f_finish_end')
+        
+        if f_vehicle_id:
+            history_domain.append(('vehicle_id', '=', int(f_vehicle_id)))
+        if f_type:
+            history_domain.append(('vehicle_id.model_id.name', '=', f_type))
+        if f_report_start:
+            history_domain.append(('report_date', '>=', f_report_start))
+        if f_report_end:
+            history_domain.append(('report_date', '<=', f_report_end + ' 23:59:59'))
+        if f_finish_start:
+            history_domain.append(('finish_date', '>=', f_finish_start))
+        if f_finish_end:
+            history_domain.append(('finish_date', '<=', f_finish_end + ' 23:59:59'))
+            
+        repair_history = env_sudo['vehicle.repair.request'].search(history_domain, order='finish_date desc, id desc')
+        
+        import io
+        import xlsxwriter
+        from datetime import datetime
+        
+        # เตรียม Buffer เขียนข้อมูลตาราง Excel
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('ประวัติการซ่อมบำรุง')
+        
+        worksheet.hide_gridlines(0)
+        
+        # กำหนดสไตล์และรูปแบบสีตารางให้สวยงาม
+        title_format = workbook.add_format({
+            'bold': True, 'font_size': 16, 'font_name': 'Cordia New', 'font_color': '#1F4E79', 'align': 'left', 'valign': 'vcenter'
+        })
+        meta_format = workbook.add_format({
+            'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#595959', 'align': 'left'
+        })
+        header_format = workbook.add_format({
+            'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'font_color': '#FFFFFF', 'bg_color': '#1F4E79',
+            'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#D9D9D9'
+        })
+        
+        cell_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        cell_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        
+        align_center_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        align_center_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        price_right_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '฿#,##0.00'})
+        price_right_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '฿#,##0.00'})
+        
+        state_done = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#1E4620', 'bg_color': '#D1E7DD', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        state_cancel = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#842029', 'bg_color': '#F8D7DA', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        total_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'right', 'valign': 'vcenter', 'num_format': '฿#,##0.00'})
+        total_label_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'center', 'valign': 'vcenter'})
+        
+        # เขียนหัวข้อหลักรายงาน
+        worksheet.write('A1', 'รายงานประวัติการซ่อมบำรุงรถยนต์ทั้งหมด', title_format)
+        worksheet.set_row(0, 35)
+        
+        # แสดงเงื่อนไขการกรอง
+        factory_text = user_factory if user_factory else "ทุกโรงงาน (Head Admin)"
+        export_date = datetime.now().strftime('%d/%m/%Y %H:%M')
+        filter_text = f"โรงงาน: {factory_text} | วันเวลาที่ส่งออก: {export_date}"
+        
+        if f_type:
+            filter_text += f" | ประเภทรถ: {f_type}"
+        if f_vehicle_id:
+            vehicle = env_sudo['fleet.vehicle'].browse(int(f_vehicle_id))
+            if vehicle.exists():
+                filter_text += f" | รถยนต์: {vehicle.license_plate}"
+                
+        worksheet.write('A2', filter_text, meta_format)
+        worksheet.set_row(1, 20)
+        
+        headers = [
+            'เลขที่แจ้งซ่อม', 'ทะเบียนรถ', 'ประเภทรถ', 'โรงงาน', 
+            'วันที่แจ้งซ่อม', 'วันที่ซ่อมเสร็จ', 'ระยะเวลาซ่อม', 'ผู้แจ้งซ่อม', 
+            'อาการเสีย', 'รายละเอียดการซ่อม', 'อะไหล่เบิกคลัง', 'อะไหล่นอกสต็อก', 
+            'ค่าอะไหล่เบิกคลัง', 'ค่าใช้จ่ายเพิ่มเติม', 'ค่าใช้จ่ายรวม', 'สถานะ'
+        ]
+        col_widths = {i: len(headers[i]) + 5 for i in range(len(headers))}
+        
+        for col_num, header_title in enumerate(headers):
+            worksheet.write(3, col_num, header_title, header_format)
+        worksheet.set_row(3, 26)
+        
+        row_idx = 4
+        sum_parts_cost = 0.0
+        sum_additional_cost = 0.0
+        sum_total_cost = 0.0
+        
+        for rep in repair_history:
+            is_zebra = (row_idx % 2 == 1)
+            fmt_cell = cell_zebra if is_zebra else cell_white
+            fmt_center = align_center_zebra if is_zebra else align_center_white
+            fmt_price = price_right_zebra if is_zebra else price_right_white
+            
+            # การแปลงค่าฟิลด์
+            ref_val = rep.name or '-'
+            plate_val = rep.vehicle_id.license_plate or '-'
+            model_val = rep.vehicle_id.model_id.name or '-'
+            fac_val = rep.vehicle_id.factory or '-'
+            report_val = rep.report_date.strftime('%Y-%m-%d %H:%M') if rep.report_date else '-'
+            finish_val = rep.finish_date.strftime('%Y-%m-%d %H:%M') if rep.finish_date else '-'
+            duration_val = rep.repair_duration or '-'
+            reporter_val = rep.reported_by_id.name or 'ระบบอัตโนมัติ'
+            desc_val = rep.description or '-'
+            details_val = rep.repair_details or '-'
+            
+            # ดึงรายการอะไหล่ที่ใช้
+            auto_parts_val = rep.auto_parts_used or '-'
+            non_stock_val = rep.non_stock_parts or '-'
+            
+            cost_parts = rep.auto_parts_cost
+            cost_add = rep.additional_cost
+            cost_total = rep.repair_cost
+            
+            state_val = 'ซ่อมเสร็จแล้ว' if rep.state == 'done' else 'ยกเลิก' if rep.state == 'cancelled' else rep.state
+            
+            worksheet.write(row_idx, 0, ref_val, fmt_center)
+            worksheet.write(row_idx, 1, plate_val, fmt_center)
+            worksheet.write(row_idx, 2, model_val, fmt_cell)
+            worksheet.write(row_idx, 3, fac_val, fmt_center)
+            worksheet.write(row_idx, 4, report_val, fmt_center)
+            worksheet.write(row_idx, 5, finish_val, fmt_center)
+            worksheet.write(row_idx, 6, duration_val, fmt_center)
+            worksheet.write(row_idx, 7, reporter_val, fmt_cell)
+            worksheet.write(row_idx, 8, desc_val, fmt_cell)
+            worksheet.write(row_idx, 9, details_val, fmt_cell)
+            worksheet.write(row_idx, 10, auto_parts_val, fmt_cell)
+            worksheet.write(row_idx, 11, non_stock_val, fmt_cell)
+            worksheet.write(row_idx, 12, cost_parts, fmt_price)
+            worksheet.write(row_idx, 13, cost_add, fmt_price)
+            worksheet.write(row_idx, 14, cost_total, fmt_price)
+            
+            if rep.state == 'done':
+                worksheet.write(row_idx, 15, state_val, state_done)
+            else:
+                worksheet.write(row_idx, 15, state_val, state_cancel)
+                
+            sum_parts_cost += cost_parts
+            sum_additional_cost += cost_add
+            sum_total_cost += cost_total
+            
+            # วัดขนาดคอลัมน์อัตโนมัติ โดยจำกัดขอบเขตคอลัมน์รายละเอียดตัวอักษรยาวไม่ให้กว้างเกินไป
+            for col_num, val in enumerate([
+                ref_val, plate_val, model_val, fac_val, report_val, finish_val, duration_val, reporter_val,
+                desc_val[:30] if desc_val else '', details_val[:30] if details_val else '',
+                auto_parts_val[:30] if auto_parts_val else '', non_stock_val[:30] if non_stock_val else '',
+                f"฿{cost_parts:.2f}", f"฿{cost_add:.2f}", f"฿{cost_total:.2f}", state_val
+            ]):
+                val_len = len(val) * 2 + 3 if any(ord(char) > 127 for char in val) else len(val) + 3
+                col_widths[col_num] = max(col_widths[col_num], val_len)
+                
+            worksheet.set_row(row_idx, 22)
+            row_idx += 1
+            
+        # เขียนแถวสรุปรวมผลรวมค่าใช้จ่ายทั้งหมด
+        worksheet.merge_range(row_idx, 0, row_idx, 11, 'ยอดรวมค่าใช้จ่ายทั้งหมด', total_label_format)
+        worksheet.write(row_idx, 12, sum_parts_cost, total_format)
+        worksheet.write(row_idx, 13, sum_additional_cost, total_format)
+        worksheet.write(row_idx, 14, sum_total_cost, total_format)
+        worksheet.write(row_idx, 15, '', total_label_format)
+        worksheet.set_row(row_idx, 24)
+        
+        # ปรับขนาดคอลัมน์ตามที่วัดไว้ (จำกัดสูงสุด 35)
+        for col_num, width in col_widths.items():
+            worksheet.set_column(col_num, col_num, min(max(width, 11), 35))
+            
+        workbook.close()
+        output.seek(0)
+        
+        filename = f"Vehicle_Repair_History_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return request.make_response(
+            output.getvalue(),
+            headers=[
+                ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                ('Content-Disposition', f'attachment; filename="{filename}"')
+            ]
+        )
+
     @http.route(['/automotive/repair/submit'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_repair_submit(self, **post):
         if not self._is_admin():

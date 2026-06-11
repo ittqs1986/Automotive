@@ -3721,6 +3721,7 @@
                                         <!-- ปุ่มค้นหาและรีเซ็ต -->
                                         <div class="col-12 d-flex gap-2 justify-content-end mt-4">
                                             <button type="submit" class="btn btn-primary btn-sm px-4"><i class="fa fa-search me-2"/>ค้นหาข้อมูล</button>
+                                            <button type="submit" formaction="/automotive/repair/history/export" class="btn btn-success btn-sm px-4" title="ส่งออกข้อมูลเป็น Excel"><i class="fa fa-file-excel-o me-2"/>Export Excel</button>
                                             <a href="/automotive/repair/history" class="btn btn-outline-secondary btn-sm px-3"><i class="fa fa-refresh me-2"/>ล้างตัวกรอง</a>
                                         </div>
                                     </form>
