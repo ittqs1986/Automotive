@@ -448,17 +448,20 @@ class VehicleBorrowController(http.Controller):
         user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
         fleet_manager_group = request.env.ref('fleet.fleet_group_manager')
 
-        # กรองรายชื่อพนักงานตามโรงงาน (ถ้าไม่ใช่ Head Admin)
+        # กรองรายชื่อพนักงานตามโรงงาน (หากเลือกโรงงาน จะแสดงพนักงานโรงงานนั้นบวกกับผู้ใช้กลุ่ม Head Admin ทุกคนเสมอ)
         user_search_domain = [('share', '=', False)]
         if user_factory:
-            # ใช้ Domain กรองตรงๆ จาก DB: ค้นหา User ที่มีกลุ่มของโรงงานที่เลือกอย่างน้อย 1 กลุ่ม
-            # เปลี่ยนเป็น group_ids ตามมาตรฐาน Odoo 19 (เดิมคือ groups_id)
+            # ใช้ Domain แบบ OR '|' เพื่อให้แอดมิน TQS, CKR, TPS เห็น Head Admin ในตารางจัดการสิทธิ์ด้วย
             my_role_ids = {
                 'TQS': [admin_tqs_group.id, user_tqs_group.id],
                 'CKR': [admin_ckr_group.id, user_ckr_group.id],
                 'TPS': [admin_tps_group.id, user_tps_group.id],
             }.get(user_factory, [])
-            user_search_domain.append(('group_ids', 'in', my_role_ids))
+            user_search_domain += [
+                '|',
+                ('group_ids', 'in', my_role_ids),
+                ('group_ids', 'in', [head_admin_group.id])
+            ]
             
         users = env_sudo['res.users'].with_context(active_test=False).search(user_search_domain, order='login')
 
@@ -541,10 +544,22 @@ class VehicleBorrowController(http.Controller):
                     # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids ตามมาตรฐาน Odoo 19
                     new_user.sudo().write({'group_ids': [(4, group.id)]})
                 
-            # สร้าง Employee (ถ้ายังไม่มี)
+            # วิเคราะห์โรงงานของพนักงานตามสิทธิ์ที่เลือก
+            emp_factory = False
+            if role:
+                if 'tqs' in role:
+                    emp_factory = 'TQS'
+                elif 'ckr' in role:
+                    emp_factory = 'CKR'
+                elif 'tps' in role:
+                    emp_factory = 'TPS'
+
+            # สร้าง Employee (ถ้ายังไม่มี) พร้อมส่งค่าสิทธิ์และโรงงาน เพื่อให้ Odoo ซิงค์ข้อมูลเข้ากลุ่ม res.users อัตโนมัติ
             request.env['hr.employee'].sudo().create({
                 'name': name,
                 'user_id': new_user.id,
+                'vehicle_borrow_role': role or 'none',
+                'factory': emp_factory,
             })
             
             return request.redirect('/automotive/dashboard?msg=member_added')
@@ -590,41 +605,35 @@ class VehicleBorrowController(http.Controller):
             return request.render("http_routing.403")
         
         try:
-            user = request.env['res.users'].sudo().browse(user_id)
-            # ลบทุก factory group ก่อน แล้วค่อยเพิ่มใหม่
-            all_factory_groups = [
-                request.env.ref('vehicle_borrow.group_vb_head_admin'),
-                request.env.ref('vehicle_borrow.group_vb_admin_tqs'),
-                request.env.ref('vehicle_borrow.group_vb_admin_ckr'),
-                request.env.ref('vehicle_borrow.group_vb_admin_tps'),
-                request.env.ref('vehicle_borrow.group_vb_user_tqs'),
-                request.env.ref('vehicle_borrow.group_vb_user_ckr'),
-                request.env.ref('vehicle_borrow.group_vb_user_tps'),
-                request.env.ref('fleet.fleet_group_manager'),
-            ]
-            # ถอด groups เดิมออกทั้งหมด (เปลี่ยนเป็น group_ids ตามมาตรฐาน Odoo 19)
-            user.sudo().write({'group_ids': [(3, g.id) for g in all_factory_groups]})
+            # ค้นหาพนักงานที่ผูกกับ User ID นี้เพื่อเปลี่ยนสิทธิ์และโรงงาน
+            employee = request.env['hr.employee'].sudo().search([('user_id', '=', user_id)], limit=1)
             
-            # เพิ่ม group ใหม่ (รองรับบทบาท 'user' ที่ต้องเข้าถึงได้ทุกโรงงานโดยการเพิ่มเข้าไปในทุกกลุ่มของพนักงาน)
-            group_map = {
-                'head_admin': ['vehicle_borrow.group_vb_head_admin'],
-                'admin_tqs': ['vehicle_borrow.group_vb_admin_tqs'],
-                'admin_ckr': ['vehicle_borrow.group_vb_admin_ckr'],
-                'admin_tps': ['vehicle_borrow.group_vb_admin_tps'],
-                'user_tqs': ['vehicle_borrow.group_vb_user_tqs'],
-                'user_ckr': ['vehicle_borrow.group_vb_user_ckr'],
-                'user_tps': ['vehicle_borrow.group_vb_user_tps'],
-                'user': [
-                    'vehicle_borrow.group_vb_user_tqs',
-                    'vehicle_borrow.group_vb_user_ckr',
-                    'vehicle_borrow.group_vb_user_tps'
-                ],
-            }
-            if role in group_map:
-                for group_xmlid in group_map[role]:
-                    group = request.env.ref(group_xmlid)
-                    # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids สำหรับ Odoo 19
-                    user.sudo().write({'group_ids': [(4, group.id)]})
+            # วิเคราะห์โรงงานของพนักงานตามสิทธิ์ที่ต้องการเปลี่ยน
+            emp_factory = False
+            if role:
+                if 'tqs' in role:
+                    emp_factory = 'TQS'
+                elif 'ckr' in role:
+                    emp_factory = 'CKR'
+                elif 'tps' in role:
+                    emp_factory = 'TPS'
+
+            if employee:
+                # เขียนค่าสิทธิ์และโรงงานลงใน Employee ซึ่งจะทริกเกอร์ _sync_user_groups() เพื่อซิงค์ไป res.users อัตโนมัติ
+                employee.sudo().write({
+                    'vehicle_borrow_role': role,
+                    'factory': emp_factory
+                })
+            else:
+                # กรณีฉุกเฉินถ้าไม่มี Employee ผูกอยู่ ให้ทำการสร้าง Employee ใหม่พร้อมระบุสิทธิ์และโรงงาน
+                user = request.env['res.users'].sudo().browse(user_id)
+                if user.exists():
+                    request.env['hr.employee'].sudo().create({
+                        'name': user.name,
+                        'user_id': user.id,
+                        'vehicle_borrow_role': role,
+                        'factory': emp_factory
+                    })
                 
             return request.redirect('/automotive/dashboard?msg=role_updated')
         except Exception as e:

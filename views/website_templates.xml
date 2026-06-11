@@ -173,9 +173,14 @@
                     <!-- โหลดรายการลิงก์นำทาง -->
                     <t t-call="vehicle_borrow.sidebar_navigation_links"/>
                     
-                    <!-- ส่วนท้ายของ Sidebar (ปรับปรุงเวอร์ชันเป็น 2.4) -->
+                    <!-- ส่วนท้ายของ Sidebar (แสดงข้อมูลผู้ล็อกอินปัจจุบันและเวอร์ชันระบบ) -->
                     <div class="sidebar-footer pt-3 mt-auto border-top text-center" style="border-color: rgba(255,255,255,0.08) !important;">
-                        <small class="text-white-50">เวอร์ชัน 2.4</small>
+                        <div class="user-info mb-2 text-white-50 small d-flex align-items-center justify-content-center gap-2">
+                            <i class="fa fa-user-circle text-warning fs-5"/>
+                            <!-- แสดงชื่อผู้ล็อกอิน และรหัสเข้าใช้งานจาก request.env.user ของ Odoo -->
+                            <span class="fw-semibold text-white"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                        </div>
+                        <small class="text-white-50">เวอร์ชัน 2.61</small>
                     </div>
                 </aside>
 
@@ -191,9 +196,14 @@
                     <div class="offcanvas-body d-flex flex-column p-4">
                         <!-- โหลดรายการลิงก์นำทาง -->
                         <t t-call="vehicle_borrow.sidebar_navigation_links"/>
-                        <!-- ส่วนท้ายของ Offcanvas Mobile Sidebar (ปรับปรุงเวอร์ชันเป็น 2.4) -->
+                        <!-- ส่วนท้ายของ Offcanvas Mobile Sidebar (แสดงชื่อผู้ใช้งานและเวอร์ชันระบบปัจจุบัน) -->
                         <div class="mt-auto pt-3 border-top text-center text-white-50" style="border-color: rgba(255,255,255,0.08) !important;">
-                            <small>เวอร์ชัน 2.4</small>
+                            <div class="user-info mb-2 small d-flex align-items-center justify-content-center gap-2">
+                                <i class="fa fa-user-circle text-warning fs-5"/>
+                                <!-- แสดงชื่อและรหัสพนักงานของผู้ล็อกอินปัจจุบันในเวอร์ชันมือถือ -->
+                                <span class="fw-semibold text-white"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                            </div>
+                            <small>เวอร์ชัน 2.61</small>
                         </div>
                     </div>
                 </div>

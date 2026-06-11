@@ -28,6 +28,7 @@ class HrEmployee(models.Model):
         ('admin_ckr', 'Admin Factory CKR'),
         ('admin_tps', 'Admin Factory TPS'),
         ('head_admin', 'Head Admin'),
+        ('user', 'User General (ทุกโรงงาน)'), # เพิ่มบทบาทพนักงานทั่วไปที่เข้าได้ทุกโรงงาน
     ], string='สิทธิ์ระบบยืมรถ', default='none', tracking=True)
 
     @api.onchange('vehicle_borrow_role')
@@ -95,26 +96,32 @@ class HrEmployee(models.Model):
             if remove_groups:
                 user.sudo().write({'group_ids': [(3, g.id) for g in remove_groups]})
                 
-            # ตารางจับคู่สิทธิ์ระบบยืมรถกับกลุ่มผู้ใช้ Odoo
+            # ตารางจับคู่สิทธิ์ระบบยืมรถกับกลุ่มผู้ใช้ Odoo (ปรับปรุงให้รองรับกลุ่มสิทธิ์แบบ List และเพิ่มบทบาท 'user')
             group_map = {
-                'head_admin': 'vehicle_borrow.group_vb_head_admin',
-                'admin_tqs': 'vehicle_borrow.group_vb_admin_tqs',
-                'admin_ckr': 'vehicle_borrow.group_vb_admin_ckr',
-                'admin_tps': 'vehicle_borrow.group_vb_admin_tps',
-                'user_tqs': 'vehicle_borrow.group_vb_user_tqs',
-                'user_ckr': 'vehicle_borrow.group_vb_user_ckr',
-                'user_tps': 'vehicle_borrow.group_vb_user_tps',
+                'head_admin': ['vehicle_borrow.group_vb_head_admin'],
+                'admin_tqs': ['vehicle_borrow.group_vb_admin_tqs'],
+                'admin_ckr': ['vehicle_borrow.group_vb_admin_ckr'],
+                'admin_tps': ['vehicle_borrow.group_vb_admin_tps'],
+                'user_tqs': ['vehicle_borrow.group_vb_user_tqs'],
+                'user_ckr': ['vehicle_borrow.group_vb_user_ckr'],
+                'user_tps': ['vehicle_borrow.group_vb_user_tps'],
+                'user': [
+                    'vehicle_borrow.group_vb_user_tqs',
+                    'vehicle_borrow.group_vb_user_ckr',
+                    'vehicle_borrow.group_vb_user_tps'
+                ],
             }
             
-            # บันทึกกลุ่มสิทธิ์ใหม่ให้กับบัญชีผู้ใช้ที่เกี่ยวข้อง
+            # บันทึกกลุ่มสิทธิ์ใหม่ให้กับบัญชีผู้ใช้ที่เกี่ยวข้อง โดยวนลูปเพิ่มทุกสิทธิ์ในลิสต์
             if employee.vehicle_borrow_role in group_map:
-                try:
-                    target_group = self.env.ref(group_map[employee.vehicle_borrow_role])
-                    if target_group:
-                        user.sudo().write({'group_ids': [(4, target_group.id)]})
-                except Exception as e:
-                    _logger.error("เกิดข้อผิดพลาดในการเชื่อมโยงสิทธิ์ %s ให้กับผู้ใช้ %s: %s", 
-                                  group_map[employee.vehicle_borrow_role], user.login, str(e))
+                for group_ref in group_map[employee.vehicle_borrow_role]:
+                    try:
+                        target_group = self.env.ref(group_ref)
+                        if target_group:
+                            user.sudo().write({'group_ids': [(4, target_group.id)]})
+                    except Exception as e:
+                        _logger.error("เกิดข้อผิดพลาดในการเชื่อมโยงสิทธิ์ %s ให้กับผู้ใช้ %s: %s", 
+                                      group_ref, user.login, str(e))
 
     @api.model_create_multi
     def create(self, vals_list):
