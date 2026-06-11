@@ -190,10 +190,10 @@
                             <i class="fa fa-car text-warning fs-3"/>
                             <span class="fs-4 fw-bold" style="letter-spacing: 0.05em;">Vehicle System</span>
                         </a>
-                        <!-- ย้ายชื่อ User และรหัสเข้าใช้งานของพนักงานมาแสดงด้านบนพร้อมจัดสไตล์กรอบกล่องแบบโปร่งแสงพรีเมียม -->
+                        <!-- ปรับปรุง: แสดงเฉพาะชื่อผู้ใช้งานจริงบน Sidebar ตามความต้องการของผู้ใช้ -->
                         <div class="user-info py-2 px-3 rounded bg-black bg-opacity-25 text-white-50 small d-flex align-items-center justify-content-center gap-2 border border-secondary border-opacity-10" style="font-size: 0.8rem;">
                             <i class="fa fa-user-circle text-warning fs-5"/>
-                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/></span>
                         </div>
                     </div>
                     
@@ -217,10 +217,10 @@
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                         </div>
-                        <!-- ย้ายชื่อพนักงานมาแสดงในส่วนหัวของ Offcanvas มือถือ -->
+                        <!-- ปรับปรุง: แสดงเฉพาะชื่อผู้ใช้งานจริงบนเมนู Offcanvas มือถือ -->
                         <div class="user-info py-2 px-3 rounded bg-black bg-opacity-25 text-white-50 small d-flex align-items-center justify-content-center gap-2 border border-secondary border-opacity-10" style="font-size: 0.8rem;">
                             <i class="fa fa-user-circle text-warning fs-5"/>
-                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/> (<t t-esc="request.env.user.login"/>)</span>
+                            <span class="fw-semibold text-white text-truncate"><t t-esc="request.env.user.name"/></span>
                         </div>
                     </div>
                     <div class="offcanvas-body d-flex flex-column p-4">
