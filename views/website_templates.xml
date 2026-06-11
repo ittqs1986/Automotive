@@ -41,6 +41,17 @@
             
             <!-- ส่วนของผู้ดูแลระบบ (Admin Only) -->
             <t t-if="request.env.user.has_group('fleet.fleet_group_manager')">
+                <!-- ดึงข้อมูลโรงงานของพนักงานจาก Session หรือกลุ่มสิทธิ์ของ Odoo สำหรับใช้คำนวณจำนวนแจ้งเตือนใบซ่อมบำรุง -->
+                <t t-set="user_factory" t-value="request.session.get('selected_factory') or (
+                    None if (request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')) else (
+                    'TQS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs')) else (
+                    'CKR' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr')) else (
+                    'TPS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps')) else None
+                    ))))"/>
+                <!-- นับจำนวนใบแจ้งซ่อมตามประเภทโรงงานและสถานะ -->
+                <t t-set="new_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported')])"/>
+                <t t-set="pending_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing')])"/>
+
                 <li class="nav-header text-uppercase text-white-50 fw-bold small mt-4 mb-2 ps-3" style="font-size: 0.75rem; letter-spacing: 0.05em;">
                     ผู้ดูแลระบบ (Admin)
                 </li>
@@ -61,22 +72,13 @@
                         <span class="d-flex align-items-center gap-3">
                             <i class="fa fa-gavel fs-5 w-20 text-center"/>
                             <span>จัดการงานซ่อม</span>
+                            <!-- เพิ่มป้ายกำกับสีแดงแจ้งเตือนตัวเลขงานใหม่ตรงปุ่มหลักเพื่อระบุให้ผู้ใช้ทราบว่ามีงานใหม่ค้างอยู่ด้านใน -->
+                            <span t-if="new_repairs_count &gt; 0" class="badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em;"><t t-esc="new_repairs_count"/> ใหม่</span>
                         </span>
                         <i class="fa fa-chevron-down small submenu-arrow" style="transition: transform 0.2s;"/>
                     </a>
                     <!-- แสดงเมนูย่อยเมื่อกด หรือแสดงค้างไว้เมื่ออยู่ในหน้าจัดการงานซ่อม -->
                     <div t-attf-class="collapse #{ 'show' if request.httprequest.path.startswith('/automotive/repair') else '' }" id="submenuRepair">
-                        <!-- ดึงข้อมูลโรงงานของพนักงานจาก Session หรือกลุ่มสิทธิ์ของ Odoo -->
-                        <t t-set="user_factory" t-value="request.session.get('selected_factory') or (
-                            None if (request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')) else (
-                            'TQS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs')) else (
-                            'CKR' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr')) else (
-                            'TPS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps')) else None
-                            ))))"/>
-                        <!-- นับจำนวนใบแจ้งซ่อมตามประเภทโรงงานและสถานะ -->
-                        <t t-set="new_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported')])"/>
-                        <t t-set="pending_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing')])"/>
-
                         <ul class="nav flex-column ps-4 gap-1 mt-1 border-start border-secondary ms-3" style="border-width: 2px !important; border-color: rgba(255,255,255,0.1) !important;">
                             <li class="nav-item">
                                 <!-- ลิงก์เมนูย่อย: รายการแจ้งซ่อมใหม่ พร้อม Badge แจ้งเตือนเมื่อมีงานใหม่เข้ามา -->
