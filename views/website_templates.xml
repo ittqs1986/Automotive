@@ -4203,6 +4203,61 @@
                     padding: 2rem 0;
                 }
 
+                /* เพิ่มเติมสไตล์ปรับแก้สีข้อความที่ซีดเพื่อให้อ่านง่ายและชัดเจนขึ้น */
+                .text-kpi-dark {
+                    color: #0f172a !important; /* Slate 900 */
+                }
+                .text-kpi-muted {
+                    color: #475569 !important; /* Slate 600 */
+                }
+                .text-kpi-slate {
+                    color: #334155 !important; /* Slate 700 */
+                }
+                .text-kpi-primary-custom {
+                    color: #1d4ed8 !important; /* Blue 700 */
+                }
+                
+                /* ปรับปรุงความคมชัดของหัวตาราง */
+                .ranking-table th {
+                    font-weight: 700;
+                    color: #1e293b !important; /* Slate 800 */
+                    border-bottom: 2px solid #e2e8f0 !important;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+
+                /* ปรับปรุงความคมชัดของ Badge สีอ่อน */
+                .badge.bg-success-light {
+                    background-color: #d1fae5 !important; /* Emerald 100 */
+                    color: #065f46 !important; /* Emerald 800 */
+                    border: 1px solid rgba(6, 95, 70, 0.15) !important;
+                }
+                .badge.bg-warning-light {
+                    background-color: #fef3c7 !important; /* Amber 100 */
+                    color: #92400e !important; /* Amber 800 */
+                    border: 1px solid rgba(146, 64, 14, 0.15) !important;
+                }
+                .badge.bg-danger-light {
+                    background-color: #fee2e2 !important; /* Red 100 */
+                    color: #991b1b !important; /* Red 800 */
+                    border: 1px solid rgba(153, 27, 27, 0.15) !important;
+                }
+                .badge.bg-primary-light {
+                    background-color: #dbeafe !important; /* Blue 100 */
+                    color: #1e40af !important; /* Blue 800 */
+                    border: 1px solid rgba(30, 64, 175, 0.15) !important;
+                }
+                .badge.bg-info-light {
+                    background-color: #ecfeff !important; /* Cyan 100 */
+                    color: #0369a1 !important; /* Cyan 800 */
+                    border: 1px solid rgba(3, 105, 161, 0.15) !important;
+                }
+                .badge.bg-secondary {
+                    background-color: #e2e8f0 !important;
+                    color: #334155 !important;
+                }
+
                 .kpi-header {
                     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
                     color: white;
@@ -4322,33 +4377,34 @@
             <div class="kpi-dashboard-container">
                 <div class="container-fluid px-4">
                     <!-- ส่วนหัวแดชบอร์ด -->
+                    <!-- ส่วนหัวแดชบอร์ด: ปรับสีตัวอักษรสีซีดให้ชัดเจนขึ้นอ่านง่ายขึ้น -->
                     <div class="kpi-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div>
-                            <span class="badge bg-primary mb-2 badge-pill" style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.2) !important; color: #93c5fd;">KPI Analytics</span>
+                            <span class="badge bg-primary mb-2 badge-pill" style="font-size: 0.8rem; background: rgba(59, 130, 246, 0.25) !important; color: #ffffff;">KPI Analytics</span>
                             <h2 class="fw-bold m-0"><i class="fa fa-bar-chart me-2"></i> แดชบอร์ดสรุปสถิติและตัวชี้วัดหลัก (KPI)</h2>
-                            <p class="m-0 text-white-50 mt-1" style="font-size: 0.95rem;">ข้อมูลตัวชี้วัดประสิทธิภาพของระบบจัดสรรยานพาหนะและคลังอะไหล่</p>
+                            <p class="m-0 mt-1" style="font-size: 0.95rem; color: rgba(255, 255, 255, 0.95);">ข้อมูลตัวชี้วัดประสิทธิภาพของระบบจัดสรรยานพาหนะและคลังอะไหล่</p>
                         </div>
                         <div class="text-md-end">
-                            <div class="text-white-50 small mb-1">สาขาที่แสดงผล</div>
+                            <div class="small mb-1" style="color: rgba(255, 255, 255, 0.95);">สาขาที่แสดงผล</div>
                             <h4 class="fw-bold m-0 text-warning"><i class="fa fa-industry me-1"></i> <t t-esc="user_factory"/></h4>
                         </div>
                     </div>
 
-                    <!-- กล่องสถิติหลัก (5 columns) -->
+                    <!-- กล่องสถิติหลัก: ปรับแต่งให้แสดงหัวข้อที่ชัดเจนอ่านง่ายขึ้นด้วยคลาส text-kpi-muted -->
                     <div class="row g-4 mb-4">
                         <!-- ยานพาหนะทั้งหมด -->
                         <div class="col-xl col-md-6">
                             <div class="card kpi-card kpi-card-vehicle h-100">
                                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <span class="text-muted fw-medium small">ยานพาหนะทั้งหมด</span>
+                                        <span class="text-kpi-muted fw-semibold small">ยานพาหนะทั้งหมด</span>
                                         <div class="kpi-icon-wrapper bg-vehicle-light"><i class="fa fa-car"></i></div>
                                     </div>
                                     <div>
-                                        <h2 class="display-6 fw-bold text-dark mb-2"><t t-esc="total_vehicles"/></h2>
+                                        <h2 class="display-6 fw-bold text-kpi-dark mb-2"><t t-esc="total_vehicles"/></h2>
                                         <div class="d-flex flex-wrap gap-2 small">
-                                            <span class="badge bg-success-light text-success badge-pill"><i class="fa fa-check-circle me-1"></i>ใช้งานได้: <t t-esc="active_vehicles"/></span>
-                                            <span class="badge bg-warning-light text-warning badge-pill"><i class="fa fa-wrench me-1"></i>ส่งซ่อม: <t t-esc="repairing_vehicles"/></span>
+                                            <span class="badge bg-success-light badge-pill"><i class="fa fa-check-circle me-1"></i>ใช้งานได้: <t t-esc="active_vehicles"/></span>
+                                            <span class="badge bg-warning-light badge-pill"><i class="fa fa-wrench me-1"></i>ส่งซ่อม: <t t-esc="repairing_vehicles"/></span>
                                         </div>
                                     </div>
                                 </div>
@@ -4360,14 +4416,14 @@
                             <div class="card kpi-card kpi-card-borrow h-100">
                                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <span class="text-muted fw-medium small">ใบคำขอยืมรถ</span>
+                                        <span class="text-kpi-muted fw-semibold small">ใบคำขอยืมรถ</span>
                                         <div class="kpi-icon-wrapper bg-borrow-light"><i class="fa fa-calendar-check-o"></i></div>
                                     </div>
                                     <div>
-                                        <h2 class="display-6 fw-bold text-dark mb-2"><t t-esc="total_borrows"/></h2>
+                                        <h2 class="display-6 fw-bold text-kpi-dark mb-2"><t t-esc="total_borrows"/></h2>
                                         <div class="d-flex flex-wrap gap-2 small">
-                                            <span class="badge bg-warning-light text-warning badge-pill"><i class="fa fa-clock-o me-1"></i>รออนุมัติ: <t t-esc="pending_borrows"/></span>
-                                            <span class="badge bg-success-light text-success badge-pill"><i class="fa fa-key me-1"></i>กำลังใช้: <t t-esc="borrowed_borrows"/></span>
+                                            <span class="badge bg-warning-light badge-pill"><i class="fa fa-clock-o me-1"></i>รออนุมัติ: <t t-esc="pending_borrows"/></span>
+                                            <span class="badge bg-success-light badge-pill"><i class="fa fa-key me-1"></i>กำลังใช้: <t t-esc="borrowed_borrows"/></span>
                                         </div>
                                     </div>
                                 </div>
@@ -4379,14 +4435,14 @@
                             <div class="card kpi-card kpi-card-repair h-100">
                                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <span class="text-muted fw-medium small">งานซ่อมและบำรุงรักษา</span>
+                                        <span class="text-kpi-muted fw-semibold small">งานซ่อมและบำรุงรักษา</span>
                                         <div class="kpi-icon-wrapper bg-repair-light"><i class="fa fa-cogs"></i></div>
                                     </div>
                                     <div>
-                                        <h2 class="display-6 fw-bold text-dark mb-2"><t t-esc="total_repairs"/></h2>
+                                        <h2 class="display-6 fw-bold text-kpi-dark mb-2"><t t-esc="total_repairs"/></h2>
                                         <div class="d-flex flex-wrap gap-2 small">
-                                            <span class="badge bg-danger-light text-danger badge-pill"><i class="fa fa-wrench me-1"></i>กำลังซ่อม: <t t-esc="ongoing_repairs"/></span>
-                                            <span class="badge bg-primary-light text-primary badge-pill"><i class="fa fa-money me-1"></i>รวม: <t t-esc="'{:,.2f}'.format(total_repair_cost)"/> ฿</span>
+                                            <span class="badge bg-danger-light badge-pill"><i class="fa fa-wrench me-1"></i>กำลังซ่อม: <t t-esc="ongoing_repairs"/></span>
+                                            <span class="badge bg-primary-light badge-pill"><i class="fa fa-money me-1"></i>รวม: <t t-esc="'{:,.2f}'.format(total_repair_cost)"/> ฿</span>
                                         </div>
                                     </div>
                                 </div>
@@ -4398,18 +4454,18 @@
                             <div class="card kpi-card kpi-card-parts h-100">
                                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <span class="text-muted fw-medium small">ประเภทอะไหล่คงเหลือ</span>
+                                        <span class="text-kpi-muted fw-semibold small">ประเภทอะไหล่คงเหลือ</span>
                                         <div class="kpi-icon-wrapper bg-parts-light"><i class="fa fa-cubes"></i></div>
                                     </div>
                                     <div>
-                                        <h2 class="display-6 fw-bold text-dark mb-2"><t t-esc="total_parts"/></h2>
+                                        <h2 class="display-6 fw-bold text-kpi-dark mb-2"><t t-esc="total_parts"/></h2>
                                         <div class="d-flex flex-wrap gap-2 small">
-                                            <span class="badge bg-info-light text-info badge-pill">จำนวนชิ้นรวม: <t t-esc="total_qty_on_hand"/></span>
+                                            <span class="badge bg-info-light badge-pill">จำนวนชิ้นรวม: <t t-esc="total_qty_on_hand"/></span>
                                             <t t-if="len(low_stock_parts) &gt; 0">
-                                                <span class="badge bg-danger-light text-danger badge-pill"><i class="fa fa-exclamation-triangle me-1"></i>สต็อกต่ำ: <t t-esc="len(low_stock_parts)"/></span>
+                                                <span class="badge bg-danger-light badge-pill"><i class="fa fa-exclamation-triangle me-1"></i>สต็อกต่ำ: <t t-esc="len(low_stock_parts)"/></span>
                                             </t>
                                             <t t-else="">
-                                                <span class="badge bg-success-light text-success badge-pill"><i class="fa fa-check-circle me-1"></i>คลังปกติ</span>
+                                                <span class="badge bg-success-light badge-pill"><i class="fa fa-check-circle me-1"></i>คลังปกติ</span>
                                             </t>
                                         </div>
                                     </div>
@@ -4422,14 +4478,14 @@
                             <div class="card kpi-card kpi-card-transfer h-100">
                                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <span class="text-muted fw-medium small">ส่งย้ายข้ามโรงงาน</span>
+                                        <span class="text-kpi-muted fw-semibold small">ส่งย้ายข้ามโรงงาน</span>
                                         <div class="kpi-icon-wrapper bg-transfer-light"><i class="fa fa-exchange"></i></div>
                                     </div>
                                     <div>
-                                        <h2 class="display-6 fw-bold text-dark mb-2"><t t-esc="total_transfers"/></h2>
+                                        <h2 class="display-6 fw-bold text-kpi-dark mb-2"><t t-esc="total_transfers"/></h2>
                                         <div class="d-flex flex-wrap gap-2 small">
-                                            <span class="badge bg-warning-light text-warning badge-pill"><i class="fa fa-clock-o me-1"></i>รอดำเนินการ: <t t-esc="pending_transfers"/></span>
-                                            <span class="badge bg-success-light text-success badge-pill"><i class="fa fa-check-circle me-1"></i>สำเร็จ: <t t-esc="accepted_transfers"/></span>
+                                            <span class="badge bg-warning-light badge-pill"><i class="fa fa-clock-o me-1"></i>รอดำเนินการ: <t t-esc="pending_transfers"/></span>
+                                            <span class="badge bg-success-light badge-pill"><i class="fa fa-check-circle me-1"></i>สำเร็จ: <t t-esc="accepted_transfers"/></span>
                                         </div>
                                     </div>
                                 </div>
@@ -4437,7 +4493,7 @@
                         </div>
                     </div>
 
-                    <!-- แถวแสดงกราฟความก้าวหน้า/อัตราส่วนสถานะ -->
+                    <!-- แถวแสดงกราฟความก้าวหน้า/อัตราส่วนสถานะ: ปรับปรุงสีข้อความ text-secondary และ text-muted เป็นคลาสที่ชัดเจนขึ้น -->
                     <div class="row g-4 mb-4">
                         <!-- อัตราความพร้อมใช้งานยานพาหนะ -->
                         <div class="col-md-6">
@@ -4449,7 +4505,7 @@
                                 <t t-set="retired_percent" t-value="(retired_vehicles * 100 / total_vehicles) if total_vehicles &gt; 0 else 0"/>
 
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="small fw-semibold text-secondary">อัตราพร้อมใช้งาน (Active Rate)</span>
+                                    <span class="small fw-semibold text-kpi-slate">อัตราพร้อมใช้งาน (Active Rate)</span>
                                     <span class="small fw-bold text-success"><t t-esc="int(active_percent)"/>%</span>
                                 </div>
                                 <div class="status-bar mb-4">
@@ -4459,19 +4515,19 @@
                                 <div class="row g-3 text-center">
                                     <div class="col-3 border-end">
                                         <div class="text-success fw-bold h4 m-0"><t t-esc="active_vehicles"/></div>
-                                        <div class="text-muted small">ใช้งานได้</div>
+                                        <div class="text-kpi-muted small">ใช้งานได้</div>
                                     </div>
                                     <div class="col-3 border-end">
                                         <div class="text-warning fw-bold h4 m-0"><t t-esc="repairing_vehicles"/></div>
-                                        <div class="text-muted small">กำลังซ่อม</div>
+                                        <div class="text-kpi-muted small">กำลังซ่อม</div>
                                     </div>
                                     <div class="col-3 border-end">
                                         <div class="text-danger fw-bold h4 m-0"><t t-esc="broken_vehicles"/></div>
-                                        <div class="text-muted small">เสียชำรุด</div>
+                                        <div class="text-kpi-muted small">เสียชำรุด</div>
                                     </div>
                                     <div class="col-3">
-                                        <div class="text-secondary fw-bold h4 m-0"><t t-esc="retired_vehicles"/></div>
-                                        <div class="text-muted small">ยกเลิกใช้</div>
+                                        <div class="text-kpi-muted fw-bold h4 m-0"><t t-esc="retired_vehicles"/></div>
+                                        <div class="text-kpi-muted small">ยกเลิกใช้</div>
                                     </div>
                                 </div>
                             </div>
@@ -4486,7 +4542,7 @@
                                 <t t-set="pending_percent" t-value="(pending_borrows * 100 / total_borrows) if total_borrows &gt; 0 else 0"/>
 
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="small fw-semibold text-secondary">อัตราคืนรถเสร็จสิ้น (Returned Rate)</span>
+                                    <span class="small fw-semibold text-kpi-slate">อัตราคืนรถเสร็จสิ้น (Returned Rate)</span>
                                     <span class="small fw-bold text-success"><t t-esc="int(return_percent)"/>%</span>
                                 </div>
                                 <div class="status-bar mb-4">
@@ -4496,22 +4552,22 @@
                                 <div class="row g-3 text-center">
                                     <div class="col-4 border-end">
                                         <div class="text-warning fw-bold h4 m-0"><t t-esc="pending_borrows"/></div>
-                                        <div class="text-muted small">รออนุมัติ</div>
+                                        <div class="text-kpi-muted small">รออนุมัติ</div>
                                     </div>
                                     <div class="col-4 border-end">
                                         <div class="text-info fw-bold h4 m-0"><t t-esc="borrowed_borrows"/></div>
-                                        <div class="text-muted small">กำลังใช้งาน</div>
+                                        <div class="text-kpi-muted small">กำลังใช้งาน</div>
                                     </div>
                                     <div class="col-4">
                                         <div class="text-success fw-bold h4 m-0"><t t-esc="returned_borrows"/></div>
-                                        <div class="text-muted small">คืนรถแล้ว</div>
+                                        <div class="text-kpi-muted small">คืนรถแล้ว</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- แถวแสดงรายการอันดับและความนิยม (Top Rankings) -->
+                    <!-- แถวแสดงรายการอันดับและความนิยม: ปรับปรุงความคมชัดตัวหนังสือในตาราง -->
                     <div class="row g-4 mb-4">
                         <!-- รถยนต์ยอดนิยม 5 อันดับแรก -->
                         <div class="col-lg-6">
@@ -4534,13 +4590,13 @@
                                                     <tr>
                                                         <td>
                                                             <span class="badge rounded-circle p-2 d-inline-flex align-items-center justify-content-center" 
-                                                                  t-att-style="'width: 28px; height: 28px; background-color: ' + ('#fbbf24; color: #78350f;' if idx == 1 else '#94a3b8; color: #1e293b;' if idx == 2 else '#cd7f32; color: #ffffff;' if idx == 3 else '#f1f5f9; color: #64748b;')">
+                                                                  t-att-style="'width: 28px; height: 28px; background-color: ' + ('#fbbf24; color: #78350f;' if idx == 1 else '#94a3b8; color: #1e293b;' if idx == 2 else '#cd7f32; color: #ffffff;' if idx == 3 else '#f1f5f9; color: #334155;')">
                                                                 <t t-esc="idx"/>
                                                             </span>
                                                         </td>
-                                                        <td class="fw-semibold"><t t-esc="item['name']"/></td>
+                                                        <td class="fw-semibold text-kpi-dark"><t t-esc="item['name']"/></td>
                                                         <td><span class="badge bg-secondary badge-pill"><t t-esc="item['factory']"/></span></td>
-                                                        <td class="text-end fw-bold text-primary"><t t-esc="item['count']"/> ครั้ง</td>
+                                                        <td class="text-end fw-bold text-kpi-primary-custom"><t t-esc="item['count']"/> ครั้ง</td>
                                                     </tr>
                                                     <t t-set="idx" t-value="idx + 1"/>
                                                 </t>
@@ -4549,7 +4605,7 @@
                                     </div>
                                 </t>
                                 <t t-else="">
-                                    <p class="text-muted my-3 text-center">ไม่มีข้อมูลประวัติการยืมรถ</p>
+                                    <p class="text-kpi-muted my-3 text-center">ไม่มีข้อมูลประวัติการยืมรถ</p>
                                 </t>
                             </div>
                         </div>
@@ -4572,9 +4628,9 @@
                                             <tbody>
                                                 <t t-foreach="expensive_repairs" t-as="rep">
                                                     <tr>
-                                                        <td class="fw-semibold text-primary"><t t-esc="rep.name"/></td>
+                                                        <td class="fw-semibold text-kpi-primary-custom"><t t-esc="rep.name"/></td>
                                                         <!-- ปรับให้ดึงทะเบียนรถยนต์แบบสั้นแทนชื่อเต็ม เพื่อความสวยงามในโหมดมือถือและแผงแดชบอร์ด KPI -->
-                                                        <td><t t-esc="rep.vehicle_id.license_plate or rep.vehicle_id.name"/></td>
+                                                        <td class="text-kpi-dark"><t t-esc="rep.vehicle_id.license_plate or rep.vehicle_id.name"/></td>
                                                         <td>
                                                             <t t-if="rep.state == 'repairing'">
                                                                 <span class="badge bg-warning badge-pill">กำลังซ่อม</span>
@@ -4591,13 +4647,13 @@
                                     </div>
                                 </t>
                                 <t t-else="">
-                                    <p class="text-muted my-3 text-center">ไม่มีข้อมูลบันทึกค่าใช้จ่ายการซ่อมรถ</p>
+                                    <p class="text-kpi-muted my-3 text-center">ไม่มีข้อมูลบันทึกค่าใช้จ่ายการซ่อมรถ</p>
                                 </t>
                             </div>
                         </div>
                     </div>
 
-                    <!-- รายการสินค้าอะไหล่ใกล้หมดสต็อก -->
+                    <!-- รายการสินค้าอะไหล่ใกล้หมดสต็อก: ปรับแก้สีตัวอักษรของรหัสอะไหล่และเกณฑ์วิกฤตที่ซีดจาง -->
                     <div class="card ranking-card p-4 mb-4">
                         <h5 class="fw-bold text-dark mb-3"><i class="fa fa-exclamation-triangle text-warning me-2"></i> รายการอะไหล่ที่อยู่ในระดับวิกฤต (Low Stock)</h5>
                         <t t-if="low_stock_parts">
@@ -4616,11 +4672,11 @@
                                     <tbody>
                                         <t t-foreach="low_stock_parts" t-as="part">
                                             <tr>
-                                                <td class="text-secondary"><t t-esc="part.code or '-'"/></td>
-                                                <td class="fw-semibold"><t t-esc="part.name"/></td>
+                                                <td class="text-kpi-slate fw-medium"><t t-esc="part.code or '-'"/></td>
+                                                <td class="fw-semibold text-kpi-dark"><t t-esc="part.name"/></td>
                                                 <td><span class="badge bg-secondary badge-pill"><t t-esc="part.factory"/></span></td>
                                                 <td><span class="badge bg-danger badge-pill fw-bold"><t t-esc="part.qty_on_hand"/> <t t-esc="part.uom or 'ชิ้น'"/></span></td>
-                                                <td class="text-muted"><t t-esc="part.min_qty"/> <t t-esc="part.uom or 'ชิ้น'"/></td>
+                                                <td class="text-kpi-muted"><t t-esc="part.min_qty"/> <t t-esc="part.uom or 'ชิ้น'"/></td>
                                                 <td>
                                                     <t t-if="part.qty_on_hand == 0">
                                                         <span class="badge bg-danger badge-pill">หมดสต็อก</span>
