@@ -922,7 +922,7 @@
                         <div class="card shadow-lg border-0 rounded-4">
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                         <thead class="table-dark">
                                             <tr>
                                                 <th class="ps-4 py-3">เลขที่คำขอ</th>
@@ -1368,7 +1368,7 @@
                                         <h5 class="mb-0 fw-bold"><i class="fa fa-exchange me-2"></i>รายการรออนุมัติโยกย้ายระหว่างโรงงาน</h5>
                                     </div>
                                     <div class="card-body p-0">
-                                        <table class="table table-hover align-middle mb-0">
+                                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                             <thead class="bg-light">
                                                 <tr>
                                                     <th class="ps-4">รถยนต์ / เหตุผล</th>
@@ -1451,7 +1451,7 @@
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
-                                            <table class="table table-hover align-middle mb-0">
+                                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                                 <thead class="bg-light text-muted small text-uppercase">
                                                     <tr>
                                                         <th class="ps-4">รถยนต์ / เหตุผล</th>
@@ -1772,7 +1772,7 @@
                             <t t-else="">
                                 <div class="card border-0 shadow-sm overflow-hidden">
                                     <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0">
+                                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                             <thead class="bg-primary text-white">
                                                 <tr>
                                                     <th class="ps-4 py-3">ประเภท / รถยนต์</th>
@@ -1872,8 +1872,8 @@
                 <div class="container pb-5">
                     <!-- ปรับโครงสร้างแถวใหม่ (row g-4) เพื่อแสดงผลแบบ 2 คอลัมน์คู่กัน (Side-by-side) ตามความต้องการของผู้ใช้ -->
                     <div class="row g-4">
-                        <!-- คอลัมน์ซ้าย: ฟอร์มแจ้งซ่อมรถยนต์ (Admin) ขนาด col-lg-4 เพื่อความเหมาะสมและสมดุล -->
-                        <div class="col-lg-4">
+                        <!-- คอลัมน์ซ้าย: ฟอร์มแจ้งซ่อมรถยนต์ (Admin) ขนาด col-lg-3 เพื่อความเหมาะสมและสมดุล -->
+                        <div class="col-lg-3">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                                 <div class="card-header bg-danger text-white py-3">
                                     <h5 class="mb-0 fw-bold"><i class="fa fa-wrench me-2"/>แจ้งซ่อมรถยนต์ (Admin)</h5>
@@ -1946,14 +1946,14 @@
                             </div>
                         </div>
 
-                        <!-- คอลัมน์ขวา: ตารางแสดงรายการแจ้งซ่อม รอตรวจสอบ ขนาด col-lg-8 เพื่อให้มีพื้นที่แสดงข้อมูลตารางกว้างเพียงพอ -->
-                        <div class="col-lg-8">
+                        <!-- คอลัมน์ขวา: ตารางแสดงรายการแจ้งซ่อม รอตรวจสอบ ขนาด col-lg-9 เพื่อให้มีพื้นที่แสดงข้อมูลตารางกว้างเพียงพอ -->
+                        <div class="col-lg-9">
                             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
                                 <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
                                     <h5 class="mb-0 fw-bold"><i class="fa fa-clock-o me-2"/>รายการแจ้งซ่อมใหม่ รอตรวจสอบ</h5>
                                 </div>
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                         <thead class="bg-light">
                                             <tr>
                                                 <th class="ps-4">รถยนต์ / เลขรับแจ้ง</th>
@@ -1996,26 +1996,26 @@
                                                             <span class="badge extra-small p-1" style="background-color: #d97706; color: white; font-size: 0.55rem;">แอดมิน TPS</span>
                                                         </t>
                                                     </td>
-                                                    <td class="small text-truncate" style="max-width: 250px;"><t t-esc="rep.description"/></td>
+                                                    <td class="small text-truncate" style="max-width: 180px;"><t t-esc="rep.description"/></td>
                                                     <td class="text-center">
                                                         <span class="badge rounded-pill px-3 py-2 bg-warning text-dark">รอตรวจสอบ</span>
                                                     </td>
-                                                    <td class="pe-4 text-center">
-                                                        <div class="d-flex justify-content-center gap-1">
-                                                            <form t-attf-action="/automotive/repair/approve/#{rep.id}" method="post" class="d-inline">
-                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                                <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">
-                                                                    <i class="fa fa-wrench me-1"/> อนุมัติซ่อม
-                                                                </button>
-                                                            </form>
-                                                            <form t-attf-action="/automotive/repair/cancel/#{rep.id}" method="post" class="d-inline">
-                                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="return confirm('คุณต้องการยกเลิกการแจ้งซ่อมนี้ใช่หรือไม่?')">
-                                                                    <i class="fa fa-times me-1"/> ยกเลิก
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </td>
+                                                    <td class="pe-4 text-center" style="width: 1%; white-space: nowrap;">
+                                                         <div class="d-flex justify-content-center gap-2">
+                                                             <form t-attf-action="/automotive/repair/approve/#{rep.id}" method="post" class="d-inline mb-0">
+                                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                 <button type="submit" class="btn btn-sm btn-primary rounded-pill px-2 py-1" style="font-size: 0.72rem; white-space: nowrap;">
+                                                                     <i class="fa fa-wrench me-1"/> อนุมัติ
+                                                                 </button>
+                                                             </form>
+                                                             <form t-attf-action="/automotive/repair/cancel/#{rep.id}" method="post" class="d-inline mb-0">
+                                                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" style="font-size: 0.72rem; white-space: nowrap;" onclick="return confirm('คุณต้องการยกเลิกการแจ้งซ่อมนี้ใช่หรือไม่?')">
+                                                                     <i class="fa fa-times me-1"/> ยกเลิก
+                                                                 </button>
+                                                             </form>
+                                                         </div>
+                                                     </td>
                                                 </tr>
                                             </t>
                                         </tbody>
@@ -2086,7 +2086,7 @@
                             </a>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                 <thead class="bg-light">
                                     <tr>
                                         <th class="ps-4">รถยนต์ / เลขรับแจ้ง</th>
@@ -2130,7 +2130,7 @@
                                                     <span class="badge extra-small p-1" style="background-color: #d97706; color: white; font-size: 0.55rem;">แอดมิน TPS</span>
                                                 </t>
                                             </td>
-                                            <td class="small text-truncate" style="max-width: 250px;"><t t-esc="rep.description"/></td>
+                                            <td class="small text-truncate" style="max-width: 180px;"><t t-esc="rep.description"/></td>
                                             <td class="text-center">
                                                 <!-- แสดง Badge สถานะ -->
                                                 <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-danger text-white' if rep.state == 'repairing' else 'bg-success text-white' if rep.state == 'done' else 'bg-secondary text-white'}">
@@ -2735,7 +2735,7 @@
                                     </div>
                                     <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                         <thead class="table-light">
                                             <tr>
                                                 <th class="ps-4">รหัส</th>
@@ -3553,7 +3553,7 @@
                         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                         <thead class="table-dark">
                                             <tr>
                                                 <th class="ps-4">วันเวลา</th>
@@ -3755,7 +3755,7 @@
                         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
+                                    <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                         <thead class="table-dark">
                                             <tr>
                                                 <th class="ps-4" style="width: 20%;">รถยนต์ / เลขรับแจ้ง</th>
