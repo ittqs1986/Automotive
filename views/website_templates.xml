@@ -69,13 +69,16 @@
                        t-att-aria-expanded="'true' if request.httprequest.path.startswith('/automotive/repair') else 'false'" 
                        aria-controls="submenuRepair"
                        style="transition: all 0.2s; cursor: pointer;">
-                        <span class="d-flex align-items-center gap-3">
+                        <!-- กำหนดสไตล์ white-space: nowrap เพื่อไม่ให้ข้อความจัดการงานซ่อมตกบรรทัดเด็ดขาด -->
+                        <span class="d-flex align-items-center gap-3" style="white-space: nowrap;">
                             <i class="fa fa-gavel fs-5 w-20 text-center"/>
                             <span>จัดการงานซ่อม</span>
-                            <!-- เพิ่มป้ายกำกับสีแดงแจ้งเตือนตัวเลขงานใหม่ตรงปุ่มหลักเพื่อระบุให้ผู้ใช้ทราบว่ามีงานใหม่ค้างอยู่ด้านใน -->
-                            <span t-if="new_repairs_count &gt; 0" class="badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em;"><t t-esc="new_repairs_count"/> ใหม่</span>
                         </span>
-                        <i class="fa fa-chevron-down small submenu-arrow" style="transition: transform 0.2s;"/>
+                        <!-- ย้ายป้ายแจ้งเตือนสีแดง (Badge) มาไว้ชิดขวาร่วมกับ chevron เพื่อไม่ให้เบียดเสียดพื้นที่ของชื่อเมนูหลัก -->
+                        <span class="d-flex align-items-center gap-2">
+                            <span t-if="new_repairs_count &gt; 0" class="badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em; white-space: nowrap;"><t t-esc="new_repairs_count"/> ใหม่</span>
+                            <i class="fa fa-chevron-down small submenu-arrow" style="transition: transform 0.2s;"/>
+                        </span>
                     </a>
                     <!-- แสดงเมนูย่อยเมื่อกด หรือแสดงค้างไว้เมื่ออยู่ในหน้าจัดการงานซ่อม -->
                     <div t-attf-class="collapse #{ 'show' if request.httprequest.path.startswith('/automotive/repair') else '' }" id="submenuRepair">
