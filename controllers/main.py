@@ -1539,6 +1539,383 @@ class VehicleBorrowController(http.Controller):
             'user_tps_group': user_tps_group,
         })
 
+    @http.route(['/automotive/spare-parts/export'], type='http', auth="user", website=True)
+    def admin_spare_parts_export(self, **post):
+        # ฟังก์ชันตรวจสอบสิทธิ์ผู้ใช้
+        if not self._is_admin():
+            return request.render("http_routing.403")
+        
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        
+        # กรองข้อมูลตามฟิลเตอร์แบบเดียวกับหน้าแดชบอร์ดหลัก
+        domain = []
+        search = post.get('search')
+        if search:
+            domain += ['|', ('name', 'ilike', search), ('code', 'ilike', search)]
+            
+        selected_category_id = post.get('category_id') or 'all'
+        if selected_category_id != 'all':
+            domain.append(('category_id', '=', int(selected_category_id)))
+            
+        stock_status = post.get('stock_status') or 'all'
+        if stock_status == 'out':
+            domain.append(('qty_on_hand', '=', 0))
+        elif stock_status == 'low':
+            domain += [('qty_on_hand', '>', 0), ('qty_on_hand', '<=', 2)]
+        elif stock_status == 'normal':
+            domain.append(('qty_on_hand', '>', 2))
+            
+        if user_factory:
+            domain.append(('factory', '=', user_factory))
+            
+        parts = env_sudo['vehicle.spare.part'].with_context(active_test=False).search(domain, order='name')
+        
+        import io
+        import xlsxwriter
+        from datetime import datetime
+        
+        # สร้าง Buffer ในหน่วยความจำเพื่อเขียนไฟล์ Excel
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('คลังอะไหล่คงเหลือ')
+        
+        # แสดงเส้น Gridlines ปกติ
+        worksheet.hide_gridlines(0)
+        
+        # จัดรูปแบบตัวอักษรและสีตารางสไตล์พรีเมียม
+        title_format = workbook.add_format({
+            'bold': True, 'font_size': 16, 'font_name': 'Cordia New', 'font_color': '#1F4E79', 'align': 'left', 'valign': 'vcenter'
+        })
+        meta_format = workbook.add_format({
+            'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#595959', 'align': 'left'
+        })
+        header_format = workbook.add_format({
+            'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'font_color': '#FFFFFF', 'bg_color': '#1F4E79',
+            'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#D9D9D9'
+        })
+        
+        # รูปแบบสำหรับแถวสลับสี (Zebra Striping)
+        cell_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        cell_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        
+        align_center_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        align_center_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        number_right_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '#,##0'})
+        number_right_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '#,##0'})
+        
+        # สไตล์แสดงผลสัญลักษณ์สีสำหรับสถานะสต็อก
+        status_normal = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#1E4620', 'bg_color': '#D1E7DD', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        status_low = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#842029', 'bg_color': '#F8D7DA', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        status_inactive = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#41464B', 'bg_color': '#E2E3E5', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        total_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'right', 'valign': 'vcenter', 'num_format': '#,##0'})
+        total_label_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'center', 'valign': 'vcenter'})
+        
+        # เขียนชื่อหัวข้อหลักรายงาน
+        worksheet.write('A1', 'รายงานรายการอะไหล่และยอดคงเหลือในคลัง', title_format)
+        worksheet.set_row(0, 35)
+        
+        # แสดงเงื่อนไขที่เลือกกรองข้อมูล
+        factory_text = user_factory if user_factory else "ทุกโรงงาน (Head Admin)"
+        export_date = datetime.now().strftime('%d/%m/%Y %H:%M')
+        filter_text = f"โรงงาน: {factory_text} | วันเวลาที่ส่งออก: {export_date}"
+        if search:
+            filter_text += f" | คำค้นหา: {search}"
+        if stock_status != 'all':
+            status_map = {'out': 'หมด', 'low': 'สต็อกต่ำ', 'normal': 'ปกติ'}
+            filter_text += f" | สถานะสต็อก: {status_map.get(stock_status, stock_status)}"
+        worksheet.write('A2', filter_text, meta_format)
+        worksheet.set_row(1, 20)
+        
+        # กำหนดชื่อหัวคอลัมน์ตาราง
+        headers = ['รหัสอะไหล่', 'ชื่ออะไหล่', 'หมวดหมู่', 'โรงงาน', 'จำนวนคงเหลือ', 'หน่วยนับ', 'ระดับสั่งซื้อขั้นต่ำ', 'สถานะ', 'รายละเอียดเพิ่มเติม']
+        col_widths = {i: len(headers[i]) + 5 for i in range(len(headers))}
+        
+        for col_num, header_title in enumerate(headers):
+            worksheet.write(3, col_num, header_title, header_format)
+        worksheet.set_row(3, 26)
+        
+        # วนลูปกรอกข้อมูลลงแถวตาราง
+        row_idx = 4
+        total_qty = 0.0
+        for p in parts:
+            is_zebra = (row_idx % 2 == 1)
+            fmt_cell = cell_zebra if is_zebra else cell_white
+            fmt_center = align_center_zebra if is_zebra else align_center_white
+            fmt_number = number_right_zebra if is_zebra else number_right_white
+            
+            # ดึงค่าเพื่อเตรียมเขียน
+            code_val = p.code or '-'
+            name_val = p.name or ''
+            cat_val = p.category_id.name or '-'
+            fac_val = p.factory or '-'
+            qty_val = p.qty_on_hand
+            uom_val = p.uom or 'ชิ้น'
+            min_val = p.min_qty
+            desc_val = p.description or '-'
+            
+            worksheet.write(row_idx, 0, code_val, fmt_center)
+            worksheet.write(row_idx, 1, name_val, fmt_cell)
+            worksheet.write(row_idx, 2, cat_val, fmt_cell)
+            worksheet.write(row_idx, 3, fac_val, fmt_center)
+            worksheet.write(row_idx, 4, qty_val, fmt_number)
+            worksheet.write(row_idx, 5, uom_val, fmt_center)
+            worksheet.write(row_idx, 6, min_val, fmt_number)
+            
+            # กำหนดสถานะสต็อกอย่างละเอียดตามข้อมูลจริง
+            if 'active' in p._fields and not p.active:
+                worksheet.write(row_idx, 7, 'ปิดใช้งาน', status_inactive)
+                status_val = 'ปิดใช้งาน'
+            elif p.qty_on_hand == 0:
+                worksheet.write(row_idx, 7, 'หมด', status_low)
+                status_val = 'หมด'
+            elif p.qty_on_hand <= p.min_qty:
+                worksheet.write(row_idx, 7, 'สต็อกต่ำ', status_low)
+                status_val = 'สต็อกต่ำ'
+            else:
+                worksheet.write(row_idx, 7, 'ปกติ', status_normal)
+                status_val = 'ปกติ'
+                
+            worksheet.write(row_idx, 8, desc_val, fmt_cell)
+            total_qty += qty_val
+            
+            # วัดขนาดคอลัมน์เพื่อความสวยงาม
+            for col_num, val in enumerate([code_val, name_val, cat_val, fac_val, str(int(qty_val)), uom_val, str(int(min_val)), status_val, desc_val]):
+                val_len = len(val) * 2 + 3 if any(ord(char) > 127 for char in val) else len(val) + 3
+                col_widths[col_num] = max(col_widths[col_num], val_len)
+                
+            worksheet.set_row(row_idx, 22)
+            row_idx += 1
+            
+        # เขียนแถวสรุปรวมผลยอดคงเหลือ
+        worksheet.merge_range(row_idx, 0, row_idx, 3, 'รวมยอดคงคลังทั้งหมด', total_label_format)
+        worksheet.write(row_idx, 4, total_qty, total_format)
+        worksheet.merge_range(row_idx, 5, row_idx, 8, '', total_label_format)
+        worksheet.set_row(row_idx, 24)
+        
+        # ปรับขนาดความกว้างตามที่วัดไว้
+        for col_num, width in col_widths.items():
+            # กำหนดขอบเขตขั้นต่ำไม่ให้คอลัมน์แคบเกินไป
+            worksheet.set_column(col_num, col_num, max(width, 11))
+            
+        workbook.close()
+        output.seek(0)
+        
+        filename = f"Spare_Parts_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return request.make_response(
+            output.getvalue(),
+            headers=[
+                ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                ('Content-Disposition', f'attachment; filename="{filename}"')
+            ]
+        )
+
+    @http.route(['/automotive/spare-parts/history/export'], type='http', auth="user", website=True)
+    def admin_spare_parts_history_export(self, **post):
+        # ฟังก์ชันตรวจสอบสิทธิ์แอดมินในการทำรายการ
+        if not self._is_admin():
+            return request.render("http_routing.403")
+        
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        
+        # กำหนด Domain กรองข้อมูลตามสิทธิ์ของโรงงาน
+        domain = []
+        if user_factory:
+            repair_factory_domain = [('vehicle_id.factory', '=', user_factory)]
+            domain += ['|', ('vehicle_id', '=', False)] + list(repair_factory_domain)
+            
+        # กรองข้อมูลเพิ่มเติมตามตัวกรองที่ส่งมาจาก Form ค้นหา
+        f_date_start = post.get('f_date_start')
+        f_date_end = post.get('f_date_end')
+        f_part_id = post.get('f_part_id')
+        f_vehicle_type = post.get('f_vehicle_type')
+        f_vehicle_id = post.get('f_vehicle_id')
+        f_move_type = post.get('f_move_type')
+        
+        if f_date_start:
+            domain.append(('date', '>=', f_date_start + ' 00:00:00'))
+        if f_date_end:
+            domain.append(('date', '<=', f_date_end + ' 23:59:59'))
+        if f_part_id and f_part_id != 'all':
+            domain.append(('part_id', '=', int(f_part_id)))
+        if f_vehicle_type and f_vehicle_type != 'all':
+            domain.append(('vehicle_id.model_id.name', '=', f_vehicle_type))
+        if f_vehicle_id and f_vehicle_id != 'all':
+            domain.append(('vehicle_id', '=', int(f_vehicle_id)))
+        if f_move_type and f_move_type != 'all':
+            domain.append(('move_type', '=', f_move_type))
+            
+        history = env_sudo['vehicle.spare.part.movement'].search(domain, order='date desc, id desc')
+        
+        import io
+        import xlsxwriter
+        from datetime import datetime
+        
+        # เตรียม Buffer เขียนข้อมูลตาราง Excel
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('ประวัติการรับ-จ่ายอะไหล่')
+        
+        worksheet.hide_gridlines(0)
+        
+        # จัดสไตล์รูปแบบและสีสำหรับหัวรายงานและหัวข้อคอลัมน์
+        title_format = workbook.add_format({
+            'bold': True, 'font_size': 16, 'font_name': 'Cordia New', 'font_color': '#1F4E79', 'align': 'left', 'valign': 'vcenter'
+        })
+        meta_format = workbook.add_format({
+            'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#595959', 'align': 'left'
+        })
+        header_format = workbook.add_format({
+            'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'font_color': '#FFFFFF', 'bg_color': '#1F4E79',
+            'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#D9D9D9'
+        })
+        
+        cell_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        cell_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'valign': 'vcenter'})
+        
+        align_center_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        align_center_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'center', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        number_right_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '#,##0'})
+        number_right_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '#,##0'})
+        
+        price_right_white = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '฿#,##0.00'})
+        price_right_zebra = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'align': 'right', 'valign': 'vcenter', 'bg_color': '#F9FBFD', 'border': 1, 'border_color': '#E0E0E0', 'num_format': '฿#,##0.00'})
+        
+        # รูปแบบสีสันของสัญลักษณ์ประเภทรับเข้า-เบิกออก
+        type_in = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#1E4620', 'bg_color': '#D1E7DD', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        type_out = workbook.add_format({'font_size': 11, 'font_name': 'Cordia New', 'font_color': '#842029', 'bg_color': '#F8D7DA', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'border_color': '#E0E0E0'})
+        
+        total_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'right', 'valign': 'vcenter', 'num_format': '฿#,##0.00'})
+        total_qty_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'right', 'valign': 'vcenter', 'num_format': '#,##0'})
+        total_label_format = workbook.add_format({'bold': True, 'font_size': 12, 'font_name': 'Cordia New', 'bg_color': '#EAEAEA', 'border': 1, 'border_color': '#A6A6A6', 'align': 'center', 'valign': 'vcenter'})
+        
+        # เขียนหัวรายงานหลักและช่วงวิเคราะห์ผลลัพธ์
+        worksheet.write('A1', 'รายงานประวัติการรับเข้าและเบิกใช้อะไหล่', title_format)
+        worksheet.set_row(0, 35)
+        
+        factory_text = user_factory if user_factory else "ทุกโรงงาน (Head Admin)"
+        export_date = datetime.now().strftime('%d/%m/%Y %H:%M')
+        filter_text = f"โรงงาน: {factory_text} | วันเวลาที่ส่งออก: {export_date}"
+        
+        if f_date_start and f_date_end:
+            filter_text += f" | ช่วงวันที่: {f_date_start} ถึง {f_date_end}"
+        elif f_date_start:
+            filter_text += f" | ตั้งแต่วันที่: {f_date_start}"
+        elif f_date_end:
+            filter_text += f" | จนถึงวันที่: {f_date_end}"
+            
+        if f_move_type and f_move_type != 'all':
+            type_map = {'in': 'รับเข้า (IN)', 'out': 'เบิกออก (OUT)'}
+            filter_text += f" | ประเภทรายการ: {type_map.get(f_move_type)}"
+            
+        worksheet.write('A2', filter_text, meta_format)
+        worksheet.set_row(1, 20)
+        
+        # รายการคอลัมน์ประวัติเคลื่อนไหว
+        headers = ['วันเวลา', 'รหัสอะไหล่', 'ชื่ออะไหล่', 'ประเภท', 'จำนวน', 'หน่วย', 'ล็อตผลิต', 'ราคา/หน่วย', 'ราคารวม', 'อ้างอิง/รถที่ใช้', 'ผู้บันทึก']
+        col_widths = {i: len(headers[i]) + 5 for i in range(len(headers))}
+        
+        for col_num, header_title in enumerate(headers):
+            worksheet.write(3, col_num, header_title, header_format)
+        worksheet.set_row(3, 26)
+        
+        row_idx = 4
+        sum_qty_in = 0.0
+        sum_qty_out = 0.0
+        sum_value = 0.0
+        
+        for h in history:
+            is_zebra = (row_idx % 2 == 1)
+            fmt_cell = cell_zebra if is_zebra else cell_white
+            fmt_center = align_center_zebra if is_zebra else align_center_white
+            fmt_number = number_right_zebra if is_zebra else number_right_white
+            fmt_price = price_right_zebra if is_zebra else price_right_white
+            
+            # การแปลงค่าฟิลด์
+            date_val = h.date.strftime('%Y-%m-%d %H:%M') if h.date else '-'
+            code_val = h.part_id.code or '-'
+            name_val = h.part_id.name or ''
+            type_str = 'รับเข้า (IN)' if h.move_type == 'in' else 'เบิกจ่าย (OUT)'
+            qty_val = h.qty
+            uom_val = h.part_id.uom or 'ชิ้น'
+            lot_val = h.lot_number or '-'
+            price_val = h.unit_price
+            val_total = qty_val * price_val if price_val > 0 else 0.0
+            
+            # ข้อมูลรถยนต์อ้างอิง
+            ref_val = '-'
+            if h.vehicle_id:
+                ref_val = f"{h.vehicle_id.license_plate} ({h.vehicle_id.factory})"
+            elif h.reference:
+                ref_val = h.reference
+                
+            user_val = h.user_id.name or '-'
+            
+            # เขียนลงเซลล์
+            worksheet.write(row_idx, 0, date_val, fmt_center)
+            worksheet.write(row_idx, 1, code_val, fmt_center)
+            worksheet.write(row_idx, 2, name_val, fmt_cell)
+            
+            # ระบุประเภทรายการ
+            if h.move_type == 'in':
+                worksheet.write(row_idx, 3, type_str, type_in)
+                sum_qty_in += qty_val
+            else:
+                worksheet.write(row_idx, 3, type_str, type_out)
+                sum_qty_out += qty_val
+                
+            worksheet.write(row_idx, 4, qty_val, fmt_number)
+            worksheet.write(row_idx, 5, uom_val, fmt_center)
+            worksheet.write(row_idx, 6, lot_val, fmt_center)
+            worksheet.write(row_idx, 7, price_val, fmt_price)
+            worksheet.write(row_idx, 8, val_total, fmt_price)
+            worksheet.write(row_idx, 9, ref_val, fmt_cell)
+            worksheet.write(row_idx, 10, user_val, fmt_cell)
+            
+            sum_value += val_total
+            
+            # วัดขนาดคอลัมน์อัตโนมัติ
+            for col_num, val in enumerate([date_val, code_val, name_val, type_str, str(int(qty_val)), uom_val, lot_val, f"฿{price_val:.2f}", f"฿{val_total:.2f}", ref_val, user_val]):
+                val_len = len(val) * 2 + 3 if any(ord(char) > 127 for char in val) else len(val) + 3
+                col_widths[col_num] = max(col_widths[col_num], val_len)
+                
+            worksheet.set_row(row_idx, 22)
+            row_idx += 1
+            
+        # เขียนสรุปรวมผลลัพธ์
+        worksheet.merge_range(row_idx, 0, row_idx, 3, 'ยอดรวมรับเข้าทั้งหมด', total_label_format)
+        worksheet.write(row_idx, 4, sum_qty_in, total_qty_format)
+        worksheet.merge_range(row_idx, 5, row_idx, 10, '', total_label_format)
+        worksheet.set_row(row_idx, 24)
+        row_idx += 1
+        
+        worksheet.merge_range(row_idx, 0, row_idx, 3, 'ยอดรวมเบิกจ่ายทั้งหมด', total_label_format)
+        worksheet.write(row_idx, 4, sum_qty_out, total_qty_format)
+        worksheet.merge_range(row_idx, 5, row_idx, 7, '', total_label_format)
+        worksheet.write(row_idx, 8, sum_value, total_format)
+        worksheet.merge_range(row_idx, 9, row_idx, 10, '', total_label_format)
+        worksheet.set_row(row_idx, 24)
+        
+        # ปรับความกว้างคอลัมน์ตามขนาดจริง
+        for col_num, width in col_widths.items():
+            worksheet.set_column(col_num, col_num, max(width, 11))
+            
+        workbook.close()
+        output.seek(0)
+        
+        filename = f"Spare_Parts_History_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        return request.make_response(
+            output.getvalue(),
+            headers=[
+                ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                ('Content-Disposition', f'attachment; filename="{filename}"')
+            ]
+        )
+
     @http.route(['/automotive/spare-parts/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_spare_parts_add(self, **post):
         if not self._is_admin():
