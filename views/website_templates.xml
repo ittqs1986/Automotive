@@ -2050,6 +2050,7 @@
                             allOptions.forEach(opt => {
                                 if (opt.getAttribute('data-type') === selectedType) {
                                     vehicleSelect.appendChild(opt.cloneNode(true));
+                                    // ยกเลิกการดึงค่าของช่องกรอกรายละเอียดอะไหล่เพิ่มเติม (parts_used) ที่ถูกนำออกไปแล้ว
                                     count++;
                                 }
                             });
@@ -2081,9 +2082,9 @@
                     </t>
                     <!-- ส่วนหัวหน้าจอแสดงผลเต็มหน้าจอสวยงามพรีเมียม -->
                     <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white">
-                        <!-- ส่วนหัวหน้าจอ: ปรับเปลี่ยนเป็น รายการแจ้งซ่อมคงค้าง (10 รายการ) ตามปุ่มกดและคำร้องขอของผู้ใช้ เพื่อความสอดคล้องกัน -->
+                        <!-- ส่วนหัวหน้าจอ: ปรับเปลี่ยนเป็น รายการแจ้งซ่อมคงค้าง ตามความต้องการของผู้ใช้ -->
                         <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-                            <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>รายการแจ้งซ่อมคงค้าง (10 รายการ)</h5>
+                            <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"/>รายการแจ้งซ่อมคงค้าง</h5>
                             <a href="/automotive/dashboard" class="btn btn-sm btn-outline-light rounded-pill">
                                 <i class="fa fa-dashboard me-1"/> กลับหน้า Dashboard
                             </a>
@@ -2202,8 +2203,7 @@
                                     </div>
                                     <input type="hidden" name="deleted_movement_ids" id="modal_deleted_movement_ids" value=""/>
                                     
-                                    <!-- ช่องรายละเอียดเพิ่มเติม -->
-                                    <textarea name="parts_used" class="form-control border-light bg-light" rows="2" placeholder="ระบุรายละเอียดอะไหล่เพิ่มเติม (ถ้ามี)..."></textarea>
+                                    <!-- นำช่องระบุรายละเอียดอะไหล่เพิ่มเติม (parts_used) ออกตามคำขอเพื่อลดความซ้ำซ้อน -->
                                  </div>
 
                                 <div class="mb-3">
@@ -3107,7 +3107,7 @@
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label fw-bold small text-muted text-uppercase">เลือกล็อตการผลิต</label>
-                                            <select name="lot_number" id="issue_lot_select" class="form-select" disabled="1">
+                                            <select name="lot_number" id="issue_lot_select" class="form-select" required="1" disabled="1">
                                                 <option value="">-- เลือกล็อต --</option>
                                             </select>
                                             <!-- ข้อมูลล็อตทั้งหมด (ซ่อนไว้ให้ JS ใช้) -->
@@ -3240,6 +3240,18 @@
 
                                     if (partSelect) partSelect.addEventListener('change', checkStock);
                                     if (qtyInput) qtyInput.addEventListener('input', checkStock);
+
+                                     // ตรวจสอบล็อตก่อนทำการส่งฟอร์มเบิกอะไหล่ เพื่อป้องกันสต๊อกติดลบ
+                                     const issueForm = document.getElementById('issue_form');
+                                     if (issueForm) {
+                                         issueForm.addEventListener('submit', function(event) {
+                                             if (lotSelect &amp;&amp; (!lotSelect.value || lotSelect.value === '')) {
+                                                 alert('กรุณาเลือกล็อตการผลิตเพื่อดำเนินการต่อ');
+                                                 event.preventDefault();
+                                                 return false;
+                                             }
+                                         });
+                                     }
 
                                     // ระบบค้นหาอัตโนมัติ Auto Complete (แทนที่ Dropdown ดั้งเดิม) ใน Modal รับและเบิกอะไหล่
                                     const makeAutocomplete = (inputId, resultsId, selectId) => {
