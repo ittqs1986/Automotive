@@ -2200,6 +2200,31 @@
                                 </div>
                             </t>
                             <t t-else="">
+                                <!-- [แก้ไข] แถบปุ่มเลื่อนหน้าด้านบน (Top Pagination) แสดงหากมีประวัติใช้งานมากกว่า 20 รายการ -->
+                                <t t-if="total_pages &gt; 1">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="text-muted small">แสดง <t t-esc="len(my_borrows)"/> จากทั้งหมด <t t-esc="total_count"/> รายการ</span>
+                                        <nav aria-label="Page navigation top">
+                                            <ul class="pagination pagination-sm mb-0">
+                                                <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                                    <a class="page-link" t-att-href="prev_page_url" aria-label="Previous">
+                                                        <span aria-hidden="true">&amp;laquo; ก่อนหน้า</span>
+                                                    </a>
+                                                </li>
+                                                <t t-foreach="pages_list" t-as="p">
+                                                    <li t-attf-class="page-item #{'active' if p['is_current'] else ''}">
+                                                        <a class="page-link" t-att-href="p['url']"><t t-esc="p['num']"/></a>
+                                                    </li>
+                                                </t>
+                                                <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                                    <a class="page-link" t-att-href="next_page_url" aria-label="Next">
+                                                        <span aria-hidden="true">ถัดไป &amp;raquo;</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </t>
                                 <div class="card border-0 shadow-sm overflow-hidden">
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
@@ -2281,6 +2306,31 @@
                                         </table>
                                     </div>
                                 </div>
+                                <!-- [แก้ไข] แถบปุ่มเลื่อนหน้าด้านล่าง (Bottom Pagination) แสดงหากมีประวัติใช้งานมากกว่า 20 รายการ -->
+                                <t t-if="total_pages &gt; 1">
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="text-muted small">แสดง <t t-esc="len(my_borrows)"/> จากทั้งหมด <t t-esc="total_count"/> รายการ</span>
+                                        <nav aria-label="Page navigation bottom">
+                                            <ul class="pagination pagination-sm mb-0">
+                                                <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                                    <a class="page-link" t-att-href="prev_page_url" aria-label="Previous">
+                                                        <span aria-hidden="true">&amp;laquo; ก่อนหน้า</span>
+                                                    </a>
+                                                </li>
+                                                <t t-foreach="pages_list" t-as="p">
+                                                    <li t-attf-class="page-item #{'active' if p['is_current'] else ''}">
+                                                        <a class="page-link" t-att-href="p['url']"><t t-esc="p['num']"/></a>
+                                                    </li>
+                                                </t>
+                                                <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                                    <a class="page-link" t-att-href="next_page_url" aria-label="Next">
+                                                        <span aria-hidden="true">ถัดไป &amp;raquo;</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </t>
                             </t>
 
                             <!-- Back Button -->
@@ -4297,16 +4347,7 @@
                                                 </tr>
                                             </t>
                                         </tbody>
-                                        <!-- สรุปราคารวมทั้งหมด (Total Sum Cost) ของประวัติการซ่อมที่แสดงผล -->
-                                        <tfoot t-if="repair_history">
-                                            <tr class="table-light fw-bold text-dark border-top">
-                                                <td colspan="4" class="text-end ps-4 py-3">รวมค่าใช้จ่ายในการซ่อมทั้งหมด:</td>
-                                                <td class="text-end text-danger fs-5 py-3 pe-3">
-                                                    ฿ <t t-esc="'{:,.2f}'.format(sum((rep.auto_parts_cost or 0.0) + (rep.additional_cost or 0.0) for rep in repair_history))"/>
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
+                                        <!-- [แก้ไข] นำแถบรวมค่าใช้จ่ายในการซ่อมบำรุงทั้งหมดออกจากหน้าประวัติการซ่อมบำรุงรถยนต์ทั้งหมดตามความต้องการของผู้ใช้ -->
                                     </table>
                                 </div>
                             </div>

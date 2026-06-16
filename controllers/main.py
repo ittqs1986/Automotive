@@ -175,15 +175,77 @@ class VehicleBorrowController(http.Controller):
             [('user_id', '=', current_user.id)], limit=1
         )
         
+        # [แก้ไข] ระบบแบ่งหน้า (Pagination) 20 รายการต่อหน้า สำหรับหน้าประวัติการใช้งานของฉัน
+        import math
+        from urllib.parse import urlencode
+
+        # รับหมายเลขหน้าปัจจุบันจากตัวแปร query parameter
+        try:
+            page = int(post.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+        if page < 1:
+            page = 1
+
+        limit = 20
+        offset = (page - 1) * limit
+
         my_borrows = []
+        total_count = 0
+        total_pages = 1
+        
         if employee:
+            # ดึงยอดรวมรายการทั้งหมดของผู้ใช้เพื่อนำไปใช้คำนวณจำนวนหน้า
+            total_count = request.env['vehicle.borrow.request'].sudo().search_count([
+                ('employee_id', '=', employee.id)
+            ])
+            total_pages = math.ceil(total_count / limit) or 1
+            if page > total_pages:
+                page = total_pages
+                offset = (page - 1) * limit
+
+            # ค้นหารายการการใช้งานของฉัน โดยจำกัดหน้าละ 20 รายการ ( limit=20 )
             my_borrows = request.env['vehicle.borrow.request'].sudo().search([
                 ('employee_id', '=', employee.id)
-            ], order='create_date desc')
+            ], order='create_date desc', limit=limit, offset=offset)
             
+        # สร้างรายการหน้าทั้งหมดเพื่อแสดงเป็นแถบปุ่มกดตัวเลข
+        pages_list = []
+        for p in range(1, total_pages + 1):
+            params = post.copy()
+            params['page'] = p
+            params = {k: v for k, v in params.items() if v}
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/my-bookings?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        # URL สำหรับปุ่มย้อนกลับไปหน้าก่อนหน้า (Previous Page)
+        prev_page_url = None
+        if page > 1:
+            params = post.copy()
+            params['page'] = page - 1
+            params = {k: v for k, v in params.items() if v}
+            prev_page_url = '/automotive/my-bookings?' + urlencode(params)
+
+        # URL สำหรับปุ่มเปิดไปยังหน้าถัดไป (Next Page)
+        next_page_url = None
+        if page < total_pages:
+            params = post.copy()
+            params['page'] = page + 1
+            params = {k: v for k, v in params.items() if v}
+            next_page_url = '/automotive/my-bookings?' + urlencode(params)
+
         return request.render('vehicle_borrow.my_bookings_template', {
             'my_borrows': my_borrows,
             'current_employee': employee,
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
         })
 
     @http.route(['/automotive/return/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
@@ -1598,8 +1660,50 @@ class VehicleBorrowController(http.Controller):
         if f_finish_end:
             history_domain.append(('finish_date', '<=', f_finish_end + ' 23:59:59'))
             
-        repair_history = env_sudo['vehicle.repair.request'].search(history_domain, order='finish_date desc, id desc')
-        
+        # คำนวณแบ่งหน้า (Pagination) หน้าละ 20 รายการ (คอมเมนต์ภาษาไทย)
+        import math
+        from urllib.parse import urlencode
+
+        limit = 20
+        page = int(post.get('page', 1))
+        if page < 1:
+            page = 1
+
+        total_count = env_sudo['vehicle.repair.request'].search_count(history_domain)
+        total_pages = math.ceil(total_count / limit) if total_count > 0 else 1
+
+        if page > total_pages:
+            page = total_pages
+
+        offset = (page - 1) * limit
+        repair_history = env_sudo['vehicle.repair.request'].search(
+            history_domain, 
+            order='finish_date desc, id desc',
+            limit=limit,
+            offset=offset
+        )
+
+        # สร้างรายการลิงก์สลับหน้า (Pagination Links) โดยรักษาฟิลเตอร์เดิมไว้ (คอมเมนต์ภาษาไทย)
+        params = {k: v for k, v in post.items() if k != 'page'}
+        pages_list = []
+        for p in range(max(1, page - 3), min(total_pages, page + 3) + 1):
+            params['page'] = p
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/repair/history?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        prev_page_url = None
+        if page > 1:
+            params['page'] = page - 1
+            prev_page_url = '/automotive/repair/history?' + urlencode(params)
+
+        next_page_url = None
+        if page < total_pages:
+            params['page'] = page + 1
+            next_page_url = '/automotive/repair/history?' + urlencode(params)
+
         # รายการรถทั้งหมดในโรงงานสำหรับฟิลเตอร์
         all_vehicles_history = env_sudo['fleet.vehicle'].search(factory_domain)
         
@@ -1617,6 +1721,12 @@ class VehicleBorrowController(http.Controller):
 
         return request.render("vehicle_borrow.admin_repair_history_list_template", {
             'repair_history': repair_history,
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
             'all_vehicles_history': all_vehicles_history,
             'vehicle_types': vehicle_types,
             'filters': post, # รักษาฟิลเตอร์ที่ผู้ใช้กรองไว้
@@ -2023,8 +2133,55 @@ class VehicleBorrowController(http.Controller):
         # Admin โรงงาน → เห็นเฉพาะโรงงานตัวเอง
         if user_factory:
             domain.append(('factory', '=', user_factory))
-        # แสดงรายการทั้งหมดรวมถึงที่ปิดการใช้งาน (Inactive) เพื่อให้แอดมินเปิดกลับมาได้
-        parts = env_sudo['vehicle.spare.part'].with_context(active_test=False).search(domain, order='name')
+        
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับสต็อกอะไหล่ (แสดงครั้งละ 20 รายการ) ---
+        try:
+            page = int(post.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+        if page < 1:
+            page = 1
+
+        limit = 20
+        offset = (page - 1) * limit
+
+        # นับจำนวนอะไหล่ทั้งหมดที่ตรงตามเงื่อนไขเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        total_count = env_sudo['vehicle.spare.part'].with_context(active_test=False).search_count(domain)
+        total_pages = math.ceil(total_count / limit) or 1
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * limit
+
+        # แสดงรายการเฉพาะหน้านั้นๆ รวมถึงที่ปิดการใช้งาน (Inactive) (ภาษาไทยคอมเมนต์)
+        parts = env_sudo['vehicle.spare.part'].with_context(active_test=False).search(
+            domain, order='name', limit=limit, offset=offset
+        )
+
+        # สร้างรายการปุ่มลิงก์ Pagination โดยรักษาพารามิเตอร์ของหน้าสต็อกอะไหล่อื่นๆ ไว้ (ภาษาไทยคอมเมนต์)
+        pages_list = []
+        for p in range(1, total_pages + 1):
+            params = post.copy()
+            params['page'] = p
+            params = {k: v for k, v in params.items() if v}
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/spare-parts?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        prev_page_url = None
+        if page > 1:
+            params = post.copy()
+            params['page'] = page - 1
+            params = {k: v for k, v in params.items() if v}
+            prev_page_url = '/automotive/spare-parts?' + urlencode(params)
+
+        next_page_url = None
+        if page < total_pages:
+            params = post.copy()
+            params['page'] = page + 1
+            params = {k: v for k, v in params.items() if v}
+            next_page_url = '/automotive/spare-parts?' + urlencode(params)
         
         # ดึงประวัติทั้งหมดของอะไหล่เหล่านี้เพื่อคำนวณสต็อกแยกตามล็อต 
         # ใช้ sudo เพื่อให้เห็นรายการ In (รับเข้า) ทั้งหมดสำหรับคำนวณล็อตราคา
@@ -2107,6 +2264,13 @@ class VehicleBorrowController(http.Controller):
             'user_tqs_group': user_tqs_group,
             'user_ckr_group': user_ckr_group,
             'user_tps_group': user_tps_group,
+            # ส่งตัวแปรสำหรับแบ่งหน้าข้อมูลสต็อกอะไหล่ไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
         })
 
     @http.route(['/automotive/spare-parts/move'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
@@ -2184,7 +2348,53 @@ class VehicleBorrowController(http.Controller):
         if f_move_type and f_move_type != 'all':
             domain.append(('move_type', '=', f_move_type))
             
-        history = env_sudo['vehicle.spare.part.movement'].search(domain, order='date desc, id desc')
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับประวัติอะไหล่ (แสดงครั้งละ 20 รายการ) ---
+        try:
+            page = int(post.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+        if page < 1:
+            page = 1
+
+        limit = 20
+        offset = (page - 1) * limit
+
+        # นับจำนวนประวัติทั้งหมดเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        total_count = env_sudo['vehicle.spare.part.movement'].search_count(domain)
+        total_pages = math.ceil(total_count / limit) or 1
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * limit
+
+        history = env_sudo['vehicle.spare.part.movement'].search(
+            domain, order='date desc, id desc', limit=limit, offset=offset
+        )
+
+        # สร้างรายการปุ่มลิงก์ Pagination โดยรักษาพารามิเตอร์ตัวกรองเดิมไว้ (ภาษาไทยคอมเมนต์)
+        pages_list = []
+        for p in range(1, total_pages + 1):
+            params = post.copy()
+            params['page'] = p
+            params = {k: v for k, v in params.items() if v}
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/spare-parts/history?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        prev_page_url = None
+        if page > 1:
+            params = post.copy()
+            params['page'] = page - 1
+            params = {k: v for k, v in params.items() if v}
+            prev_page_url = '/automotive/spare-parts/history?' + urlencode(params)
+
+        next_page_url = None
+        if page < total_pages:
+            params = post.copy()
+            params['page'] = page + 1
+            params = {k: v for k, v in params.items() if v}
+            next_page_url = '/automotive/spare-parts/history?' + urlencode(params)
         
         # Fetch data for filter dropdowns
         all_parts = env_sudo['vehicle.spare.part'].search([], order='name')
@@ -2225,6 +2435,13 @@ class VehicleBorrowController(http.Controller):
             'user_tqs_group': user_tqs_group,
             'user_ckr_group': user_ckr_group,
             'user_tps_group': user_tps_group,
+            # ส่งตัวแปรสำหรับแบ่งหน้าข้อมูลประวัติอะไหล่ไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
         })
 
     @http.route(['/automotive/spare-parts/export'], type='http', auth="user", website=True)
