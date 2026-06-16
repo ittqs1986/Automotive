@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 
+        ไฟล์ XML สำหรับสร้างรายงาน PDF เพื่อพิมพ์ QR Code ประจำยานพาหนะแต่ละคัน
+        ช่วยให้แอดมินสามารถปริ้นท์รูป QR Code ไปแปะติดไว้หน้ารถยนต์ได้อย่างสะดวก
+    -->
+
+    <!-- ลงทะเบียน Action สำหรับรายงาน PDF ในระบบหลังบ้านของ Odoo -->
+    <record id="action_report_fleet_vehicle_qrcode" model="ir.actions.report">
+        <field name="name">QR Code ประจำรถ (สำหรับพิมพ์ติดรถ)</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vehicle_borrow.report_vehicle_qrcode</field>
+        <field name="report_file">vehicle_borrow.report_vehicle_qrcode</field>
+        <!-- binding_model_id เชื่อมโยงเพื่อให้ปุ่มพิมพ์นี้ไปปรากฏอยู่ในหน้าจอรถยนต์ (Fleet Vehicle) ในเมนู Action / Print -->
+        <field name="binding_model_id" ref="fleet.model_fleet_vehicle"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- เทมเพลตดีไซน์รายงาน PDF ของ QR Code รถยนต์แต่ละคัน -->
+    <template id="report_vehicle_qrcode">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <!-- ใช้ basic_layout เพื่อความสะอาดตา ไม่มีหัวกระดาษหรือท้ายกระดาษของบริษัทมารบกวน เหมาะกับการทำป้ายติดรถ -->
+                <t t-call="web.basic_layout">
+                    <div class="page" style="page-break-after: always; display: flex; justify-content: center; align-items: center; padding: 25px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                        
+                        <!-- กรอบการ์ดดีไซน์พรีเมียม สไตล์ Modern Glassmorphism & Sleek Box -->
+                        <div style="border: 2px solid #e5e7eb; border-radius: 16px; padding: 30px; width: 360px; background: #ffffff; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                            
+                            <!-- ส่วนหัว: ชื่อระบบและป้ายระบุโรงงาน -->
+                            <div style="margin-bottom: 18px;">
+                                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #9ca3af; display: block; margin-bottom: 6px;">
+                                    VEHICLE BORROWING SYSTEM
+                                </span>
+                                
+                                <!-- ป้ายแสดงโรงงาน (TQS, CKR, TPS) แยกตามรหัสสีเพื่อความสวยงามและชัดเจน -->
+                                <span t-att-style="'display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #ffffff; text-transform: uppercase; ' + 
+                                                   (o.factory == 'TQS' and 'background: #16a34a;' or 
+                                                    o.factory == 'CKR' and 'background: #880808;' or 
+                                                    o.factory == 'TPS' and 'background: #d97706;' or 'background: #4b5563;')">
+                                    🏭 <t t-esc="o.factory or 'General'"/>
+                                </span>
+                            </div>
+                            
+                            <!-- ส่วนเนื้อหา: รุ่นรถยนต์และเลขทะเบียนรถ -->
+                            <div style="margin-bottom: 22px; border-bottom: 1px solid #f3f4f6; padding-bottom: 16px;">
+                                <h2 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0 0 6px 0;">
+                                    <t t-esc="o.name"/>
+                                </h2>
+                                <t t-if="o.license_plate">
+                                    <span style="font-size: 14px; font-weight: 700; color: #4b5563; background: #f3f4f6; display: inline-block; padding: 3px 10px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                        ทะเบียน: <t t-esc="o.license_plate"/>
+                                    </span>
+                                </t>
+                            </div>
+                            
+                            <!-- ส่วนของรูป QR Code -->
+                            <div style="margin-bottom: 22px; display: flex; justify-content: center; align-items: center;">
+                                <t t-if="o.qr_code_image">
+                                    <!-- ใช้ widget image ของ Odoo เพื่อดึงและเรนเดอร์ภาพจาก Binary field โดยตรงอย่างปลอดภัย -->
+                                    <span t-field="o.qr_code_image" t-options="{'widget': 'image', 'style': 'width: 200px; height: 200px; border: 1px solid #e5e7eb; padding: 8px; border-radius: 12px; background: #ffffff;'}"/>
+                                </t>
+                                <t t-else="">
+                                    <div style="width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; border: 2px dashed #d1d5db; border-radius: 12px; color: #9ca3af; font-size: 12px;">
+                                        ⚠️ ไม่พบรูป QR Code ของรถคันนี้
+                                    </div>
+                                </t>
+                            </div>
+                            
+                            <!-- ส่วนคำอธิบายขั้นตอนการทำงานภาษาไทย -->
+                            <div style="text-align: left; background: #f9fafb; padding: 14px; border-radius: 12px; border: 1px solid #f3f4f6;">
+                                <div style="font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; display: flex; align-items: center;">
+                                    <span>📱 วิธีสแกนเพื่อใช้งานรถยนต์:</span>
+                                </div>
+                                <ol style="font-size: 11px; color: #4b5563; padding-left: 16px; margin: 0; line-height: 1.5;">
+                                    <li style="margin-bottom: 4px;">ใช้กล้องสมาร์ทโฟนหรือไลน์ สแกน QR Code ด้านบน</li>
+                                    <li style="margin-bottom: 4px;">เข้าสู่ระบบและระบุสาขาที่คุณมีสิทธิ์</li>
+                                    <li>ระบุรายละเอียดจุดประสงค์และกดยืนยันการจองยืมรถยนต์</li>
+                                </ol>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

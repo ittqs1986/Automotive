@@ -415,30 +415,93 @@ class VehicleBorrowController(http.Controller):
         # domain กรองรถตาม factory
         factory_domain = [('factory', '=', user_factory)] if user_factory else []
 
-        # ดึงประเภทรถจากฐานข้อมูลจริง (fleet.vehicle.model) เฉพาะที่มีในโรงงานตัวเอง
+        # ดึงประเภทรถจากฐานข้อมูลจริง (fleet.vehicle.model) เฉพาะที่มีในโรงงานตัวเอง (ภาษาไทยคอมเมนต์)
         vehicles_for_types = env_sudo['fleet.vehicle'].search(factory_domain)
         vehicle_types = sorted(list(set([v.model_id.name for v in vehicles_for_types if v.model_id.name])))
         if not vehicle_types:
-            # fallback หากยังไม่มีรถในโรงงาน
+            # fallback หากยังไม่มีรถในโรงงาน (ภาษาไทยคอมเมนต์)
             all_models = env_sudo['fleet.vehicle.model'].search([])
             vehicle_types = sorted(list(set([m.name for m in all_models if m.name])))
 
         default_type = vehicle_types[0] if vehicle_types else ''
         selected_type = post.get('type', default_type)
 
-        # พาหนะทั้งหมดในโรงงานตัวเอง (KPI)
+        # พาหนะทั้งหมดในโรงงานตัวเอง (สำหรับ KPI และส่วนหัว) ไม่ต้องจำกัด pagination (ภาษาไทยคอมเมนต์)
         all_vehicles = env_sudo['fleet.vehicle'].search(factory_domain) or []
 
-        # รถตามประเภทที่เลือก
-        type_domain = list(factory_domain) + [('model_id.name', '=', selected_type)]
-        vehicles = env_sudo['fleet.vehicle'].search(type_domain) or []
+        # นำเข้า math และ urlencode สำหรับคำนวณแบ่งหน้าและสร้าง query parameter (ภาษาไทยคอมเมนต์)
+        import math
+        from urllib.parse import urlencode
 
-        # คำขอยืมรถ (ถ้า factory admin กรองเฉพาะรถของโรงงาน)
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับตาราง "จัดการคลังรถยนต์" (แสดงครั้งละ 10 รายการ) ---
+        try:
+            v_page = int(post.get('v_page', 1))
+        except (ValueError, TypeError):
+            v_page = 1
+        if v_page < 1:
+            v_page = 1
+
+        v_limit = 10
+        v_offset = (v_page - 1) * v_limit
+
+        # ดึงรถตามประเภทที่เลือก (ภาษาไทยคอมเมนต์)
+        type_domain = list(factory_domain) + [('model_id.name', '=', selected_type)]
+        
+        # นับจำนวนรถยนต์ทั้งหมดตามประเภทที่เลือกเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        v_total_count = env_sudo['fleet.vehicle'].search_count(type_domain)
+        v_total_pages = math.ceil(v_total_count / v_limit) or 1
+        if v_page > v_total_pages:
+            v_page = v_total_pages
+            v_offset = (v_page - 1) * v_limit
+
+        # ดึงรายการรถยนต์เฉพาะหน้านั้นๆ (จำกัด 10 รายการ) (ภาษาไทยคอมเมนต์)
+        vehicles = env_sudo['fleet.vehicle'].search(type_domain, limit=v_limit, offset=v_offset) or []
+
+        # สร้างรายการปุ่มลิงก์ Pagination รถยนต์โดยรักษาพารามิเตอร์อื่นๆ ไว้ (ภาษาไทยคอมเมนต์)
+        v_pages_list = []
+        for p in range(1, v_total_pages + 1):
+            params = post.copy()
+            params['v_page'] = p
+            params = {k: v for k, v in params.items() if v}
+            v_pages_list.append({
+                'num': p,
+                'url': '/automotive/dashboard?' + urlencode(params),
+                'is_current': p == v_page
+            })
+
+        v_prev_page_url = None
+        if v_page > 1:
+            params = post.copy()
+            params['v_page'] = v_page - 1
+            params = {k: v for k, v in params.items() if v}
+            v_prev_page_url = '/automotive/dashboard?' + urlencode(params)
+
+        v_next_page_url = None
+        if v_page < v_total_pages:
+            params = post.copy()
+            params['v_page'] = v_page + 1
+            params = {k: v for k, v in params.items() if v}
+            v_next_page_url = '/automotive/dashboard?' + urlencode(params)
+
+
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับตาราง "จัดการพนักงาน/สิทธิ์" (แสดงครั้งละ 10 รายการ) ---
+        try:
+            u_page = int(post.get('u_page', 1))
+        except (ValueError, TypeError):
+            u_page = 1
+        if u_page < 1:
+            u_page = 1
+
+        u_limit = 10
+        u_offset = (u_page - 1) * u_limit
+
+        # คำขอยืมรถ (สำหรับ KPI แดชบอร์ด ไม่ระบุ pagination) (ภาษาไทยคอมเมนต์)
         req_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
         borrow_requests = env_sudo['vehicle.borrow.request'].search(req_domain, order='create_date desc') or []
 
         vehicle_models = env_sudo['fleet.vehicle.model'].search([]) or []
-        # ดึงกลุ่มสิทธิ์ต่างๆ เพื่อใช้กรองและส่งไปหน้ากาก
+        
+        # ดึงกลุ่มสิทธิ์ต่างๆ เพื่อใช้กรองและส่งไปหน้ากาก (ภาษาไทยคอมเมนต์)
         head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
         admin_tqs_group = request.env.ref('vehicle_borrow.group_vb_admin_tqs')
         admin_ckr_group = request.env.ref('vehicle_borrow.group_vb_admin_ckr')
@@ -448,10 +511,10 @@ class VehicleBorrowController(http.Controller):
         user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
         fleet_manager_group = request.env.ref('fleet.fleet_group_manager')
 
-        # กรองรายชื่อพนักงานตามโรงงาน (หากเลือกโรงงาน จะแสดงพนักงานโรงงานนั้นบวกกับผู้ใช้กลุ่ม Head Admin ทุกคนเสมอ)
-        user_search_domain = [('share', '=', False)]
+        # กรองรายชื่อพนักงานตามโรงงาน (กรองไม่เอาผู้ใช้งาน ID 1 ออกเพื่อไม่ให้กระทบกับการแบ่งหน้า) (ภาษาไทยคอมเมนต์)
+        user_search_domain = [('share', '=', False), ('id', '!=', 1)]
         if user_factory:
-            # ใช้ Domain แบบ OR '|' เพื่อให้แอดมิน TQS, CKR, TPS เห็น Head Admin ในตารางจัดการสิทธิ์ด้วย
+            # ใช้ Domain แบบ OR '|' เพื่อให้แอดมิน TQS, CKR, TPS เห็น Head Admin ในตารางจัดการสิทธิ์ด้วย (ภาษาไทยคอมเมนต์)
             my_role_ids = {
                 'TQS': [admin_tqs_group.id, user_tqs_group.id],
                 'CKR': [admin_ckr_group.id, user_ckr_group.id],
@@ -463,20 +526,56 @@ class VehicleBorrowController(http.Controller):
                 ('group_ids', 'in', [head_admin_group.id])
             ]
             
-        users = env_sudo['res.users'].with_context(active_test=False).search(user_search_domain, order='login')
+        # นับจำนวนพนักงานทั้งหมดที่ตรงตามเงื่อนไขเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        u_total_count = env_sudo['res.users'].with_context(active_test=False).search_count(user_search_domain)
+        u_total_pages = math.ceil(u_total_count / u_limit) or 1
+        if u_page > u_total_pages:
+            u_page = u_total_pages
+            u_offset = (u_page - 1) * u_limit
+
+        # ดึงรายชื่อพนักงานเฉพาะหน้านั้นๆ (จำกัด 10 รายการ) (ภาษาไทยคอมเมนต์)
+        users = env_sudo['res.users'].with_context(active_test=False).search(
+            user_search_domain, order='login', limit=u_limit, offset=u_offset
+        )
+
+        # สร้างรายการปุ่มลิงก์ Pagination พนักงานโดยรักษาพารามิเตอร์อื่นๆ ไว้ (ภาษาไทยคอมเมนต์)
+        u_pages_list = []
+        for p in range(1, u_total_pages + 1):
+            params = post.copy()
+            params['u_page'] = p
+            params = {k: v for k, v in params.items() if v}
+            u_pages_list.append({
+                'num': p,
+                'url': '/automotive/dashboard?' + urlencode(params),
+                'is_current': p == u_page
+            })
+
+        u_prev_page_url = None
+        if u_page > 1:
+            params = post.copy()
+            params['u_page'] = u_page - 1
+            params = {k: v for k, v in params.items() if v}
+            u_prev_page_url = '/automotive/dashboard?' + urlencode(params)
+
+        u_next_page_url = None
+        if u_page < u_total_pages:
+            params = post.copy()
+            params['u_page'] = u_page + 1
+            params = {k: v for k, v in params.items() if v}
+            u_next_page_url = '/automotive/dashboard?' + urlencode(params)
 
         _logger.info(
             "ADMIN DASHBOARD: user=%s factory=%s | type=%s | all_v=%d | vehicles=%d",
             request.env.user.name, user_factory or 'ALL', selected_type, len(all_vehicles), len(vehicles)
         )
 
-        # ดึงรายการโยกย้ายรถ (Pending Transfers - ทั้งรออนุมัติและรอตอบรับ)
+        # ดึงรายการโยกย้ายรถ (Pending Transfers - ทั้งรออนุมัติและรอตอบรับ) (ภาษาไทยคอมเมนต์)
         transfer_domain = [('state', 'in', ['requested', 'approved'])]
         if user_factory:
             transfer_domain = ['&', ('state', 'in', ['requested', 'approved']), '|', ('from_factory', '=', user_factory), ('to_factory', '=', user_factory)]
         pending_transfers = request.env['vehicle.transfer.request'].sudo().search(transfer_domain, order='date_requested desc')
 
-        # ดึงประวัติการโยกย้าย (Transfer History - ที่จบรายการแล้ว)
+        # ดึงประวัติการโยกย้าย (Transfer History - ที่จบรายการแล้ว) (ภาษาไทยคอมเมนต์)
         history_transfer_domain = [('state', 'in', ['accepted', 'cancelled'])]
         if user_factory:
             history_transfer_domain = ['&', ('state', 'in', ['accepted', 'cancelled']), '|', ('from_factory', '=', user_factory), ('to_factory', '=', user_factory)]
@@ -502,6 +601,20 @@ class VehicleBorrowController(http.Controller):
             'is_head_admin': self._is_head_admin(),
             'pending_transfers': pending_transfers,
             'transfer_history': transfer_history,
+            # ส่งตัวแปรสำหรับแบ่งหน้ารถยนต์ไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
+            'v_page': v_page,
+            'v_total_pages': v_total_pages,
+            'v_total_count': v_total_count,
+            'v_pages_list': v_pages_list,
+            'v_prev_page_url': v_prev_page_url,
+            'v_next_page_url': v_next_page_url,
+            # ส่งตัวแปรสำหรับแบ่งหน้าพนักงานไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
+            'u_page': u_page,
+            'u_total_pages': u_total_pages,
+            'u_total_count': u_total_count,
+            'u_pages_list': u_pages_list,
+            'u_prev_page_url': u_prev_page_url,
+            'u_next_page_url': u_next_page_url,
         })
 
     @http.route(['/automotive/member/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
@@ -838,6 +951,322 @@ class VehicleBorrowController(http.Controller):
             'requests': borrow_requests,
         })
 
+    def _get_usages_domain(self, user_factory, **post):
+        """
+        ฟังก์ชันผู้ช่วยสำหรับสร้าง Domain กรองข้อมูลประวัติการจองและใช้งานรถยนต์แบบละเอียด
+        """
+        domain = []
+        
+        # 1. กรองสิทธิ์ตามโรงงานที่แอดมินดูแล
+        if user_factory:
+            domain.append(('vehicle_id.factory', '=', user_factory))
+        elif post.get('filter_factory') and post.get('filter_factory') != 'all':
+            domain.append(('vehicle_id.factory', '=', post.get('filter_factory')))
+            
+        # 2. ค้นหาคำสำคัญ (เลขที่คำขอ, พนักงาน, ยานพาหนะ, ทะเบียน)
+        search_text = post.get('search_text', '').strip()
+        if search_text:
+            domain.extend(['|', '|', '|',
+                           ('name', 'ilike', search_text),
+                           ('employee_id.name', 'ilike', search_text),
+                           ('vehicle_id.name', 'ilike', search_text),
+                           ('vehicle_id.license_plate', 'ilike', search_text)])
+            
+        # 3. ตัวกรองสถานะ
+        filter_state = post.get('filter_state', 'all')
+        if filter_state == 'active':
+            # รายการที่กำลังใช้งานอยู่ (จองใหม่, อนุมัติแล้ว, ยืมแล้ว)
+            domain.append(('state', 'in', ['request', 'approved', 'borrowed']))
+        elif filter_state and filter_state != 'all':
+            domain.append(('state', '=', filter_state))
+            
+        # 4. ตัวกรองประเภทรถยนต์ (f_type)
+        filter_type = post.get('f_type')
+        if filter_type:
+            domain.append(('vehicle_id.model_id.name', '=', filter_type))
+            
+        # 5. ตัวกรองยานพาหนะรายคัน (f_vehicle_id)
+        filter_vehicle_id = post.get('f_vehicle_id')
+        if filter_vehicle_id:
+            try:
+                domain.append(('vehicle_id', '=', int(filter_vehicle_id)))
+            except ValueError:
+                pass
+
+        # 6. ตัวกรองช่วงวันที่เริ่มยืม (f_start_date - f_start_date_end)
+        f_start_date = post.get('f_start_date')
+        if f_start_date:
+            domain.append(('date_start', '>=', f_start_date + ' 00:00:00'))
+        f_start_date_end = post.get('f_start_date_end')
+        if f_start_date_end:
+            domain.append(('date_start', '<=', f_start_date_end + ' 23:59:59'))
+            
+        # 7. ตัวกรองช่วงวันที่คืนรถ (f_end_date - f_end_date_end)
+        f_end_date = post.get('f_end_date')
+        if f_end_date:
+            domain.append(('date_end', '>=', f_end_date + ' 00:00:00'))
+        f_end_date_end = post.get('f_end_date_end')
+        if f_end_date_end:
+            domain.append(('date_end', '<=', f_end_date_end + ' 23:59:59'))
+            
+        return domain
+
+    @http.route(['/automotive/admin/usages'], type='http', auth="user", website=True)
+    def admin_active_usages(self, **post):
+        """
+        หน้าจอผู้ดูแลระบบสำหรับตรวจสอบประวัติและการใช้งานรถยนต์ทั้งหมดในระบบ (All Usages & History)
+        แสดงทั้งรายการที่กำลังใช้งานอยู่ในปัจจุบัน และรายการจองย้อนหลังทั้งหมดในอดีต พร้อมระบบตัวกรองแบบสอดคล้องกับระบบแจ้งซ่อม
+        """
+        if not self._is_admin():
+            return request.render("http_routing.403")
+        
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory() # ตรวจหาโรงงานที่สังกัดของแอดมินคนนี้
+        
+        # นำเข้าไลบรารีคณิตศาสตร์และการเข้ารหัส URL สำหรับทำ Pagination (ภาษาไทยคอมเมนต์)
+        import math
+        from urllib.parse import urlencode
+
+        # ดึงหน้าปัจจุบันและตรวจสอบความถูกต้องของค่าหน้า (ภาษาไทยคอมเมนต์)
+        try:
+            page = int(post.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+        if page < 1:
+            page = 1
+
+        # กำหนดจำนวนแสดงผลสูงสุด 20 รายการต่อหน้า (ภาษาไทยคอมเมนต์)
+        limit = 20
+        offset = (page - 1) * limit
+
+        # ดึงข้อมูลประวัติการจองยืมรถยนต์ทั้งหมดตามสาขาโรงงานที่แอดมินดูแลพร้อมฟิลเตอร์ (ภาษาไทยคอมเมนต์)
+        domain = self._get_usages_domain(user_factory, **post)
+        
+        # นับจำนวนรายการทั้งหมดตามเงื่อนไขตัวกรองเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        total_count = env_sudo['vehicle.borrow.request'].search_count(domain)
+        total_pages = math.ceil(total_count / limit) or 1
+
+        # ป้องกันกรณีระบุหน้าเกินหน้าสูงสุดที่มีจริง (ภาษาไทยคอมเมนต์)
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * limit
+
+        # ดึงข้อมูลรายการเฉพาะหน้านั้นๆ (จำกัด 20 รายการ) (ภาษาไทยคอมเมนต์)
+        borrow_requests = env_sudo['vehicle.borrow.request'].search(
+            domain, order='date_start desc', limit=limit, offset=offset
+        )
+        
+        # สร้างลิงก์สำหรับแต่ละหน้า โดยคัดลอกพารามิเตอร์ของตัวกรองเดิมเพื่อรักษาฟิลเตอร์ไว้ (ภาษาไทยคอมเมนต์)
+        pages_list = []
+        for p in range(1, total_pages + 1):
+            params = post.copy()
+            params['page'] = p
+            # ตัดฟิลด์ที่ค่าว่างเปล่าออกเพื่อลดความยาวของ URL query string (ภาษาไทยคอมเมนต์)
+            params = {k: v for k, v in params.items() if v}
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/admin/usages?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        # ลิงก์สำหรับปุ่มหน้าก่อนหน้า (Previous Page) (ภาษาไทยคอมเมนต์)
+        prev_page_url = None
+        if page > 1:
+            params = post.copy()
+            params['page'] = page - 1
+            params = {k: v for k, v in params.items() if v}
+            prev_page_url = '/automotive/admin/usages?' + urlencode(params)
+
+        # ลิงก์สำหรับปุ่มหน้าถัดไป (Next Page) (ภาษาไทยคอมเมนต์)
+        next_page_url = None
+        if page < total_pages:
+            params = post.copy()
+            params['page'] = page + 1
+            params = {k: v for k, v in params.items() if v}
+            next_page_url = '/automotive/admin/usages?' + urlencode(params)
+
+        # ดึงรายชื่อรถยนต์และประเภทรถยนต์สำหรับแสดงผลในตัวเลือก Filter Dropdown (ภาษาไทยคอมเมนต์)
+        v_domain = [('factory', '=', user_factory)] if user_factory else []
+        vehicles = env_sudo['fleet.vehicle'].search(v_domain, order='name asc')
+        vehicle_types = sorted(list(set([v.model_id.name for v in vehicles if v.model_id and v.model_id.name])))
+        
+        return request.render("vehicle_borrow.admin_active_usages_template", {
+            'requests': borrow_requests,
+            'user_factory': user_factory or 'ทั้งหมด',
+            'is_super_admin': not user_factory,
+            'vehicles': vehicles,
+            'vehicle_types': vehicle_types,
+            'search_text': post.get('search_text', ''),
+            'filter_state': post.get('filter_state', 'all'),
+            'filter_factory': post.get('filter_factory', 'all'),
+            'filter_type': post.get('f_type', ''),
+            'filter_vehicle_id': post.get('f_vehicle_id', ''),
+            'filter_start_date': post.get('f_start_date', ''),
+            'filter_start_date_end': post.get('f_start_date_end', ''),
+            'filter_end_date': post.get('f_end_date', ''),
+            'filter_end_date_end': post.get('f_end_date_end', ''),
+            # ส่งตัวแปร Pagination ไปยัง QWeb Template (ภาษาไทยคอมเมนต์)
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
+        })
+
+    @http.route(['/automotive/admin/usages/export'], type='http', auth="user", methods=['POST', 'GET'], website=True, csrf=False)
+    def admin_active_usages_export(self, **post):
+        """
+        เมธอดสำหรับส่งออกประวัติการยืมรถยนต์ออกมาเป็นไฟล์ Excel (.xlsx) ตามตัวกรองที่มีความปลอดภัยและสวยงาม
+        """
+        if not self._is_admin():
+            return request.render("http_routing.403")
+            
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()
+        
+        # ดึงข้อมูลตามฟิลเตอร์เดียวกัน
+        domain = self._get_usages_domain(user_factory, **post)
+        borrow_requests = env_sudo['vehicle.borrow.request'].search(domain, order='date_start desc')
+        
+        import io
+        import xlsxwriter
+        from odoo import fields
+        
+        # สร้าง Workbook ในหน่วยความจำ
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('ประวัติการใช้งานรถยนต์')
+        
+        # กำหนดสไตล์ความสวยงามระดับพรีเมียม (สีน้ำเงินเข้มตาม Odoo/Bootstrap)
+        title_format = workbook.add_format({
+            'bold': True,
+            'font_size': 14,
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_name': 'Tahoma'
+        })
+        header_format = workbook.add_format({
+            'bold': True,
+            'font_size': 10,
+            'align': 'center',
+            'valign': 'vcenter',
+            'bg_color': '#1e293b',
+            'font_color': '#ffffff',
+            'border': 1,
+            'border_color': '#cbd5e1',
+            'font_name': 'Tahoma'
+        })
+        cell_format = workbook.add_format({
+            'font_size': 10,
+            'align': 'left',
+            'valign': 'vcenter',
+            'border': 1,
+            'border_color': '#e2e8f0',
+            'font_name': 'Tahoma'
+        })
+        cell_center_format = workbook.add_format({
+            'font_size': 10,
+            'align': 'center',
+            'valign': 'vcenter',
+            'border': 1,
+            'border_color': '#e2e8f0',
+            'font_name': 'Tahoma'
+        })
+        
+        # กำหนดความกว้างคอลัมน์ให้สมมาตรอ่านง่าย
+        worksheet.set_column('A:A', 22) # เลขที่คำขอ
+        worksheet.set_column('B:B', 20) # ผู้ยืมรถ
+        worksheet.set_column('C:C', 18) # แผนก/ตำแหน่ง
+        worksheet.set_column('D:D', 30) # ยานพาหนะ
+        worksheet.set_column('E:E', 15) # ทะเบียน
+        worksheet.set_column('F:F', 12) # โรงงาน
+        worksheet.set_column('G:G', 25) # จุดประสงค์
+        worksheet.set_column('H:H', 20) # วันที่เริ่มยืม
+        worksheet.set_column('I:I', 20) # วันที่คืนรถ
+        worksheet.set_column('J:J', 15) # สถานะ
+        
+        # ตั้งความสูงแถวหัวเรื่อง
+        worksheet.set_row(0, 40)
+        worksheet.set_row(1, 28)
+        
+        # เขียนหัวข้อรายงาน
+        factory_title = f" ({user_factory})" if user_factory else " (ทั้งหมด)"
+        worksheet.merge_range('A1:J1', f'รายงานประวัติการจองและใช้งานรถยนต์ทั้งหมด{factory_title}', title_format)
+        
+        # เขียนคอลัมน์หัวตาราง
+        headers = [
+            'เลขที่คำขอ', 'ผู้ยืมรถ', 'แผนก/ตำแหน่ง', 'ยานพาหนะ', 
+            'ทะเบียน', 'โรงงาน', 'จุดประสงค์การใช้งาน', 'วันที่เริ่มยืม', 
+            'วันที่คืนรถ', 'สถานะ'
+        ]
+        for col_num, header in enumerate(headers):
+            worksheet.write(1, col_num, header, header_format)
+            
+        # วนลูปบันทึกแถวข้อมูลดิบ
+        row_num = 2
+        state_mapping = {
+            'draft': 'ฉบับร่าง',
+            'request': 'กำลังใช้งาน',
+            'approved': 'อนุมัติแล้ว',
+            'borrowed': 'กำลังใช้งาน',
+            'returned': 'คืนรถแล้ว',
+            'cancelled': 'ยกเลิก'
+        }
+        
+        for req in borrow_requests:
+            worksheet.set_row(row_num, 22)
+            
+            date_start_str = str(req.date_start)[:16] if req.date_start else '-'
+            date_end_str = str(req.date_end)[:16] if req.date_end else 'ยังไม่คืน'
+            state_label = state_mapping.get(req.state, req.state or '-')
+            
+            worksheet.write(row_num, 0, req.name or '-', cell_center_format)
+            worksheet.write(row_num, 1, req.employee_id.name or '-', cell_format)
+            worksheet.write(row_num, 2, req.employee_id.department_id.name if req.employee_id.department_id else 'พนักงาน', cell_format)
+            worksheet.write(row_num, 3, req.vehicle_id.name or '-', cell_format)
+            worksheet.write(row_num, 4, req.vehicle_id.license_plate or '-', cell_center_format)
+            worksheet.write(row_num, 5, req.vehicle_id.factory or 'ทั่วไป', cell_center_format)
+            worksheet.write(row_num, 6, req.purpose or '-', cell_format)
+            worksheet.write(row_num, 7, date_start_str, cell_center_format)
+            worksheet.write(row_num, 8, date_end_str, cell_center_format)
+            worksheet.write(row_num, 9, state_label, cell_center_format)
+            
+            row_num += 1
+            
+        workbook.close()
+        output.seek(0)
+        
+        # สร้าง HTTP Response ส่งกลับพร้อมแนบไฟล์ Excel
+        filename = f"vehicle_usages_report_{fields.Date.today()}.xlsx"
+        response = request.make_response(
+            output.getvalue(),
+            headers=[
+                ('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+                ('Content-Disposition', f'attachment; filename={filename}')
+            ]
+        )
+        return response
+
+    @http.route(['/automotive/admin/return/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    def admin_vehicle_return(self, req_id, **post):
+        """
+        ปุ่มสำหรับผู้ดูแลระบบ (Admin) กดคืนรถแทนผู้ใช้งานในกรณีที่ผู้ใช้งานลืมกดคืนในระบบ
+        """
+        if not self._is_admin():
+            return request.render("http_routing.403")
+        
+        from odoo import fields
+        borrow = request.env['vehicle.borrow.request'].sudo().browse(req_id)
+        # ปรับปรุงให้รองรับการกดคืนรถแทนพนักงานในสถานะ request (กำลังใช้งาน) นอกเหนือจาก approved และ borrowed
+        if borrow.exists() and borrow.state in ['request', 'approved', 'borrowed']:
+            borrow.sudo().write({
+                'state': 'returned',
+                'date_end': fields.Datetime.now(),
+            })
+            
+        return request.redirect('/automotive/admin/usages?msg=returned')
+
     @http.route(['/automotive/delete/<int:vehicle_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_delete(self, vehicle_id, **post):
         if not self._is_admin():
@@ -853,16 +1282,21 @@ class VehicleBorrowController(http.Controller):
 
     @http.route(['/automotive/booking/delete/<int:req_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_booking_delete(self, req_id, **post):
+        """
+        เมธอดสำหรับลบประวัติการจองและใช้งานรถยนต์โดยผู้ดูแลระบบ (ภาษาไทยคอมเมนต์)
+        """
         if not self._is_admin():
             return request.render("http_routing.403")
         
+        # ดึงลิงก์ปลายทางในการ Redirect หากไม่มีให้กลับไปยังหน้าประวัติหลัก (ภาษาไทยคอมเมนต์)
+        redirect_url = post.get('redirect_url', '/automotive/admin/usages')
         try:
             req = request.env['vehicle.borrow.request'].sudo().browse(req_id)
             if req.exists():
                 req.sudo().unlink()
-            return request.redirect('/automotive/bookings?msg=booking_deleted')
+            return request.redirect(f'{redirect_url}?msg=booking_deleted')
         except Exception as e:
-            return request.redirect("/automotive/bookings?error=" + str(e))
+            return request.redirect(f'{redirect_url}?error=' + str(e))
 
     @http.route(['/automotive/setup/list-vehicles'], type='http', auth="user", website=True)
     def admin_list_vehicles(self, **post):

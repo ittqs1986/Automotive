@@ -29,6 +29,47 @@ class FleetVehicle(models.Model):
         tracking=True,
     )
 
+    # เพิ่มฟิลด์สำหรับระบบ QR Code ประจำตัวรถยนต์
+    qr_code_image = fields.Binary(string='QR Code สแกนยืมรถ', compute='_compute_qr_code_image', store=False)
+    qr_code_link = fields.Char(string='ลิงก์สแกนยืมรถ', compute='_compute_qr_code_image', store=False)
+
+    def _compute_qr_code_image(self):
+        """
+        ฟังก์ชันสำหรับสร้างภาพ QR Code และลิงก์สำหรับสแกนยืมรถยนต์แบบอัตโนมัติ
+        โดยจะแปลง URL ของระบบรวมถึง ID ของรถยนต์เป็นรหัส QR Code
+        """
+        # ดึง base_url ของ Odoo (เช่น http://localhost:8069 หรือโดเมนเนมใช้งานจริง)
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+        for record in self:
+            # ลิงก์ปลายทางสำหรับการสแกนเลือกรถยนต์ทันที
+            link = f"{base_url}/automotive?scan_vehicle_id={record.id}"
+            record.qr_code_link = link
+            
+            try:
+                import qrcode
+                import io
+                import base64
+                
+                # ตั้งค่าไลบรารี qrcode
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(link)
+                qr.make(fit=True)
+                
+                # แปลงรหัส QR เป็นรูปภาพ PNG และเข้ารหัสเป็น Base64
+                img = qr.make_image(fill_color="black", back_color="white")
+                temp = io.BytesIO()
+                img.save(temp, format="PNG")
+                qr_image = base64.b64encode(temp.getvalue())
+                record.qr_code_image = qr_image
+            except Exception:
+                # ป้องกันข้อผิดพลาดกรณีเกิดความล้มเหลวในการโหลด qrcode
+                record.qr_code_image = False
+
     def _compute_current_borrow(self):
         for record in self:
             # ถ้ารถ "เสีย" ให้ถือว่าไม่ว่างทันที
@@ -62,10 +103,10 @@ class VehicleBorrowRequest(models.Model):
     date_end = fields.Datetime(string='วันที่คืน', required=False, tracking=True)
     purpose = fields.Text(string='จุดประสงค์การยืม', required=True)
     
-    # สถานะของคำขอจองรถ
+    # สถานะของคำขอจองรถ (ปรับเปลี่ยนคำแสดงผลของ request จาก "รออนุมัติ" เป็น "กำลังใช้งาน" ตามต้องการ)
     state = fields.Selection([
         ('draft', 'ฉบับร่าง'),
-        ('request', 'รออนุมัติ'),
+        ('request', 'กำลังใช้งาน'),
         ('approved', 'อนุมัติแล้ว'),
         ('borrowed', 'กำลังใช้งาน'),
         ('returned', 'คืนรถแล้ว'),

@@ -999,6 +999,274 @@
         </t>
     </template>
 
+    <!-- Admin Active Usages and History Template (ภาษาไทยคอมเมนต์) -->
+    <template id="admin_active_usages_template" name="Admin Active Usages and History">
+        <t t-call="vehicle_borrow.vb_layout">
+            <div id="wrap" class="oe_structure oe_empty bg-light py-5">
+                <div class="container pb-5">
+                    <!-- ส่วนหัวของหน้าและปุ่มส่งออกรายงาน (ภาษาไทยคอมเมนต์) -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1"><i class="fa fa-history me-2 text-warning"/>ประวัติการใช้งานทั้งหมด</h2>
+                            <p class="text-muted mb-0">รายการคำขอและประวัติการยืม-คืนรถยนต์ในระบบของโรงงาน <span class="fw-bold text-primary" t-esc="user_factory"/></p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <!-- ฟอร์มส่งออกรายงาน Excel พร้อมส่งพารามิเตอร์ตัวกรองไปด้วย (ภาษาไทยคอมเมนต์) -->
+                            <form action="/automotive/admin/usages/export" method="get" class="m-0">
+                                <input type="hidden" name="search_text" t-att-value="search_text"/>
+                                <input type="hidden" name="filter_state" t-att-value="filter_state"/>
+                                <input type="hidden" name="filter_factory" t-att-value="filter_factory"/>
+                                <input type="hidden" name="f_type" t-att-value="filter_type"/>
+                                <input type="hidden" name="f_vehicle_id" t-att-value="filter_vehicle_id"/>
+                                <input type="hidden" name="f_start_date" t-att-value="filter_start_date"/>
+                                <input type="hidden" name="f_start_date_end" t-att-value="filter_start_date_end"/>
+                                <input type="hidden" name="f_end_date" t-att-value="filter_end_date"/>
+                                <input type="hidden" name="f_end_date_end" t-att-value="filter_end_date_end"/>
+                                <button type="submit" class="btn btn-success shadow-sm rounded-pill px-4">
+                                    <i class="fa fa-file-excel-o me-2"/>ส่งออก Excel
+                                </button>
+                            </form>
+                            <a href="/automotive/dashboard" class="btn btn-outline-secondary shadow-sm rounded-pill px-4">
+                                <i class="fa fa-arrow-left me-2"/>กลับแดชบอร์ด
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนตัวกรองข้อมูลแบบละเอียด (Filters Form) (ภาษาไทยคอมเมนต์) -->
+                    <div class="card shadow-sm border-0 rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <form method="get" action="/automotive/admin/usages" class="row g-3">
+                                <!-- ค้นหาคำด่วน (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-4 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">ค้นหาด่วน (เลขที่/ผู้จอง/ทะเบียน)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fa fa-search text-muted"/></span>
+                                        <input type="text" name="search_text" t-att-value="search_text" class="form-control border-start-0 text-dark" placeholder="พิมพ์คำค้นหา..."/>
+                                    </div>
+                                </div>
+                                <!-- กรองตามสถานะการยืม (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">สถานะ</label>
+                                    <select name="filter_state" class="form-select form-select-sm">
+                                        <option value="all" t-att-selected="filter_state == 'all'">-- ทั้งหมด --</option>
+                                        <option value="request" t-att-selected="filter_state == 'request'">รออนุมัติ</option>
+                                        <option value="approved" t-att-selected="filter_state == 'approved'">อนุมัติแล้ว</option>
+                                        <option value="borrowed" t-att-selected="filter_state == 'borrowed'">กำลังใช้งาน</option>
+                                        <option value="returned" t-att-selected="filter_state == 'returned'">คืนแล้ว</option>
+                                        <option value="cancelled" t-att-selected="filter_state == 'cancelled'">ยกเลิก</option>
+                                    </select>
+                                </div>
+                                <!-- กรองตามโรงงาน (เฉพาะ Super Admin เท่านั้นที่ไม่มีขอบเขตโรงงานสังกัด) (ภาษาไทยคอมเมนต์) -->
+                                <div t-if="is_super_admin" class="col-md-2 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">โรงงาน</label>
+                                    <select name="filter_factory" class="form-select form-select-sm">
+                                        <option value="all" t-att-selected="filter_factory == 'all'">-- ทั้งหมด --</option>
+                                        <option value="TQS" t-att-selected="filter_factory == 'TQS'">TQS</option>
+                                        <option value="CKR" t-att-selected="filter_factory == 'CKR'">CKR</option>
+                                        <option value="TPS" t-att-selected="filter_factory == 'TPS'">TPS</option>
+                                    </select>
+                                </div>
+                                <!-- กรองตามประเภทของรถยนต์ (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">ประเภทรถ</label>
+                                    <select id="filter_vehicle_type" name="f_type" class="form-select form-select-sm">
+                                        <option value="">-- ทั้งหมด --</option>
+                                        <t t-foreach="vehicle_types" t-as="vt">
+                                            <option t-att-value="vt" t-att-selected="filter_type == vt" t-esc="vt"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <!-- กรองเจาะจงรายคัน (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-2 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">ยี่ห้อ/รุ่นรถ</label>
+                                    <select id="filter_vehicle_id" name="f_vehicle_id" class="form-select form-select-sm">
+                                        <option value="">-- ทั้งหมด --</option>
+                                        <t t-foreach="vehicles" t-as="v">
+                                            <option t-att-value="v.id" t-att-selected="str(v.id) == str(filter_vehicle_id)" t-att-data-type="v.model_id.name" t-esc="v.display_name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <!-- ช่วงเวลาเริ่มต้นการจอง (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">วันเริ่มจอง (ระหว่างวันที่)</label>
+                                    <input type="date" name="f_start_date" t-att-value="filter_start_date" class="form-control form-control-sm"/>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">ถึงวันที่</label>
+                                    <input type="date" name="f_start_date_end" t-att-value="filter_start_date_end" class="form-control form-control-sm"/>
+                                </div>
+                                <!-- ช่วงเวลาการคืนรถจริง (ภาษาไทยคอมเมนต์) -->
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">วันคืนจริง (ระหว่างวันที่)</label>
+                                    <input type="date" name="f_end_date" t-att-value="filter_end_date" class="form-control form-control-sm"/>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <label class="form-label small fw-bold text-muted">ถึงวันที่</label>
+                                    <input type="date" name="f_end_date_end" t-att-value="filter_end_date_end" class="form-control form-control-sm"/>
+                                </div>
+                                
+                                <div class="col-12 text-end mt-3">
+                                    <a href="/automotive/admin/usages" class="btn btn-sm btn-outline-secondary me-2 rounded-pill px-3">ล้างค่าตัวกรอง</a>
+                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4"><i class="fa fa-filter me-2"/>กรองข้อมูล</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ตารางรายการประวัติ (ภาษาไทยคอมเมนต์) -->
+                    <div class="card shadow border-0 rounded-4">
+                        <!-- ปุ่มเปลี่ยนหน้า (Pagination) ด้านบนตารางประวัติ (ภาษาไทยคอมเมนต์) -->
+                        <div t-if="total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light rounded-top-4">
+                            <div class="small text-muted fw-semibold">
+                                แสดงหน้า <t t-esc="page"/> จาก <t t-esc="total_pages"/> (ทั้งหมด <t t-esc="total_count"/> รายการ)
+                            </div>
+                            <nav aria-label="Usage history pagination top">
+                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                    <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                        <a class="page-link" t-att-href="prev_page_url or '#'" aria-label="Previous">
+                                            <i class="fa fa-chevron-left"/>
+                                        </a>
+                                    </li>
+                                    <t t-foreach="pages_list" t-as="p_info">
+                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                        </li>
+                                    </t>
+                                    <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                        <a class="page-link" t-att-href="next_page_url or '#'" aria-label="Next">
+                                            <i class="fa fa-chevron-right"/>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th class="ps-4 py-3">เลขที่คำขอ</th>
+                                            <th>ผู้จอง</th>
+                                            <th>ยานพาหนะ</th>
+                                            <th>โรงงาน</th>
+                                            <th>วันเวลาที่จอง</th>
+                                            <th>วันเวลาที่คืน</th>
+                                            <th class="text-center">สถานะ</th>
+                                            <th class="text-center">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="not requests">
+                                            <tr><td colspan="8" class="text-center py-5 text-muted">ไม่พบข้อมูลการจองในระบบ</td></tr>
+                                        </t>
+                                        <t t-foreach="requests" t-as="r">
+                                            <tr class="bg-white">
+                                                <td class="ps-4 fw-bold text-primary" t-esc="r.name"/>
+                                                <td>
+                                                    <div class="fw-semibold" t-esc="r.employee_id.name"/>
+                                                    <div class="small text-muted" t-esc="r.employee_id.department_id.name if r.employee_id.department_id else 'พนักงาน'"/>
+                                                </td>
+                                                <td>
+                                                    <div t-esc="r.vehicle_id.display_name"/>
+                                                    <span class="badge bg-light text-dark border small" t-esc="r.vehicle_id.license_plate"/>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary" t-esc="r.vehicle_id.factory"/>
+                                                </td>
+                                                <td class="small">
+                                                    <i class="fa fa-calendar-plus-o me-1 text-success"/>
+                                                    <t t-esc="str(r.date_start)[:16]"/>
+                                                </td>
+                                                <td class="small">
+                                                    <t t-if="r.date_end">
+                                                        <i class="fa fa-calendar-check-o me-1 text-primary"/>
+                                                        <t t-esc="str(r.date_end)[:16]"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="text-muted small italic">ยังไม่คืน</span>
+                                                    </t>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-attf-class="badge rounded-pill shadow-sm px-3 py-2 #{'bg-warning text-dark' if r.state == 'request' else 'bg-success' if r.state == 'returned' else 'bg-info' if r.state in ['approved', 'borrowed'] else 'bg-secondary'}" 
+                                                          style="font-size: 0.75rem;">
+                                                        <t t-if="r.state == 'request'">รออนุมัติ</t>
+                                                        <t t-elif="r.state == 'approved'">อนุมัติแล้ว</t>
+                                                        <t t-elif="r.state == 'borrowed'">กำลังใช้งาน</t>
+                                                        <t t-elif="r.state == 'returned'">คืนแล้ว</t>
+                                                        <t t-elif="r.state == 'cancelled'">ยกเลิก</t>
+                                                        <t t-else=""><t t-esc="r.state"/></t>
+                                                    </span>
+                                                </td>
+                                                <td class="text-center pe-3">
+                                                    <!-- ฟอร์มปุ่มลบรายการจอง (ภาษาไทยคอมเมนต์) -->
+                                                    <form t-attf-action="/automotive/booking/delete/#{r.id}" method="post" class="m-0">
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                        <input type="hidden" name="redirect_url" value="/automotive/admin/usages"/>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0" 
+                                                                onclick="return confirm('ยืนยันลบข้อมูลการจองนี้ออกจากประวัติ?')" title="ลบออกจากประวัติ">
+                                                            <i class="fa fa-trash-o fs-5"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- ปุ่มเปลี่ยนหน้า (Pagination) ด้านล่างตารางประวัติ (ภาษาไทยคอมเมนต์) -->
+                        <div t-if="total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 rounded-bottom-4">
+                            <div class="small text-muted fw-semibold">
+                                แสดงหน้า <t t-esc="page"/> จาก <t t-esc="total_pages"/> (ทั้งหมด <t t-esc="total_count"/> รายการ)
+                            </div>
+                            <nav aria-label="Usage history pagination bottom">
+                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                    <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                        <a class="page-link" t-att-href="prev_page_url or '#'" aria-label="Previous">
+                                            <i class="fa fa-chevron-left"/>
+                                        </a>
+                                    </li>
+                                    <t t-foreach="pages_list" t-as="p_info">
+                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                        </li>
+                                    </t>
+                                    <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                        <a class="page-link" t-att-href="next_page_url or '#'" aria-label="Next">
+                                            <i class="fa fa-chevron-right"/>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- สคริปต์กรองยี่ห้อ/รุ่นรถสัมพันธ์กับประเภทรถที่เลือก (ภาษาไทยคอมเมนต์) -->
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function() {
+                    const filterType = document.getElementById('filter_vehicle_type');
+                    const filterVehicle = document.getElementById('filter_vehicle_id');
+                    if (filterType &amp;&amp; filterVehicle) {
+                        const allOptions = Array.from(filterVehicle.options).slice(1);
+                        filterType.addEventListener('change', function() {
+                            const selectedType = this.value;
+                            filterVehicle.innerHTML = '&lt;option value=""&gt;-- ทั้งหมด --&lt;/option&gt;';
+                            allOptions.forEach(function(opt) {
+                                if (!selectedType || opt.getAttribute('data-type') === selectedType) {
+                                    filterVehicle.appendChild(opt.cloneNode(true));
+                                }
+                            });
+                        });
+                    }
+                });
+            </script>
+        </t>
+    </template>
+
     <!-- Admin Dashboard Template -->
     <template id="admin_dashboard_template" name="Admin Vehicle Dashboard">
         <t t-call="vehicle_borrow.vb_layout">
@@ -1131,6 +1399,31 @@
                                         </div>
                                     </div>
                                     <div class="card-body p-0">
+                                        <!-- ปุ่มเลือกหน้า (Pagination) ด้านบนตารางจัดการคลังรถยนต์ (ภาษาไทยคอมเมนต์) -->
+                                        <div t-if="v_total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light">
+                                            <div class="small text-muted fw-semibold">
+                                                <i class="fa fa-info-circle me-1 text-primary"/>แสดงหน้า <t t-esc="v_page"/> จาก <t t-esc="v_total_pages"/> (ทั้งหมด <t t-esc="v_total_count"/> รายการ)
+                                            </div>
+                                            <nav aria-label="Vehicle pagination top">
+                                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                    <li t-attf-class="page-item #{'disabled' if not v_prev_page_url else ''}">
+                                                        <a class="page-link" t-att-href="v_prev_page_url or '#'" aria-label="Previous">
+                                                            <i class="fa fa-chevron-left"/>
+                                                        </a>
+                                                    </li>
+                                                    <t t-foreach="v_pages_list" t-as="p_info">
+                                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                        </li>
+                                                    </t>
+                                                    <li t-attf-class="page-item #{'disabled' if not v_next_page_url else ''}">
+                                                        <a class="page-link" t-att-href="v_next_page_url or '#'" aria-label="Next">
+                                                            <i class="fa fa-chevron-right"/>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </nav>
+                                        </div>
                                         <table class="table table-hover mb-0">
                                             <thead class="table-light">
                                                 <tr>
@@ -1242,6 +1535,31 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                    <!-- ปุ่มเลือกหน้า (Pagination) ด้านล่างตารางจัดการคลังรถยนต์ (ภาษาไทยคอมเมนต์) -->
+                                    <div t-if="v_total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                                        <div class="small text-muted fw-semibold">
+                                            แสดงหน้า <t t-esc="v_page"/> จาก <t t-esc="v_total_pages"/> (ทั้งหมด <t t-esc="v_total_count"/> รายการ)
+                                        </div>
+                                        <nav aria-label="Vehicle pagination bottom">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                <li t-attf-class="page-item #{'disabled' if not v_prev_page_url else ''}">
+                                                    <a class="page-link" t-att-href="v_prev_page_url or '#'" aria-label="Previous">
+                                                        <i class="fa fa-chevron-left"/>
+                                                    </a>
+                                                </li>
+                                                <t t-foreach="v_pages_list" t-as="p_info">
+                                                    <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                        <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                    </li>
+                                                </t>
+                                                <li t-attf-class="page-item #{'disabled' if not v_next_page_url else ''}">
+                                                    <a class="page-link" t-att-href="v_next_page_url or '#'" aria-label="Next">
+                                                        <i class="fa fa-chevron-right"/>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1255,6 +1573,31 @@
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
+                                        <!-- ปุ่มเลือกหน้า (Pagination) ด้านบนตารางจัดการพนักงาน (ภาษาไทยคอมเมนต์) -->
+                                        <div t-if="u_total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light">
+                                            <div class="small text-muted fw-semibold">
+                                                <i class="fa fa-info-circle me-1 text-primary"/>แสดงหน้า <t t-esc="u_page"/> จาก <t t-esc="u_total_pages"/> (ทั้งหมด <t t-esc="u_total_count"/> คน)
+                                            </div>
+                                            <nav aria-label="User pagination top">
+                                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                    <li t-attf-class="page-item #{'disabled' if not u_prev_page_url else ''}">
+                                                        <a class="page-link" t-att-href="u_prev_page_url or '#'" aria-label="Previous">
+                                                            <i class="fa fa-chevron-left"/>
+                                                        </a>
+                                                    </li>
+                                                    <t t-foreach="u_pages_list" t-as="p_info">
+                                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                        </li>
+                                                    </t>
+                                                    <li t-attf-class="page-item #{'disabled' if not u_next_page_url else ''}">
+                                                        <a class="page-link" t-att-href="u_next_page_url or '#'" aria-label="Next">
+                                                            <i class="fa fa-chevron-right"/>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </nav>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
                                                 <thead class="table-light">
@@ -1358,6 +1701,31 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                    <!-- ปุ่มเลือกหน้า (Pagination) ด้านล่างตารางจัดการพนักงาน (ภาษาไทยคอมเมนต์) -->
+                                    <div t-if="u_total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                                        <div class="small text-muted fw-semibold">
+                                            แสดงหน้า <t t-esc="u_page"/> จาก <t t-esc="u_total_pages"/> (ทั้งหมด <t t-esc="u_total_count"/> คน)
+                                        </div>
+                                        <nav aria-label="User pagination bottom">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                <li t-attf-class="page-item #{'disabled' if not u_prev_page_url else ''}">
+                                                    <a class="page-link" t-att-href="u_prev_page_url or '#'" aria-label="Previous">
+                                                        <i class="fa fa-chevron-left"/>
+                                                     </a>
+                                                </li>
+                                                <t t-foreach="u_pages_list" t-as="p_info">
+                                                    <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                        <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                    </li>
+                                                </t>
+                                                <li t-attf-class="page-item #{'disabled' if not u_next_page_url else ''}">
+                                                    <a class="page-link" t-att-href="u_next_page_url or '#'" aria-label="Next">
+                                                        <i class="fa fa-chevron-right"/>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
                                     </div>
                                 </div>
                             </div>
@@ -1510,7 +1878,7 @@
                         <!-- ปุ่มทางลัดไปหน้าประวัติ และ จัดการอะไหล่ -->
                         <div class="row mt-5">
                             <div class="col-12 text-center d-flex justify-content-center gap-3 flex-wrap">
-                                <a href="/automotive/bookings" class="btn btn-dark btn-lg px-5 py-3 rounded-pill shadow">
+                                <a href="/automotive/admin/usages" class="btn btn-dark btn-lg px-5 py-3 rounded-pill shadow">
                                     <i class="fa fa-history me-2"></i> ประวัติการใช้งานรถ
                                 </a>
                                 <a href="/automotive/spare-parts" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow">
