@@ -575,11 +575,58 @@ class VehicleBorrowController(http.Controller):
             transfer_domain = ['&', ('state', 'in', ['requested', 'approved']), '|', ('from_factory', '=', user_factory), ('to_factory', '=', user_factory)]
         pending_transfers = request.env['vehicle.transfer.request'].sudo().search(transfer_domain, order='date_requested desc')
 
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับตาราง "ประวัติการโยกย้ายรถ" (แสดงครั้งละ 10 รายการ) ---
+        try:
+            t_page = int(post.get('t_page', 1))
+        except (ValueError, TypeError):
+            t_page = 1
+        if t_page < 1:
+            t_page = 1
+
+        t_limit = 10
+        t_offset = (t_page - 1) * t_limit
+
         # ดึงประวัติการโยกย้าย (Transfer History - ที่จบรายการแล้ว) (ภาษาไทยคอมเมนต์)
         history_transfer_domain = [('state', 'in', ['accepted', 'cancelled'])]
         if user_factory:
             history_transfer_domain = ['&', ('state', 'in', ['accepted', 'cancelled']), '|', ('from_factory', '=', user_factory), ('to_factory', '=', user_factory)]
-        transfer_history = request.env['vehicle.transfer.request'].sudo().search(history_transfer_domain, order='date_accepted desc, write_date desc', limit=50)
+        
+        # นับจำนวนประวัติการโยกย้ายทั้งหมดเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        t_total_count = request.env['vehicle.transfer.request'].sudo().search_count(history_transfer_domain)
+        t_total_pages = math.ceil(t_total_count / t_limit) or 1
+        if t_page > t_total_pages:
+            t_page = t_total_pages
+            t_offset = (t_page - 1) * t_limit
+
+        transfer_history = request.env['vehicle.transfer.request'].sudo().search(
+            history_transfer_domain, order='date_accepted desc, write_date desc', limit=t_limit, offset=t_offset
+        )
+
+        # สร้างรายการปุ่มลิงก์ Pagination ประวัติการโยกย้ายโดยรักษาพารามิเตอร์อื่นๆ ไว้ (ภาษาไทยคอมเมนต์)
+        t_pages_list = []
+        for p in range(1, t_total_pages + 1):
+            params = post.copy()
+            params['t_page'] = p
+            params = {k: v for k, v in params.items() if v}
+            t_pages_list.append({
+                'num': p,
+                'url': '/automotive/dashboard?' + urlencode(params),
+                'is_current': p == t_page
+            })
+
+        t_prev_page_url = None
+        if t_page > 1:
+            params = post.copy()
+            params['t_page'] = t_page - 1
+            params = {k: v for k, v in params.items() if v}
+            t_prev_page_url = '/automotive/dashboard?' + urlencode(params)
+
+        t_next_page_url = None
+        if t_page < t_total_pages:
+            params = post.copy()
+            params['t_page'] = t_page + 1
+            params = {k: v for k, v in params.items() if v}
+            t_next_page_url = '/automotive/dashboard?' + urlencode(params)
 
         return request.render("vehicle_borrow.admin_dashboard_template", {
             'all_vehicles': all_vehicles,
@@ -615,6 +662,13 @@ class VehicleBorrowController(http.Controller):
             'u_pages_list': u_pages_list,
             'u_prev_page_url': u_prev_page_url,
             'u_next_page_url': u_next_page_url,
+            # ส่งตัวแปรสำหรับแบ่งหน้าประวัติการโยกย้ายไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
+            't_page': t_page,
+            't_total_pages': t_total_pages,
+            't_total_count': t_total_count,
+            't_pages_list': t_pages_list,
+            't_prev_page_url': t_prev_page_url,
+            't_next_page_url': t_next_page_url,
         })
 
     @http.route(['/automotive/member/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)

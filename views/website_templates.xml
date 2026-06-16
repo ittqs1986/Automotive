@@ -1812,15 +1812,42 @@
                             </div>
                         </div>
                         
-                        <!-- ส่วนของประวัติการโยกย้ายรถ (Transfer History - ที่จบแล้ว) -->
+                        <!-- ส่วนของประวัติการโยกย้ายรถ (Transfer History - ที่จบแล้ว) (ภาษาไทยคอมเมนต์) -->
                         <div class="row mt-5" t-if="transfer_history">
                             <div class="col-12">
                                 <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5">
                                     <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
                                         <h5 class="mb-0 fw-bold"><i class="fa fa-history me-2"></i>ประวัติการโยกย้ายระหว่างโรงงาน</h5>
-                                        <span class="badge bg-secondary">แสดงล่าสุด 50 รายการ</span>
+                                        <div class="small text-white-50 fw-semibold">
+                                            <i class="fa fa-info-circle me-1"/>แสดงหน้า <t t-esc="t_page"/> จาก <t t-esc="t_total_pages"/> (ทั้งหมด <t t-esc="t_total_count"/> รายการ)
+                                        </div>
                                     </div>
                                     <div class="card-body p-0">
+                                        <!-- ปุ่มเลือกหน้า (Pagination) ด้านบนตารางประวัติโยกย้าย (ภาษาไทยคอมเมนต์) -->
+                                        <div t-if="t_total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light">
+                                            <div class="small text-muted fw-semibold">
+                                                <i class="fa fa-info-circle me-1 text-primary"/>แสดงหน้า <t t-esc="t_page"/> จาก <t t-esc="t_total_pages"/> (ทั้งหมด <t t-esc="t_total_count"/> รายการ)
+                                            </div>
+                                            <nav aria-label="Transfer history pagination top">
+                                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                    <li t-attf-class="page-item #{'disabled' if not t_prev_page_url else ''}">
+                                                        <a class="page-link" t-att-href="t_prev_page_url or '#'" aria-label="Previous">
+                                                            <i class="fa fa-chevron-left"/>
+                                                        </a>
+                                                    </li>
+                                                    <t t-foreach="t_pages_list" t-as="p_info">
+                                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                        </li>
+                                                    </t>
+                                                    <li t-attf-class="page-item #{'disabled' if not t_next_page_url else ''}">
+                                                        <a class="page-link" t-att-href="t_next_page_url or '#'" aria-label="Next">
+                                                            <i class="fa fa-chevron-right"/>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </nav>
+                                        </div>
                                         <div class="table-responsive">
                                             <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                                                 <thead class="bg-light text-muted small text-uppercase">
@@ -1870,6 +1897,31 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                    <!-- ปุ่มเลือกหน้า (Pagination) ด้านล่างตารางประวัติโยกย้าย (ภาษาไทยคอมเมนต์) -->
+                                    <div t-if="t_total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                                        <div class="small text-muted fw-semibold">
+                                            แสดงหน้า <t t-esc="t_page"/> จาก <t t-esc="t_total_pages"/> (ทั้งหมด <t t-esc="t_total_count"/> รายการ)
+                                        </div>
+                                        <nav aria-label="Transfer history pagination bottom">
+                                            <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                                <li t-attf-class="page-item #{'disabled' if not t_prev_page_url else ''}">
+                                                    <a class="page-link" t-att-href="t_prev_page_url or '#'" aria-label="Previous">
+                                                        <i class="fa fa-chevron-left"/>
+                                                    </a>
+                                                </li>
+                                                <t t-foreach="t_pages_list" t-as="p_info">
+                                                    <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                        <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                                    </li>
+                                                </t>
+                                                <li t-attf-class="page-item #{'disabled' if not t_next_page_url else ''}">
+                                                    <a class="page-link" t-att-href="t_next_page_url or '#'" aria-label="Next">
+                                                        <i class="fa fa-chevron-right"/>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </nav>
                                     </div>
                                 </div>
                             </div>
