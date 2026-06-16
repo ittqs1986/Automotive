@@ -62,6 +62,13 @@
                         <span>แผงควบคุมระบบ</span>
                     </a>
                 </li>
+                <!-- ประวัติการใช้งานทั้งหมด (ภาษาไทยคอมเมนต์) -->
+                <li class="nav-item">
+                    <a href="/automotive/admin/usages" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-history fs-5 w-20 text-center"/>
+                        <span>ประวัติการใช้งานทั้งหมด</span>
+                    </a>
+                </li>
                 <!-- จัดการงานซ่อม (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้สำหรับ Odoo 19) -->
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center justify-content-between py-2 px-3 rounded text-white-50 collapsed" 
