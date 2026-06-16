@@ -1,5 +1,7 @@
 from odoo import http, _, fields
 from odoo.http import request
+import math # นำเข้าโมดูล math สำหรับใช้งานปัดเศษในการแบ่งหน้า (Pagination)
+from urllib.parse import urlencode # นำเข้าฟังก์ชัน urlencode สำหรับจัดรูปแบบพารามิเตอร์ URL ในระบบแบ่งหน้า (Pagination)
 
 class VehicleBorrowController(http.Controller):
 
