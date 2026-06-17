@@ -21,6 +21,10 @@ class VehicleBorrowController(http.Controller):
 
     @http.route(['/automotive'], type='http', auth="public", website=True)
     def vehicle_home(self, **post):
+        scan_vehicle_id = post.get('scan_vehicle_id')
+        if scan_vehicle_id:
+            # หากตรวจพบว่ามีการสแกน QR Code และส่งรหัสรถมา ให้เปลี่ยนเส้นทางไปยังหน้าจองรถทันที
+            return request.redirect(f'/automotive/booking?vehicle_id={scan_vehicle_id}')
         vehicle_types, vehicles, employee = self._get_repair_data()
         return request.render("vehicle_borrow.landing_page_template", {
             'vehicle_types': vehicle_types,
@@ -3052,12 +3056,65 @@ class VehicleBorrowController(http.Controller):
         if not self._is_head_admin() and user_factory:
             domain.append(('factory', '=', user_factory))
 
-        # ดึงข้อเสนอแนะตามเงื่อนไข (เรียงจากล่าสุดไปหาเก่าสุด)
-        suggestions = env_sudo['vehicle.suggestion'].search(domain, order='date desc')
+        # --- ระบบแบ่งหน้า (Pagination) สำหรับข้อเสนอแนะ (แสดงครั้งละ 20 รายการ) ---
+        try:
+            page = int(post.get('page', 1))
+        except (ValueError, TypeError):
+            page = 1
+        if page < 1:
+            page = 1
+
+        limit = 20
+        offset = (page - 1) * limit
+
+        # นับจำนวนข้อเสนอแนะทั้งหมดเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
+        total_count = env_sudo['vehicle.suggestion'].search_count(domain)
+        total_pages = math.ceil(total_count / limit) or 1
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * limit
+
+        # ดึงข้อเสนอแนะตามเงื่อนไข (เรียงจากล่าสุดไปหาเก่าสุด) จำกัดรายการละ 20 แถว (ภาษาไทยคอมเมนต์)
+        suggestions = env_sudo['vehicle.suggestion'].search(
+            domain, order='date desc', limit=limit, offset=offset
+        )
+
+        # สร้างรายการหน้าทั้งหมดเพื่อแสดงเป็นปุ่มลิงก์ (ภาษาไทยคอมเมนต์)
+        pages_list = []
+        for p in range(1, total_pages + 1):
+            params = post.copy()
+            params['page'] = p
+            params = {k: v for k, v in params.items() if v}
+            pages_list.append({
+                'num': p,
+                'url': '/automotive/admin/suggestions?' + urlencode(params),
+                'is_current': p == page
+            })
+
+        prev_page_url = None
+        if page > 1:
+            params = post.copy()
+            params['page'] = page - 1
+            params = {k: v for k, v in params.items() if v}
+            prev_page_url = '/automotive/admin/suggestions?' + urlencode(params)
+
+        next_page_url = None
+        if page < total_pages:
+            params = post.copy()
+            params['page'] = page + 1
+            params = {k: v for k, v in params.items() if v}
+            next_page_url = '/automotive/admin/suggestions?' + urlencode(params)
 
         return request.render("vehicle_borrow.admin_suggestions_template", {
             'suggestions': suggestions,
             'user_factory': user_factory or 'ทั้งหมด',
+            # ส่งตัวแปรสำหรับการแบ่งหน้าไปประมวลผลที่ QWeb Template (ภาษาไทยคอมเมนต์)
+            'page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+            'pages_list': pages_list,
+            'prev_page_url': prev_page_url,
+            'next_page_url': next_page_url,
         })
 
 

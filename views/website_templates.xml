@@ -153,11 +153,11 @@
                         </ul>
                     </div>
                 </li>
-                <!-- แดชบอร์ด KPI -->
+                <!-- แดชบอร์ดสรุปสถิติ -->
                 <li class="nav-item">
                     <a href="/automotive/admin/kpi" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
                         <i class="fa fa-bar-chart fs-5 w-20 text-center"/>
-                        <span>แดชบอร์ด KPI</span>
+                        <span>แดชบอร์ดสรุปสถิติ</span>
                     </a>
                 </li>
                 <!-- เมนูรายงานข้อเสนอแนะผู้ใช้งานสำหรับแอดมิน -->
@@ -590,6 +590,8 @@
     <!-- Booking Form Template -->
     <template id="booking_form_template" name="Vehicle Booking Form">
         <t t-call="vehicle_borrow.vb_layout">
+            <!-- โหลด Library สำหรับถอดรหัส QR Code จากกล้องถ่ายรูป (ภาษาไทยคอมเมนต์) -->
+            <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
             <div>
                 <section class="pt-5 pb-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh;">
                     <div class="container">
@@ -652,69 +654,177 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- เลือกรถ -->
-                                                <div class="mb-4">
-                                                    <label for="vehicle_type_filter" class="form-label fw-semibold text-muted small text-uppercase">
-                                                        <i class="fa fa-filter me-1"/>ประเภทรถที่ต้องการยืม
-                                                    </label>
-                                                    <select id="vehicle_type_filter" class="form-select form-select-lg mb-3 bg-light" required="1">
-                                                        <option value="">-- กรุณาเลือกประเภทรถ --</option>
-                                                        <t t-foreach="vehicle_types" t-as="vt">
-                                                            <option t-att-value="vt"><t t-esc="vt"/></option>
-                                                        </t>
-                                                    </select>
-                                                    
-                                                    <label for="vehicle_id" class="form-label fw-semibold text-muted small text-uppercase">
-                                                        <i class="fa fa-car me-1"/>รถที่ต้องการยืม (เลือกประเภทรถก่อน)
-                                                    </label>
-                                                    <select name="vehicle_id" id="vehicle_id" class="form-select form-select-lg" required="1" disabled="1">
-                                                        <option value="">-- กรุณาเลือกรถ --</option>
-                                                        <t t-foreach="vehicles" t-as="car">
-                                                            <option t-att-value="car.id" 
-                                                                    t-att-data-type="car.model_id.name"
-                                                                    t-att-selected="post.get('vehicle_id') == str(car.id) if post else False">
-                                                                <t t-esc="car.model_id.name"/> — [<t t-esc="car.license_plate"/>]
-                                                            </option>
-                                                        </t>
-                                                    </select>
-                                                </div>
+                                                 <!-- เลือกรถ (ภาษาไทยคอมเมนต์) -->
+                                                 <div class="mb-4">
+                                                     <div class="d-flex justify-content-between align-items-center mb-2">
+                                                         <label for="vehicle_type_filter" class="form-label fw-semibold text-muted small text-uppercase mb-0">
+                                                             <i class="fa fa-filter me-1"/>ประเภทรถที่ต้องการยืม
+                                                         </label>
+                                                         <!-- ปุ่มสำหรับเปิดกล้องสแกน QR Code (ภาษาไทยคอมเมนต์) -->
+                                                         <button type="button" id="btn-scan-qr" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-2 py-1 px-3 rounded-pill text-dark fw-bold border-2" data-bs-toggle="modal" data-bs-target="#qrScanModal" style="background-color: #ffc107; border-color: #ffc107;">
+                                                             <i class="fa fa-qrcode"/> สแกน QR Code เลือกรถ
+                                                         </button>
+                                                     </div>
+                                                     <select id="vehicle_type_filter" class="form-select form-select-lg mb-3 bg-light" required="1">
+                                                         <option value="">-- กรุณาเลือกประเภทรถ --</option>
+                                                         <t t-foreach="vehicle_types" t-as="vt">
+                                                             <option t-att-value="vt"><t t-esc="vt"/></option>
+                                                         </t>
+                                                     </select>
+                                                     
+                                                     <label for="vehicle_id" class="form-label fw-semibold text-muted small text-uppercase">
+                                                         <i class="fa fa-car me-1"/>รถที่ต้องการยืม (เลือกประเภทรถก่อน)
+                                                     </label>
+                                                     <select name="vehicle_id" id="vehicle_id" class="form-select form-select-lg" required="1" disabled="1">
+                                                         <option value="">-- กรุณาเลือกรถ --</option>
+                                                         <t t-foreach="vehicles" t-as="car">
+                                                             <option t-att-value="car.id" 
+                                                                     t-att-data-type="car.model_id.name"
+                                                                     t-att-selected="post.get('vehicle_id') == str(car.id) if post else False">
+                                                                 <t t-esc="car.model_id.name"/> — [<t t-esc="car.license_plate"/>]
+                                                             </option>
+                                                         </t>
+                                                     </select>
+                                                 </div>
 
-                                                <script type="text/javascript">
-                                                    document.addEventListener('DOMContentLoaded', function() {
-                                                        const typeFilter = document.getElementById('vehicle_type_filter');
-                                                        const vehicleSelect = document.getElementById('vehicle_id');
-                                                        const galleryContainer = document.getElementById('vehicle_gallery_container');
-                                                        const galleryItems = document.querySelectorAll('.vehicle-gallery-item');
-                                                        const allOptions = Array.from(vehicleSelect.options).slice(1);
+                                                 <script type="text/javascript">
+                                                     document.addEventListener('DOMContentLoaded', function() {
+                                                         const typeFilter = document.getElementById('vehicle_type_filter');
+                                                         const vehicleSelect = document.getElementById('vehicle_id');
+                                                         const galleryContainer = document.getElementById('vehicle_gallery_container');
+                                                         const galleryItems = document.querySelectorAll('.vehicle-gallery-item');
+                                                         const allOptions = Array.from(vehicleSelect.options).slice(1);
 
-                                                        typeFilter.addEventListener('change', function() {
-                                                            const selectedType = this.value;
-                                                            
-                                                            // 1. Update Dropdown
-                                                            vehicleSelect.innerHTML = '<option value="">-- กรุณาเลือกรถ --</option>';
-                                                            if (!selectedType) {
-                                                                vehicleSelect.disabled = true;
-                                                                galleryContainer.classList.add('d-none');
-                                                                return;
-                                                            }
+                                                         // ฟังก์ชันสำหรับอัปเดตตัวเลือกยานพาหนะตามประเภทรถที่เลือก (ภาษาไทยคอมเมนต์)
+                                                         function updateVehicleOptions(selectedType) {
+                                                             vehicleSelect.innerHTML = '<option value="">-- กรุณาเลือกรถ --</option>';
+                                                             if (!selectedType) {
+                                                                 vehicleSelect.disabled = true;
+                                                                 galleryContainer.classList.add('d-none');
+                                                                 return;
+                                                             }
 
-                                                            let found = false;
-                                                            allOptions.forEach(opt => {
-                                                                if (opt.getAttribute('data-type') === selectedType) {
-                                                                    vehicleSelect.appendChild(opt);
-                                                                    found = true;
-                                                                }
-                                                            });
-                                                            vehicleSelect.disabled = !found;
+                                                             let found = false;
+                                                             allOptions.forEach(opt => {
+                                                                 if (opt.getAttribute('data-type') === selectedType) {
+                                                                     vehicleSelect.appendChild(opt);
+                                                                     found = true;
+                                                                 }
+                                                             });
+                                                             vehicleSelect.disabled = !found;
 
-                                                            // 2. Update Gallery
-                                                            galleryContainer.classList.remove('d-none');
-                                                            galleryItems.forEach(item => {
-                                                                item.style.display = (item.getAttribute('data-type') === selectedType) ? 'block' : 'none';
-                                                            });
-                                                        });
-                                                    });
-                                                </script>
+                                                             // จัดการการแสดงรูปภาพแกลลอรี่ด้านล่าง (ภาษาไทยคอมเมนต์)
+                                                             galleryContainer.classList.remove('d-none');
+                                                             galleryItems.forEach(item => {
+                                                                 item.style.display = (item.getAttribute('data-type') === selectedType) ? 'block' : 'none';
+                                                             });
+                                                         }
+
+                                                         typeFilter.addEventListener('change', function() {
+                                                             updateVehicleOptions(this.value);
+                                                         });
+
+                                                         // --- ระบบกล้องและสแกน QR Code (ภาษาไทยคอมเมนต์) ---
+                                                         let html5QrCode;
+                                                         const qrModal = document.getElementById('qrScanModal');
+                                                         const qrReaderResults = document.getElementById('qr-reader-results');
+
+                                                         if (qrModal) {
+                                                             // เมื่อหน้าต่าง Modal แสดง ให้เริ่มการใช้งานกล้องถ่ายรูป (ภาษาไทยคอมเมนต์)
+                                                             qrModal.addEventListener('shown.bs.modal', function () {
+                                                                 html5QrCode = new Html5Qrcode("qr-reader");
+                                                                 const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                                                                     console.log("สแกนสำเร็จ:", decodedText);
+                                                                     try {
+                                                                         const url = new URL(decodedText);
+                                                                         const vehicleId = url.searchParams.get("scan_vehicle_id") || url.searchParams.get("vehicle_id");
+                                                                         if (vehicleId) {
+                                                                             const targetOpt = allOptions.find(opt => opt.value === vehicleId);
+                                                                             if (targetOpt) {
+                                                                                 const vehicleType = targetOpt.getAttribute('data-type');
+                                                                                 if (vehicleType) {
+                                                                                     typeFilter.value = vehicleType;
+                                                                                     updateVehicleOptions(vehicleType);
+                                                                                     vehicleSelect.value = vehicleId;
+                                                                                     
+                                                                                     if (qrReaderResults) {
+                                                                                         qrReaderResults.className = "mt-3 text-success fw-bold";
+                                                                                         qrReaderResults.innerText = "สแกนสำเร็จ: ระบบกำลังเลือกยานพาหนะให้...";
+                                                                                     }
+                                                                                     
+                                                                                     // ปิดสแกนเนอร์และปิด Modal (ภาษาไทยคอมเมนต์)
+                                                                                     stopScanner().then(() => {
+                                                                                         const closeBtn = document.getElementById("btn-close-qr-modal");
+                                                                                         if (closeBtn) {
+                                                                                             closeBtn.click();
+                                                                                         }
+                                                                                     });
+                                                                                 }
+                                                                             } else {
+                                                                                 if (qrReaderResults) {
+                                                                                     qrReaderResults.className = "mt-3 text-danger fw-bold";
+                                                                                     qrReaderResults.innerText = "ไม่พบยานพาหนะคันนี้ในรายการที่ว่าง/พร้อมใช้";
+                                                                                 }
+                                                                             }
+                                                                         } else {
+                                                                             if (qrReaderResults) {
+                                                                                 qrReaderResults.className = "mt-3 text-warning fw-bold";
+                                                                                 qrReaderResults.innerText = "รหัส QR Code นี้ไม่พบรหัสรถยนต์";
+                                                                             }
+                                                                         }
+                                                                     } catch (e) {
+                                                                         if (qrReaderResults) {
+                                                                             qrReaderResults.className = "mt-3 text-danger fw-bold";
+                                                                             qrReaderResults.innerText = "ลิงก์หรือรูปภาพ QR Code ไม่ถูกต้อง";
+                                                                         }
+                                                                     }
+                                                                 };
+                                                                 
+                                                                 const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+                                                                 html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                                                                     .catch((err) => {
+                                                                         console.error("ไม่สามารถเริ่มการสแกนได้:", err);
+                                                                         document.getElementById('qr-reader').innerHTML = `
+                                                                             <div class="text-danger p-4 text-center">
+                                                                                 <i class="fa fa-exclamation-triangle fa-2x mb-2"></i><br/>
+                                                                                 ไม่สามารถเปิดกล้องได้ หรือไม่มีสิทธิ์เข้าถึงกล้อง
+                                                                             </div>`;
+                                                                     });
+                                                             });
+
+                                                             // ฟังก์ชันสำหรับปิดการทำงานของกล้องสแกน (ภาษาไทยคอมเมนต์)
+                                                             function stopScanner() {
+                                                                 if (html5QrCode &amp;&amp; html5QrCode.isScanning) {
+                                                                     return html5QrCode.stop().then(() => {
+                                                                         html5QrCode.clear();
+                                                                         if (qrReaderResults) qrReaderResults.innerText = "";
+                                                                     });
+                                                                 }
+                                                                 return Promise.resolve();
+                                                             }
+
+                                                             // ปิดการใช้กล้องเมื่อปิด Modal (ภาษาไทยคอมเมนต์)
+                                                             qrModal.addEventListener('hidden.bs.modal', function () {
+                                                                 stopScanner();
+                                                             });
+                                                         }
+
+                                                         // --- จัดการค่าจากพารามิเตอร์ URL (ภาษาไทยคอมเมนต์) ---
+                                                         const urlParams = new URLSearchParams(window.location.search);
+                                                         const preSelectedId = urlParams.get('vehicle_id') || urlParams.get('scan_vehicle_id');
+                                                         if (preSelectedId) {
+                                                             const targetOpt = allOptions.find(opt => opt.value === preSelectedId);
+                                                             if (targetOpt) {
+                                                                 const vehicleType = targetOpt.getAttribute('data-type');
+                                                                 if (vehicleType) {
+                                                                     typeFilter.value = vehicleType;
+                                                                     updateVehicleOptions(vehicleType);
+                                                                     vehicleSelect.value = preSelectedId;
+                                                                 }
+                                                             }
+                                                         }
+                                                     });
+                                                 </script>
 
                                                 <!-- วัตถุประสงค์ -->
                                                 <div class="mb-4">
@@ -874,7 +984,29 @@
                         var disp_s = document.getElementById('display_start');
                         if (disp_s) disp_s.textContent = formatDisplay(now);
                     })();
-                </script>
+                                                 </script>
+
+                <!-- Modal สำหรับการสแกน QR Code (ภาษาไทยคอมเมนต์) -->
+                <div class="modal fade" id="qrScanModal" tabindex="-1" aria-labelledby="qrScanModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header bg-primary text-white p-3 border-bottom-0">
+                                <h5 class="modal-title fw-bold mb-0" id="qrScanModalLabel">
+                                    <i class="fa fa-camera me-2"></i>สแกน QR Code ของรถยนต์
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btn-close-qr-modal"></button>
+                            </div>
+                            <div class="modal-body p-4 text-center">
+                                <p class="text-muted small mb-3">โปรดนำ QR Code ที่ติดอยู่หน้ารถส่องที่กล้องเพื่อสแกนเลือกรถยนต์</p>
+                                <div id="qr-reader" class="mx-auto rounded-3 overflow-hidden border bg-light shadow-sm" style="width: 100%; max-width: 320px; aspect-ratio: 1/1;"></div>
+                                <div id="qr-reader-results" class="mt-3"></div>
+                            </div>
+                            <div class="modal-footer bg-light border-top-0 p-3">
+                                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal" id="btn-cancel-qr-scan">ยกเลิกสแกน</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </t>
@@ -1288,6 +1420,17 @@
                 .card.shadow-lg:hover {
                     transform: translateY(-8px);
                 }
+                /* สไตล์เพิ่มเติมสำหรับรายการรถยนต์ที่สามารถคลิกได้ (ภาษาไทยคอมเมนต์) */
+                .vehicle-detail-trigger {
+                    transition: background-color 0.2s ease;
+                }
+                .vehicle-detail-trigger:hover {
+                    background-color: rgba(79, 70, 229, 0.05) !important;
+                }
+                .vehicle-detail-trigger:hover .text-dark {
+                    color: #4f46e5 !important;
+                    text-decoration: underline;
+                }
             </style>
             <div>
                 <section class="admin_hero py-5 bg-dark text-white border-bottom">
@@ -1446,7 +1589,30 @@
                                                 </t>
                                                 <t t-foreach="vehicles" t-as="v">
                                                     <tr class="align-middle">
-                                                        <td class="ps-3 py-3">
+                                                        <td class="ps-3 py-3 vehicle-detail-trigger" 
+                                                             style="cursor: pointer;"
+                                                             data-bs-toggle="modal" 
+                                                             data-bs-target="#vehicleDetailModal"
+                                                             t-att-data-id="v.id"
+                                                             t-att-data-model="v.model_id.name"
+                                                             t-att-data-plate="v.license_plate"
+                                                             t-att-data-factory="v.factory"
+                                                             t-att-data-status="v.vehicle_status"
+                                                             t-att-data-status-th="'พร้อมใช้' if v.vehicle_status == 'active' else 'กำลังซ่อม' if v.vehicle_status == 'repairing' else 'เสีย' if v.vehicle_status == 'broken' else 'ยกเลิกใช้งาน'"
+                                                             t-att-data-available="'true' if v.is_available else 'false'"
+                                                             t-att-data-borrower="v.current_borrow_id.employee_id.name if v.current_borrow_id else ''"
+                                                             t-att-data-borrow-purpose="v.current_borrow_id.purpose if v.current_borrow_id else ''"
+                                                             t-att-data-borrow-start="str(v.current_borrow_id.date_start)[:16] if v.current_borrow_id and v.current_borrow_id.date_start else ''"
+                                                             t-att-data-vin="v.vin_sn or ''"
+                                                             t-att-data-color="v.color or ''"
+                                                             t-att-data-year="v.model_year or ''"
+                                                             t-att-data-transmission="v.transmission or ''"
+                                                             t-att-data-fuel="v.fuel_type or ''"
+                                                             t-att-data-odometer="v.odometer or ''"
+                                                             t-att-data-image-url="'/web/image/fleet.vehicle/%s/image_256' % v.id if v.image_1920 else ''"
+                                                             t-att-data-qrcode-url="'/web/image/fleet.vehicle/%s/qr_code_image' % v.id if v.qr_code_image else ''"
+                                                             t-att-data-qrcode-link="v.qr_code_link or ''"
+                                                             title="คลิกเพื่อดูรายละเอียดรถยนต์">
                                                             <div class="d-flex align-items-center">
                                                                 <div class="avatar-sm me-3 bg-light rounded-3 overflow-hidden d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
                                                                      <t t-if="v.image_1920">
@@ -2046,6 +2212,151 @@
                     </form>
                 </div></div></div>
 
+                <!-- Modal รายละเอียดรถยนต์ (ภาษาไทยคอมเมนต์) -->
+                <div class="modal fade" id="vehicleDetailModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                            <div class="modal-header bg-primary text-white p-3 border-bottom-0">
+                                <h5 class="modal-title fw-bold mb-0">
+                                    <i class="fa fa-car me-2"></i>รายละเอียดรถยนต์
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4 text-dark">
+                                <div class="row g-4">
+                                    <!-- คอลัมน์ซ้าย: รูปภาพและ QR Code -->
+                                    <div class="col-md-5 text-center border-end">
+                                        <!-- รูปภาพรถยนต์ -->
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold small text-uppercase text-muted d-block text-start mb-2">รูปภาพรถยนต์</label>
+                                            <div class="rounded-4 overflow-hidden shadow-sm bg-light d-flex align-items-center justify-content-center border" style="height: 180px; width: 100%;">
+                                                <img id="detail_vehicle_image" src="" alt="รูปภาพรถยนต์" class="img-fluid w-100 h-100" style="object-fit: cover; display: none;"/>
+                                                <div id="detail_vehicle_image_placeholder" class="text-muted p-4">
+                                                    <i class="fa fa-car fa-4x text-secondary opacity-50"></i>
+                                                    <p class="small mt-2 mb-0">ไม่มีรูปภาพรถยนต์</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- QR Code สำหรับสแกนยืมรถ -->
+                                        <div class="card bg-light border-0 rounded-4 p-3 mb-0">
+                                            <label class="form-label fw-bold small text-uppercase text-primary d-block mb-2 text-start">QR Code ประจำรถยนต์</label>
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="bg-white p-2 rounded-3 shadow-sm border mb-3" style="width: 150px; aspect-ratio: 330 / 515; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                                                    <img id="detail_qrcode_image" src="" alt="QR Code" class="img-fluid w-100 h-100" style="display: none; object-fit: contain;"/>
+                                                    <div id="detail_qrcode_placeholder" class="h-100 w-100 d-flex align-items-center justify-content-center text-muted">
+                                                        <i class="fa fa-qrcode fa-3x opacity-50"></i>
+                                                    </div>
+                                                </div>
+                                                <!-- ป้ายทะเบียน/หมายเลขรถยนต์ใต้รูป QR Code (ภาษาไทยคอมเมนต์) -->
+                                                <div id="detail_qrcode_plate" class="badge bg-dark text-white px-3 py-2 rounded-pill fw-bold mb-2 shadow-sm" style="font-size: 0.85rem; letter-spacing: 0.5px;">-</div>
+                                                
+                                                <!-- ป้ายเตือนการใช้งานให้ทำรายการก่อน/หลังใช้งานรถ ปรับสีเป็นสีแดงขนาดใหญ่ขึ้นตามคำขอ (ภาษาไทยคอมเมนต์) -->
+                                                <div class="alert border-0 text-center py-2 px-3 rounded-3 mb-3 w-100" style="font-size: 0.88rem; background-color: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; line-height: 1.4; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-weight: bold;">
+                                                    <i class="fa fa-exclamation-circle me-1"></i>
+                                                    <strong>กรุณาทำรายการในระบบก่อนใช้งานและหลังใช้งานรถ</strong>
+                                                </div>
+                                                
+                                                <a id="detail_qrcode_download" href="#" class="btn btn-sm btn-outline-primary rounded-pill w-100 fw-bold mb-2" download="vehicle_qrcode.png">
+                                                    <i class="fa fa-download me-1"></i> ดาวน์โหลด QR Code
+                                                </a>
+                                                <input type="text" id="detail_qrcode_link" class="form-control form-control-sm text-center bg-white border-0 text-muted select-all" readonly="1" style="font-size: 0.65rem; border-radius: 4px; box-shadow: none;" placeholder="ไม่มีลิงก์ QR Code"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- คอลัมน์ขวา: รายละเอียดต่างๆ -->
+                                    <div class="col-md-7">
+                                        <!-- ข้อมูลพื้นฐาน -->
+                                        <div class="d-flex align-items-start justify-content-between mb-3">
+                                            <div>
+                                                <h4 id="detail_model_name" class="fw-bold mb-1 text-primary">ยี่ห้อ/รุ่นรถ</h4>
+                                                <span id="detail_license_plate" class="badge bg-secondary px-3 py-2 fs-6 rounded-3">ทะเบียนรถ</span>
+                                            </div>
+                                            <div class="text-end">
+                                                <span id="detail_factory_badge" class="badge p-2 px-3 rounded-3 fs-6">โรงงาน</span>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-3"/>
+
+                                        <!-- สถานะความว่างการยืม -->
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold small text-uppercase text-muted d-block mb-2">สถานะการจองและการใช้งาน</label>
+                                            <div id="detail_available_alert" class="alert p-3 rounded-4 mb-0 d-flex align-items-center gap-2">
+                                                <i class="fa fa-info-circle fs-5"></i>
+                                                <div>
+                                                    <strong id="detail_available_title">สถานะความว่าง</strong>
+                                                    <div id="detail_available_desc" class="small mt-1">รายละเอียด</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ข้อมูลผู้ยืมปัจจุบัน (แสดงเฉพาะเมื่อไม่ว่าง) -->
+                                        <div id="detail_borrower_section" class="card border-warning bg-warning-soft rounded-4 p-3 mb-4" style="display: none; background-color: #fff9e6; border: 1px solid #ffeeba;">
+                                            <h6 class="fw-bold text-warning-dark mb-2"><i class="fa fa-user me-2"></i>รายละเอียดการใช้งานขณะนี้</h6>
+                                            <div class="row g-2 small">
+                                                <div class="col-sm-4 text-muted">ผู้จอง/ผู้ยืม:</div>
+                                                <div class="col-sm-8 fw-bold" id="detail_borrower_name">คุณพนักงาน</div>
+                                                
+                                                <div class="col-sm-4 text-muted">วันเวลาที่เริ่มจอง:</div>
+                                                <div class="col-sm-8" id="detail_borrow_start">17/06/2026 10:00</div>
+                                                
+                                                <div class="col-sm-4 text-muted">วัตถุประสงค์:</div>
+                                                <div class="col-sm-8 text-wrap" id="detail_borrow_purpose">เพื่อไปขนของ</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- คุณลักษณะทางเทคนิค -->
+                                        <div>
+                                            <h6 class="fw-bold text-muted mb-2"><i class="fa fa-cog me-2"></i>คุณลักษณะทางเทคนิค</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0 text-center" style="font-size: 0.85rem;">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 50%;">หัวข้อ</th>
+                                                            <th style="width: 50%;">ข้อมูลคุณสมบัติ</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">สถานะตัวรถ</td>
+                                                            <td class="fw-bold" id="detail_status_th">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">หมายเลขตัวถัง (VIN)</td>
+                                                            <td id="detail_vin">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">ปีของรุ่น (Model Year)</td>
+                                                            <td id="detail_year">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">ระบบเกียร์ (Transmission)</td>
+                                                            <td id="detail_transmission">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">ประเภทเชื้อเพลิง (Fuel Type)</td>
+                                                            <td id="detail_fuel">-</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted text-start ps-3">ระยะทางสะสม (Odometer)</td>
+                                                            <td id="detail_odometer">-</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light border-top-0 p-3">
+                                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Modal แก้ไขรถยนต์ -->
                 <div class="modal fade" id="editVehicleModal" tabindex="-1">
                     <div class="modal-dialog">
@@ -2160,6 +2471,162 @@
                                 if (transModalId) transModalId.value = this.dataset.id;
                                 if (transModalName) transModalName.textContent = this.dataset.name;
                                 if (transModalFrom) transModalFrom.textContent = this.dataset.factory;
+                            });
+                        });
+
+                        // จัดการการคลิกที่แถบข้อมูลรถเพื่อแสดงข้อมูลใน Modal (ภาษาไทยคอมเมนต์)
+                        const detailTriggers = document.querySelectorAll('.vehicle-detail-trigger');
+                        const detailModalImage = document.getElementById('detail_vehicle_image');
+                        const detailModalImagePlaceholder = document.getElementById('detail_vehicle_image_placeholder');
+                        const detailModalQR = document.getElementById('detail_qrcode_image');
+                        const detailModalQRPlaceholder = document.getElementById('detail_qrcode_placeholder');
+                        const detailModalQRDownload = document.getElementById('detail_qrcode_download');
+                        const detailModalQRLink = document.getElementById('detail_qrcode_link');
+                        const detailModalQRPlate = document.getElementById('detail_qrcode_plate');
+                        const detailModalModel = document.getElementById('detail_model_name');
+                        const detailModalPlate = document.getElementById('detail_license_plate');
+                        const detailModalFactoryBadge = document.getElementById('detail_factory_badge');
+                        const detailModalStatusTh = document.getElementById('detail_status_th');
+                        const detailModalVin = document.getElementById('detail_vin');
+                        const detailModalYear = document.getElementById('detail_year');
+                        const detailModalTransmission = document.getElementById('detail_transmission');
+                        const detailModalFuel = document.getElementById('detail_fuel');
+                        const detailModalOdometer = document.getElementById('detail_odometer');
+
+                        const detailModalAvailableAlert = document.getElementById('detail_available_alert');
+                        const detailModalAvailableTitle = document.getElementById('detail_available_title');
+                        const detailModalAvailableDesc = document.getElementById('detail_available_desc');
+
+                        const detailModalBorrowerSection = document.getElementById('detail_borrower_section');
+                        const detailModalBorrowerName = document.getElementById('detail_borrower_name');
+                        const detailModalBorrowStart = document.getElementById('detail_borrow_start');
+                        const detailModalBorrowPurpose = document.getElementById('detail_borrow_purpose');
+
+                        detailTriggers.forEach(trigger => {
+                            trigger.addEventListener('click', function() {
+                                const d = this.dataset;
+
+                                // ตั้งค่าข้อมูลพื้นฐานโดยใช้ textContent ป้องกันช่องโหว่ DOM-based XSS (ภาษาไทยคอมเมนต์)
+                                if (detailModalModel) detailModalModel.textContent = d.model || '-';
+                                if (detailModalPlate) detailModalPlate.textContent = d.plate || '-';
+                                if (detailModalQRPlate) detailModalQRPlate.textContent = d.plate || '-';
+                                if (detailModalStatusTh) detailModalStatusTh.textContent = d.statusTh || '-';
+                                if (detailModalVin) detailModalVin.textContent = d.vin || '-';
+                                if (detailModalYear) detailModalYear.textContent = d.year || '-';
+                                if (detailModalOdometer) detailModalOdometer.textContent = d.odometer ? (parseFloat(d.odometer).toLocaleString() + ' กม.') : '-';
+
+                                // การแปลข้อความสถานะเกียร์และประเภทเชื้อเพลิง (ภาษาไทยคอมเมนต์)
+                                const transVal = d.transmission || '';
+                                const fuelVal = d.fuel || '';
+                                const transMap = {
+                                    'manual': 'ธรรมดา (Manual)',
+                                    'automatic': 'อัตโนมัติ (Automatic)'
+                                };
+                                const fuelMap = {
+                                    'gasoline': 'เบนซิน (Gasoline)',
+                                    'diesel': 'ดีเซล (Diesel)',
+                                    'lpg': 'LPG',
+                                    'cng': 'CNG',
+                                    'electric': 'ไฟฟ้า (Electric)',
+                                    'hybrid': 'ไฮบริด (Hybrid)'
+                                };
+                                if (detailModalTransmission) detailModalTransmission.textContent = transMap[transVal] || transVal || '-';
+                                if (detailModalFuel) detailModalFuel.textContent = fuelMap[fuelVal] || fuelVal || '-';
+
+                                // กำหนดการแสดงผลป้ายสังกัดโรงงาน (ภาษาไทยคอมเมนต์)
+                                if (detailModalFactoryBadge) {
+                                    detailModalFactoryBadge.textContent = d.factory || 'N/A';
+                                    detailModalFactoryBadge.className = 'badge p-2 px-3 rounded-3 fs-6 ';
+                                    if (d.factory === 'TQS') {
+                                        detailModalFactoryBadge.classList.add('bg-success');
+                                        detailModalFactoryBadge.style.backgroundColor = '';
+                                    } else if (d.factory === 'CKR') {
+                                        detailModalFactoryBadge.classList.add('text-white');
+                                        detailModalFactoryBadge.style.backgroundColor = '#880808';
+                                    } else if (d.factory === 'TPS') {
+                                        detailModalFactoryBadge.classList.add('bg-warning', 'text-dark');
+                                        detailModalFactoryBadge.style.backgroundColor = '';
+                                    } else {
+                                        detailModalFactoryBadge.classList.add('bg-secondary');
+                                        detailModalFactoryBadge.style.backgroundColor = '';
+                                    }
+                                }
+
+                                // โหลดรูปภาพรถยนต์ (ภาษาไทยคอมเมนต์)
+                                if (d.imageUrl) {
+                                    if (detailModalImage) {
+                                        detailModalImage.src = d.imageUrl;
+                                        detailModalImage.style.display = 'block';
+                                    }
+                                    if (detailModalImagePlaceholder) detailModalImagePlaceholder.style.display = 'none';
+                                } else {
+                                    if (detailModalImage) {
+                                        detailModalImage.src = '';
+                                        detailModalImage.style.display = 'none';
+                                    }
+                                    if (detailModalImagePlaceholder) detailModalImagePlaceholder.style.display = 'block';
+                                }
+
+                                // โหลด QR Code สำหรับสแกนยืมรถ (ภาษาไทยคอมเมนต์)
+                                if (d.qrcodeUrl) {
+                                    if (detailModalQR) {
+                                        detailModalQR.src = d.qrcodeUrl;
+                                        detailModalQR.style.display = 'block';
+                                    }
+                                    if (detailModalQRPlaceholder) detailModalQRPlaceholder.style.display = 'none';
+                                    if (detailModalQRDownload) {
+                                        detailModalQRDownload.href = d.qrcodeUrl;
+                                        detailModalQRDownload.style.display = 'inline-block';
+                                    }
+                                } else {
+                                    if (detailModalQR) {
+                                        detailModalQR.src = '';
+                                        detailModalQR.style.display = 'none';
+                                    }
+                                    if (detailModalQRPlaceholder) detailModalQRPlaceholder.style.display = 'block';
+                                    if (detailModalQRDownload) {
+                                        detailModalQRDownload.href = '#';
+                                        detailModalQRDownload.style.display = 'none';
+                                    }
+                                }
+                                if (detailModalQRLink) {
+                                    detailModalQRLink.value = d.qrcodeLink || '';
+                                }
+
+                                // กำหนดรูปแบบของกล่องแจ้งสถานะความว่าง (ภาษาไทยคอมเมนต์)
+                                const isRetired = d.status === 'retired';
+                                const isAvailable = d.available === 'true';
+
+                                if (detailModalAvailableAlert) {
+                                    detailModalAvailableAlert.className = 'alert p-3 rounded-4 mb-0 d-flex align-items-center gap-2 ';
+                                    if (isRetired) {
+                                        detailModalAvailableAlert.classList.add('alert-secondary');
+                                        if (detailModalAvailableTitle) detailModalAvailableTitle.textContent = 'ยกเลิกใช้งาน';
+                                        if (detailModalAvailableDesc) detailModalAvailableDesc.textContent = 'ยานพาหนะคันนี้ถูกปลดระวางและยกเลิกการใช้งานแล้ว';
+                                    } else if (d.status === 'broken' || d.status === 'repairing') {
+                                        detailModalAvailableAlert.classList.add('alert-danger');
+                                        if (detailModalAvailableTitle) detailModalAvailableTitle.textContent = d.statusTh || 'ไม่พร้อมใช้งาน';
+                                        if (detailModalAvailableDesc) detailModalAvailableDesc.textContent = 'ยานพาหนะชำรุดเสียหายหรืออยู่ระหว่างการซ่อมบำรุง ไม่สามารถใช้งานได้';
+                                    } else if (isAvailable) {
+                                        detailModalAvailableAlert.classList.add('alert-success');
+                                        if (detailModalAvailableTitle) detailModalAvailableTitle.textContent = 'ว่าง (พร้อมใช้งาน)';
+                                        if (detailModalAvailableDesc) detailModalAvailableDesc.textContent = 'สามารถสแกน QR Code หรือทำเรื่องขอใช้รถยนต์คันนี้ได้ทันที';
+                                    } else {
+                                        detailModalAvailableAlert.classList.add('alert-warning');
+                                        if (detailModalAvailableTitle) detailModalAvailableTitle.textContent = 'ไม่ว่าง (กำลังถูกใช้งาน)';
+                                        if (detailModalAvailableDesc) detailModalAvailableDesc.textContent = 'มีพนักงานจองหรือกำลังใช้งานรถคันนี้อยู่ในระบบ';
+                                    }
+                                }
+
+                                // แสดงข้อมูลผู้ยืมปัจจุบันเฉพาะกรณีที่รถกำลังถูกใช้งานอยู่ (ภาษาไทยคอมเมนต์)
+                                if (!isRetired &amp;&amp; !isAvailable &amp;&amp; (d.status === 'active') &amp;&amp; d.borrower) {
+                                    if (detailModalBorrowerSection) detailModalBorrowerSection.style.display = 'block';
+                                    if (detailModalBorrowerName) detailModalBorrowerName.textContent = d.borrower || '-';
+                                    if (detailModalBorrowStart) detailModalBorrowStart.textContent = d.borrowStart || '-';
+                                    if (detailModalBorrowPurpose) detailModalBorrowPurpose.textContent = d.borrowPurpose || '-';
+                                } else {
+                                    if (detailModalBorrowerSection) detailModalBorrowerSection.style.display = 'none';
+                                }
                             });
                         });
                     });

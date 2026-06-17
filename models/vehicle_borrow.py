@@ -37,6 +37,7 @@ class FleetVehicle(models.Model):
         """
         ฟังก์ชันสำหรับสร้างภาพ QR Code และลิงก์สำหรับสแกนยืมรถยนต์แบบอัตโนมัติ
         โดยจะแปลง URL ของระบบรวมถึง ID ของรถยนต์เป็นรหัส QR Code
+        และวาดป้ายทะเบียนและป้ายกำกับเตือนความปลอดภัยลงบนรูปภาพผลลัพธ์ที่จะถูกดาวน์โหลดด้วย (ภาษาไทยคอมเมนต์)
         """
         # ดึง base_url ของ Odoo (เช่น http://localhost:8069 หรือโดเมนเนมใช้งานจริง)
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
@@ -49,6 +50,8 @@ class FleetVehicle(models.Model):
                 import qrcode
                 import io
                 import base64
+                import os
+                from PIL import Image, ImageDraw, ImageFont
                 
                 # ตั้งค่าไลบรารี qrcode
                 qr = qrcode.QRCode(
@@ -60,10 +63,74 @@ class FleetVehicle(models.Model):
                 qr.add_data(link)
                 qr.make(fit=True)
                 
-                # แปลงรหัส QR เป็นรูปภาพ PNG และเข้ารหัสเป็น Base64
+                # แปลงรหัส QR เป็นรูปภาพ PIL
                 img = qr.make_image(fill_color="black", back_color="white")
+                qr_img = img.convert("RGB")
+                qr_w, qr_h = qr_img.size
+                
+                # ขนาดภาพการ์ดใหม่ (เว้นขอบบนสำหรับแถบเมนูกรมท่าและด้านล่างสำหรับการ์ดที่สวยงาม ปรับความสูงเป็น qr_h + 225 เพื่อให้ครอบคลุมขอบ Alert Box) (ภาษาไทยคอมเมนต์)
+                canvas_w = qr_w + 40
+                canvas_h = qr_h + 225  # ความสูงทั้งหมดปรับเป็น 515px เพื่อสัดส่วนและระยะขอบที่สมบูรณ์แบบไม่ล้นขอบ
+                
+                # สร้างรูปภาพเปล่าสีขาว
+                canvas = Image.new("RGB", (canvas_w, canvas_h), "white")
+                draw = ImageDraw.Draw(canvas)
+                
+                # 1. วาดแถบหัวข้อสีน้ำเงินกรมท่าด้านบนของการ์ด (ภาษาไทยคอมเมนต์)
+                draw.rectangle([0, 0, canvas_w - 1, 45], fill="#1e293b")
+                
+                # 2. วาดเส้นขอบสีสีกรมท่าล้อมรอบการ์ดทั้งหมดเพื่อความพรีเมียม (ภาษาไทยคอมเมนต์)
+                draw.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline="#1e293b", width=3)
+                
+                # แปะ QR Code ลงบนการ์ด (เลื่อนลงมา 65px เพื่อหลบแถบหัวข้อด้านบน) (ภาษาไทยคอมเมนต์)
+                canvas.paste(qr_img, (20, 65))
+                
+                # กำหนดพาธไปยังฟอนต์ Sarabun เพื่อรองรับภาษาไทยใน Pillow (ภาษาไทยคอมเมนต์)
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                font_dir = os.path.join(current_dir, "..", "static", "src", "fonts")
+                font_regular = os.path.join(font_dir, "Sarabun-Regular.ttf")
+                font_bold = os.path.join(font_dir, "Sarabun-Bold.ttf")
+                
+                # โหลดฟอนต์หากไฟล์มีอยู่จริง หากไม่มีให้ใช้ฟอนต์ดีฟอลต์ของระบบ
+                try:
+                    font_header = ImageFont.truetype(font_bold, 12)
+                    font_plate = ImageFont.truetype(font_bold, 20)
+                    font_warn = ImageFont.truetype(font_bold, 20)
+                except Exception:
+                    font_header = ImageFont.load_default()
+                    font_plate = ImageFont.load_default()
+                    font_warn = ImageFont.load_default()
+                
+                # ฟังก์ชันภายในสำหรับคำนวณและวาดข้อความกึ่งกลาง (ภาษาไทยคอมเมนต์)
+                def draw_centered_text(draw_obj, y_offset, text, font_obj, color_str, width_limit):
+                    try:
+                        bbox = draw_obj.textbbox((0, 0), text, font=font_obj)
+                        text_w = bbox[2] - bbox[0]
+                    except AttributeError:
+                        text_w, _ = draw_obj.textsize(text, font=font_obj)
+                    x = (width_limit - text_w) // 2
+                    draw_obj.text((x, y_offset), text, font=font_obj, fill=color_str)
+                
+                # วาดข้อความหัวข้อบนแถบน้ำเงินกรมท่า (ภาษาไทยคอมเมนต์)
+                draw_centered_text(draw, 14, "TQS VEHICLE SYSTEM", font_header, "#ffffff", canvas_w)
+                
+                # 3. วาดป้ายทะเบียนรถในกล่อง Badge สีเทาอ่อนขอบบางเรียบร้อยสวยงาม (ภาษาไทยคอมเมนต์)
+                draw.rectangle([40, qr_h + 80, canvas_w - 40, qr_h + 115], fill="#f1f5f9", outline="#cbd5e1", width=1)
+                plate_text = record.license_plate or "-"
+                draw_centered_text(draw, qr_h + 85, plate_text, font_plate, "#1e293b", canvas_w)
+                
+                # 4. วาดกรอบ Alert Box สีแดงเตือนภัยขอบสีแดงสด สำหรับใส่ข้อความเตือนความปลอดภัยสีแดงให้สวยงามเด่นชัด (ภาษาไทยคอมเมนต์)
+                draw.rectangle([15, qr_h + 130, canvas_w - 15, qr_h + 205], fill="#fef2f2", outline="#ef4444", width=2)
+                
+                # วาดป้ายเตือนการบันทึกรายการก่อน/หลังใช้งานรถแบบกึ่งกลางและใช้ฟอนต์ตัวหนาขนาด 20 สีแดงสด (#dc2626) (ภาษาไทยคอมเมนต์)
+                warn_line1 = "กรุณาทำรายการในระบบ"
+                warn_line2 = "ก่อนใช้งานและหลังใช้งานรถ"
+                draw_centered_text(draw, qr_h + 143, warn_line1, font_warn, "#dc2626", canvas_w)
+                draw_centered_text(draw, qr_h + 169, warn_line2, font_warn, "#dc2626", canvas_w)
+                
+                # บันทึกรูปภาพการ์ด QR เป็น PNG
                 temp = io.BytesIO()
-                img.save(temp, format="PNG")
+                canvas.save(temp, format="PNG")
                 qr_image = base64.b64encode(temp.getvalue())
                 record.qr_code_image = qr_image
             except Exception:

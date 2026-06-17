@@ -75,6 +75,32 @@
                 <section class="py-5 bg-light min-vh-100">
                     <div class="container pb-5">
                         <div class="card shadow-lg border-0 rounded-4">
+                            <!-- ปุ่มสลับหน้า (Pagination) ด้านบนของตารางรายงาน (ภาษาไทยคอมเมนต์) -->
+                            <div t-if="total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light rounded-top-4">
+                                <div class="small text-muted fw-semibold">
+                                    แสดงหน้า <t t-esc="page"/> จาก <t t-esc="total_pages"/> (ทั้งหมด <t t-esc="total_count"/> รายการ)
+                                </div>
+                                <nav aria-label="Suggestions pagination top">
+                                    <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                        <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                            <a class="page-link" t-att-href="prev_page_url or '#'" aria-label="Previous">
+                                                <i class="fa fa-chevron-left"/>
+                                            </a>
+                                        </li>
+                                        <t t-foreach="pages_list" t-as="p_info">
+                                            <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                            </li>
+                                        </t>
+                                        <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                            <a class="page-link" t-att-href="next_page_url or '#'" aria-label="Next">
+                                                <i class="fa fa-chevron-right"/>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+
                             <div class="card-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0">
@@ -116,6 +142,32 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+
+                            <!-- ปุ่มสลับหน้า (Pagination) ด้านล่างของตารางรายงาน (ภาษาไทยคอมเมนต์) -->
+                            <div t-if="total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 rounded-bottom-4">
+                                <div class="small text-muted fw-semibold">
+                                    แสดงหน้า <t t-esc="page"/> จาก <t t-esc="total_pages"/> (ทั้งหมด <t t-esc="total_count"/> รายการ)
+                                </div>
+                                <nav aria-label="Suggestions pagination bottom">
+                                    <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
+                                        <li t-attf-class="page-item #{'disabled' if not prev_page_url else ''}">
+                                            <a class="page-link" t-att-href="prev_page_url or '#'" aria-label="Previous">
+                                                <i class="fa fa-chevron-left"/>
+                                            </a>
+                                        </li>
+                                        <t t-foreach="pages_list" t-as="p_info">
+                                            <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
+                                                <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
+                                            </li>
+                                        </t>
+                                        <li t-attf-class="page-item #{'disabled' if not next_page_url else ''}">
+                                            <a class="page-link" t-att-href="next_page_url or '#'" aria-label="Next">
+                                                <i class="fa fa-chevron-right"/>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
