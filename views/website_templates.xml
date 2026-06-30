@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ลิงก์เมนูนำทางใน Sidebar เพื่อใช้งานร่วมกันทั้งแบบ Desktop และ Mobile -->
-    <template id="sidebar_navigation_links" name="Sidebar Navigation Links">
+    <data>
+        <!-- ลิงก์เมนูนำทางใน Sidebar เพื่อใช้งานร่วมกันทั้งแบบ Desktop และ Mobile -->
+        <template id="sidebar_navigation_links" name="Sidebar Navigation Links">
         <ul class="nav nav-pills flex-column gap-2 mb-0">
             <!-- เมนูหน้าแรก -->
             <li class="nav-item">
@@ -41,13 +42,17 @@
             
             <!-- ส่วนของผู้ดูแลระบบ (Admin Only) -->
             <t t-if="request.env.user.has_group('fleet.fleet_group_manager')">
-                <!-- ดึงข้อมูลโรงงานของพนักงานจาก Session หรือกลุ่มสิทธิ์ของ Odoo สำหรับใช้คำนวณจำนวนแจ้งเตือนใบซ่อมบำรุง -->
-                <t t-set="user_factory" t-value="request.session.get('selected_factory') or (
-                    None if (request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')) else (
+                <!-- ดึงข้อมูลโรงงานของพนักงานจาก Session หรือกลุ่มสิทธิ์ของ Odoo โดยมี TQS เป็นค่าเริ่มต้นสำหรับ Head Admin (ภาษาไทย) -->
+                <t t-set="session_factory" t-value="request.session.get('selected_factory')"/>
+                <t t-set="is_head_admin" t-value="request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')"/>
+                <t t-set="user_factory" t-value="
+                    None if session_factory == 'ALL' else (
+                    session_factory if session_factory else (
+                    'TQS' if is_head_admin else (
                     'TQS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs')) else (
                     'CKR' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr')) else (
                     'TPS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps')) else None
-                    ))))"/>
+                    )))))"/>
                 <!-- นับจำนวนใบแจ้งซ่อมตามประเภทโรงงานและสถานะ -->
                 <t t-set="new_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'reported')])"/>
                 <t t-set="pending_repairs_count" t-value="request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing'), ('vehicle_id.factory', '=', user_factory)]) if user_factory else request.env['vehicle.repair.request'].sudo().search_count([('state', '=', 'repairing')])"/>
@@ -55,21 +60,50 @@
                 <li class="nav-header text-uppercase text-white-50 fw-bold small mt-4 mb-2 ps-3" style="font-size: 0.75rem; letter-spacing: 0.05em;">
                     ผู้ดูแลระบบ (Admin)
                 </li>
-                <!-- แผงควบคุมระบบ -->
-                <li class="nav-item">
-                    <a href="/automotive/dashboard" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
-                        <i class="fa fa-dashboard fs-5 w-20 text-center"/>
-                        <span>แผงควบคุมระบบ</span>
-                    </a>
-                </li>
-                <!-- ประวัติการใช้งานทั้งหมด (ภาษาไทยคอมเมนต์) -->
-                <li class="nav-item">
-                    <a href="/automotive/admin/usages" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
-                        <i class="fa fa-history fs-5 w-20 text-center"/>
-                        <span>ประวัติการใช้งานทั้งหมด</span>
-                    </a>
-                </li>
-                <!-- จัดการงานซ่อม (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้สำหรับ Odoo 19) -->
+
+                <!-- ส่วนเลือกบทบาทโรงงานสำหรับ Head Admin เท่านั้น (ภาษาไทย) -->
+                <t t-if="request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')">
+                    <li class="nav-item mb-3 px-3">
+                        <div class="p-3 rounded bg-black bg-opacity-25 border border-secondary border-opacity-10 shadow-sm">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="fa fa-industry text-warning" style="font-size: 0.85rem;"/>
+                                <span class="fw-bold text-white-50" style="font-size: 0.75rem; letter-spacing: 0.05em;">โรงงานที่กำลังทำงาน</span>
+                            </div>
+                            <div class="row g-1">
+                                <t t-set="active_factory" t-value="request.session.get('selected_factory') or 'TQS'"/>
+                                <div class="col-6">
+                                    <a href="/automotive/admin/switch_factory/TQS" 
+                                       t-attf-class="btn btn-sm w-100 py-1 text-center border-0 fw-semibold #{'bg-warning text-dark shadow-sm' if active_factory == 'TQS' else 'btn-outline-secondary text-white-50'}"
+                                       style="font-size: 0.75rem; border-radius: 4px; transition: all 0.2s;">
+                                        TQS
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <a href="/automotive/admin/switch_factory/CKR" 
+                                       t-attf-class="btn btn-sm w-100 py-1 text-center border-0 fw-semibold #{'bg-warning text-dark shadow-sm' if active_factory == 'CKR' else 'btn-outline-secondary text-white-50'}"
+                                       style="font-size: 0.75rem; border-radius: 4px; transition: all 0.2s;">
+                                        CKR
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <a href="/automotive/admin/switch_factory/TPS" 
+                                       t-attf-class="btn btn-sm w-100 py-1 text-center border-0 fw-semibold #{'bg-warning text-dark shadow-sm' if active_factory == 'TPS' else 'btn-outline-secondary text-white-50'}"
+                                       style="font-size: 0.75rem; border-radius: 4px; transition: all 0.2s;">
+                                        TPS
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    <a href="/automotive/admin/switch_factory/ALL" 
+                                       t-attf-class="btn btn-sm w-100 py-1 text-center border-0 fw-semibold #{'bg-warning text-dark shadow-sm' if active_factory == 'ALL' else 'btn-outline-secondary text-white-50'}"
+                                       style="font-size: 0.75rem; border-radius: 4px; transition: all 0.2s;">
+                                        ทั้งหมด
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </t>
+                <!-- 1. จัดการงานซ่อม (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้สำหรับ Odoo 19) -->
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center justify-content-between py-2 px-3 rounded text-white-50 collapsed" 
                        data-bs-toggle="collapse" href="#submenuRepair" role="button" 
@@ -111,7 +145,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <!-- ลิงก์เมนูย่อย: ประวัติการซ่อม (ย้ายลงมาเป็นอันดับสามเพื่อให้ปุ่มเรียงลำดับอย่างสวยงามและเป็นขั้นตอน) -->
+                                <!-- ลิงก์เมนูย่อย: ประวัติการซ่อม -->
                                 <a href="/automotive/repair/history" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
                                     <i class="fa fa-list-alt text-center" style="width: 15px;"/>
                                     <span>ประวัติการซ่อม</span>
@@ -120,7 +154,7 @@
                         </ul>
                     </div>
                 </li>
-                <!-- จัดการสต็อกอะไหล่ (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้) -->
+                <!-- 2. จัดการสต็อกอะไหล่ (ปรับเป็นปุ่มหลักพร้อมเมนูย่อยแบบพับได้) -->
                 <li class="nav-item">
                     <a class="nav-link d-flex align-items-center justify-content-between py-2 px-3 rounded text-white-50 collapsed" 
                        data-bs-toggle="collapse" href="#submenuSpareParts" role="button" 
@@ -143,7 +177,7 @@
                                     <span>สต๊อกอะไหล่</span>
                                 </a>
                             </li>
-                            <!-- เมนูย่อย: ประวัติอะไหล่ (ปรับเปลี่ยนชื่อปุ่มตามความต้องการของผู้ใช้งาน) -->
+                            <!-- เมนูย่อย: ประวัติอะไหล่ -->
                             <li class="nav-item">
                                 <a href="/automotive/spare-parts/history" class="nav-link py-1 px-3 rounded text-white-50 small d-flex align-items-center gap-2" style="transition: all 0.2s; font-size: 0.85rem;">
                                     <i class="fa fa-history text-center" style="width: 15px;"/>
@@ -153,14 +187,35 @@
                         </ul>
                     </div>
                 </li>
-                <!-- แดชบอร์ดสรุปสถิติ -->
+                <!-- 3. จัดการรถยนต์ (เปลี่ยนชื่อจาก แผงควบคุมระบบ ตามความต้องการของผู้ใช้) -->
+                <li class="nav-item">
+                    <a href="/automotive/dashboard" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-dashboard fs-5 w-20 text-center"/>
+                        <span>จัดการรถยนต์</span>
+                    </a>
+                </li>
+                <!-- 4. จัดการพนักงาน/สิทธิ์ -->
+                <li class="nav-item">
+                    <a href="/automotive/admin/members" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-users fs-5 w-20 text-center"/>
+                        <span>จัดการพนักงาน/สิทธิ์</span>
+                    </a>
+                </li>
+                <!-- 5. ประวัติการใช้งานทั้งหมด -->
+                <li class="nav-item">
+                    <a href="/automotive/admin/usages" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
+                        <i class="fa fa-history fs-5 w-20 text-center"/>
+                        <span>ประวัติการใช้งานทั้งหมด</span>
+                    </a>
+                </li>
+                <!-- 6. แดชบอร์ดสรุปสถิติ -->
                 <li class="nav-item">
                     <a href="/automotive/admin/kpi" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
                         <i class="fa fa-bar-chart fs-5 w-20 text-center"/>
                         <span>แดชบอร์ดสรุปสถิติ</span>
                     </a>
                 </li>
-                <!-- เมนูรายงานข้อเสนอแนะผู้ใช้งานสำหรับแอดมิน -->
+                <!-- 7. ข้อเสนอแนะจากผู้ใช้ -->
                 <li class="nav-item">
                     <a href="/automotive/admin/suggestions" class="nav-link d-flex align-items-center gap-3 py-2 px-3 rounded text-white-50" style="transition: all 0.2s;">
                         <i class="fa fa-comments-o fs-5 w-20 text-center"/>
@@ -1407,7 +1462,7 @@
     </template>
 
     <!-- Admin Dashboard Template -->
-    <template id="admin_dashboard_template" name="Admin Vehicle Dashboard">
+<template id="admin_dashboard_template" name="Admin Vehicle Dashboard">
         <t t-call="vehicle_borrow.vb_layout">
             <style>
                 .dropdown-item.text-white-50:hover {
@@ -1435,7 +1490,8 @@
             <div>
                 <section class="admin_hero py-5 bg-dark text-white border-bottom">
                     <div class="container text-center">
-                        <h1 class="display-3 fw-bold mb-0">ศูนย์ควบคุมผู้ดูแลระบบ</h1>
+                        <!-- เปลี่ยนหัวข้อจาก ศูนย์ควบคุมผู้ดูแลระบบ เป็น การจัดการรถยนต์ ตามความต้องการของผู้ใช้ -->
+                        <h1 class="display-3 fw-bold mb-0">การจัดการรถยนต์</h1>
                         <p class="lead text-muted">ระบบแผงควบคุมหลักสำหรับจัดการยานพาหนะและพนักงาน</p>
                         <div class="d-flex justify-content-center gap-2 flex-wrap mt-3">
                             <div class="badge bg-danger p-2">
@@ -1514,9 +1570,9 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
 
-                        <div class="row g-4">
-                            <!-- คอลัมน์ซ้าย: จัดการรถ -->
-                            <div class="col-xl-6 col-lg-6">
+                            <div class="row">
+                                <!-- คอลัมน์หลัก: จัดการรถ (ปรับเป็น col-12 เพื่อแสดงผลกว้างเต็มจอสวยงาม) (คอมเมนต์ภาษาไทย) -->
+                                <div class="col-12">
                                 <div class="card shadow border-0 h-100">
                                     <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center text-nowrap">
                                         <h5 class="mb-0 fw-bold me-2"><i class="fa fa-car me-2"></i>จัดการคลังรถยนต์</h5>
@@ -1735,175 +1791,7 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- คอลัมน์ขวา: จัดการสมาชิก (ย้ายมาไว้ข้างๆ กัน) -->
-                            <div class="col-xl-6 col-lg-6">
-                                <div class="card shadow border-0 h-100">
-                                    <div class="card-header bg-secondary text-white py-3 d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 fw-bold"><i class="fa fa-users me-2"></i>จัดการพนักงาน/สิทธิ์</h5>
-                                        <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addMemberModal">
-                                            <i class="fa fa-plus"></i> เพิ่มพนักงาน
-                                        </button>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <!-- ปุ่มเลือกหน้า (Pagination) ด้านบนตารางจัดการพนักงาน (ภาษาไทยคอมเมนต์) -->
-                                        <div t-if="u_total_pages &gt; 1" class="d-flex flex-column flex-sm-row justify-content-between align-items-center p-3 border-bottom gap-2 bg-light">
-                                            <div class="small text-muted fw-semibold">
-                                                <i class="fa fa-info-circle me-1 text-primary"/>แสดงหน้า <t t-esc="u_page"/> จาก <t t-esc="u_total_pages"/> (ทั้งหมด <t t-esc="u_total_count"/> คน)
-                                            </div>
-                                            <nav aria-label="User pagination top">
-                                                <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
-                                                    <li t-attf-class="page-item #{'disabled' if not u_prev_page_url else ''}">
-                                                        <a class="page-link" t-att-href="u_prev_page_url or '#'" aria-label="Previous">
-                                                            <i class="fa fa-chevron-left"/>
-                                                        </a>
-                                                    </li>
-                                                    <t t-foreach="u_pages_list" t-as="p_info">
-                                                        <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
-                                                            <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
-                                                        </li>
-                                                    </t>
-                                                    <li t-attf-class="page-item #{'disabled' if not u_next_page_url else ''}">
-                                                        <a class="page-link" t-att-href="u_next_page_url or '#'" aria-label="Next">
-                                                            <i class="fa fa-chevron-right"/>
-                                                        </a>
-                                                    </li>
-                                                </ul>
-                                            </nav>
-                                        </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-hover mb-0">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th class="ps-3 py-3">พนักงาน</th>
-                                                        <th>สิทธิ์</th>
-                                                        <th class="text-center">สถานะ</th>
-                                                        <th class="text-end pe-3 py-3">จัดการ</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <t t-foreach="users" t-as="u">
-                                                        <tr t-if="u.id != 1" class="align-middle">
-                                                            <td class="ps-3 py-3">
-                                                                <div class="fw-bold" t-esc="u.name"/>
-                                                                <div class="small text-muted" t-esc="u.login"/>
-                                                            </td>
-                                                             <td>
-                                                                  <t t-if="head_admin_group in u.group_ids">
-                                                                      <span class="badge shadow-sm" style="background-color: #dc3545 !important; color: white !important;">HEAD ADMIN</span>
-                                                                  </t>
-                                                                  <t t-elif="admin_tqs_group in u.group_ids">
-                                                                      <span class="badge shadow-sm" style="background-color: #16a34a !important; color: white !important;">ADMIN TQS</span>
-                                                                  </t>
-                                                                  <t t-elif="admin_ckr_group in u.group_ids">
-                                                                      <span class="badge shadow-sm" style="background-color: #880808 !important; color: white !important;">ADMIN CKR</span>
-                                                                  </t>
-                                                                  <t t-elif="admin_tps_group in u.group_ids">
-                                                                      <span class="badge shadow-sm" style="background-color: #f1c54aff !important; color: white !important;">ADMIN TPS</span>
-                                                                  </t>
-                                                                  <t t-elif="user_tqs_group in u.group_ids">
-                                                                      <span class="badge border shadow-sm" style="background-color: #f0fdf4 !important; color: #16a34a !important; border-color: #16a34a !important;">USER TQS</span>
-                                                                  </t>
-                                                                  <t t-elif="user_ckr_group in u.group_ids">
-                                                                      <span class="badge border shadow-sm" style="background-color: #fef2f2 !important; color: #880808 !important; border-color: #880808 !important;">USER CKR</span>
-                                                                  </t>
-                                                                  <t t-elif="user_tps_group in u.group_ids">
-                                                                      <span class="badge border shadow-sm" style="background-color: #fffbeb !important; color: #d97706 !important; border-color: #d97706 !important;">USER TPS</span>
-                                                                  </t>
-                                                                  <t t-else="">
-                                                                      <span class="badge bg-secondary opacity-50">USER General</span>
-                                                                  </t>
-                                                             </td>
-                                                            <td class="text-center">
-                                                                <form method="post" class="m-0">
-                                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                                    <select class="form-select form-select-sm border-0 bg-light fw-bold" 
-                                                                            onchange="this.form.action='/automotive/member/status/' + this.dataset.id + '/' + this.value; this.form.submit();"
-                                                                            t-att-data-id="u.id"
-                                                                            t-attf-style="width: 100px; font-size: 0.75rem; color: #{'#198754' if u.active else '#dc3545'}; cursor: pointer;">
-                                                                        <option value="active" t-att-selected="u.active">ปกติ</option>
-                                                                        <option value="inactive" t-att-selected="not u.active">ปิดใช้งาน</option>
-                                                                    </select>
-                                                                </form>
-                                                            </td>
-                                                            <td class="text-end pe-3 py-3">
-                                                                <form t-attf-action="/automotive/member/role/#{u.id}/user" method="post" class="d-inline">
-                                                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                                     <div class="dropdown d-inline">
-                                                                         <button class="btn btn-sm btn-outline-dark me-1 dropdown-toggle" type="button" data-bs-toggle="dropdown">สิทธิ์</button>
-                                                                         <ul class="dropdown-menu shadow border-0">
-                                                                              <t t-if="is_head_admin">
-                                                                                  <li class="dropdown-header text-uppercase small fw-bold text-danger">Head Admin Roles</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/head_admin'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-star me-2 text-danger"/>Head Admin (ทุกโรงงาน)</a></li>
-                                                                                  <li><hr class="dropdown-divider"/></li>
-                                                                              </t>
-                                                                              
-                                                                              <t t-if="is_head_admin or user_factory == 'TQS'">
-                                                                                  <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold text-success">TQS Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #16a34a;"/>Admin TQS</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_tqs'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #16a34a;"/>User TQS</a></li>
-                                                                              </t>
-                                                                              
-                                                                              <t t-if="is_head_admin or user_factory == 'CKR'">
-                                                                                  <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold" style="color: #880808;">CKR Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #880808;"/>Admin CKR</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_ckr'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #880808;"/>User CKR</a></li>
-                                                                              </t>
-                                                                              
-                                                                              <t t-if="is_head_admin or user_factory == 'TPS'">
-                                                                                  <li t-if="is_head_admin" class="dropdown-header text-uppercase small fw-bold" style="color: #d97706;">TPS Factory</li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/admin_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-industry me-2" style="color: #d97706;"/>Admin TPS</a></li>
-                                                                                  <li><a class="dropdown-item" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user_tps'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user me-2" style="color: #d97706;"/>User TPS</a></li>
-                                                                              </t>
-
-                                                                              <t t-if="is_head_admin">
-                                                                                  <li><hr class="dropdown-divider"/></li>
-                                                                                  <li class="dropdown-header text-uppercase small fw-bold text-muted">General Roles</li>
-                                                                                  <li><a class="dropdown-item text-muted" onclick="this.closest('form').action='/automotive/member/role/'+this.dataset.uid+'/user'; this.closest('form').submit();" t-att-data-uid="u.id"><i class="fa fa-user-secret me-2"/>User General (ทุกโรงงาน)</a></li>
-                                                                              </t>
-                                                                         </ul>
-                                                                     </div>
-                                                                 </form>
-                                                                <form t-attf-action="/automotive/member/delete/#{u.id}" method="post" class="d-inline">
-                                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบ?')" title="ลบ"><i class="fa fa-trash"></i></button>
-                                                                </form>
-                                                            </td>
-                                                        </tr>
-                                                    </t>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    <!-- ปุ่มเลือกหน้า (Pagination) ด้านล่างตารางจัดการพนักงาน (ภาษาไทยคอมเมนต์) -->
-                                    <div t-if="u_total_pages &gt; 1" class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                                        <div class="small text-muted fw-semibold">
-                                            แสดงหน้า <t t-esc="u_page"/> จาก <t t-esc="u_total_pages"/> (ทั้งหมด <t t-esc="u_total_count"/> คน)
-                                        </div>
-                                        <nav aria-label="User pagination bottom">
-                                            <ul class="pagination pagination-sm justify-content-center mb-0 shadow-sm">
-                                                <li t-attf-class="page-item #{'disabled' if not u_prev_page_url else ''}">
-                                                    <a class="page-link" t-att-href="u_prev_page_url or '#'" aria-label="Previous">
-                                                        <i class="fa fa-chevron-left"/>
-                                                     </a>
-                                                </li>
-                                                <t t-foreach="u_pages_list" t-as="p_info">
-                                                    <li t-attf-class="page-item #{'active' if p_info['is_current'] else ''}">
-                                                        <a class="page-link px-2.5" t-att-href="p_info['url']" t-esc="p_info['num']"/>
-                                                    </li>
-                                                </t>
-                                                <li t-attf-class="page-item #{'disabled' if not u_next_page_url else ''}">
-                                                    <a class="page-link" t-att-href="u_next_page_url or '#'" aria-label="Next">
-                                                        <i class="fa fa-chevron-right"/>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </nav>
-                                    </div>
-                                </div>
-                            </div>
                         </div><!-- /row -->
-
                         <!-- ส่วนของระบบโยกย้ายรถ (Pending Transfers) -->
                         <div class="row mt-5" t-if="pending_transfers">
                             <div class="col-12">
@@ -2170,47 +2058,6 @@
                     </form>
                 </div></div></div>
 
-                        <div class="modal fade" id="addMemberModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-                    <form action="/automotive/member/add" method="post">
-                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                        <div class="modal-header"><h5>เพิ่มพนักงานใหม่</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                        <div class="modal-body">
-                            <div class="mb-3"><label class="form-label">ชื่อ-นามสกุล</label><input type="text" name="name" class="form-control" required="1"/></div>
-                            <div class="mb-3"><label class="form-label">Login/Username</label><input type="text" name="login" class="form-control" required="1"/></div>
-                            <div class="mb-3"><label class="form-label">รหัสผ่าน</label><input type="password" name="password" class="form-control" required="1"/></div>
-                            <div class="mb-3"><label class="form-label fw-bold">ระดับสิทธิ์ / โรงงาน</label>
-                                <select name="role" class="form-select">
-                                    <t t-if="is_head_admin">
-                                        <optgroup label="System Roles">
-                                            <option value="user">👤 USER - พนักงานทั่วไป (เห็นทุกโรงงาน)</option>
-                                            <option value="head_admin">⭐ HEAD ADMIN - ทุกโรงงาน</option>
-                                        </optgroup>
-                                    </t>
-                                    
-                                    <t t-if="is_head_admin or user_factory == 'TQS'">
-                                        <optgroup label="TQS Factory">
-                                            <option value="admin_tqs">🏭 ADMIN TQS - โรงงาน TQS</option>
-                                            <option value="user_tqs">👤 USER TQS - โรงงาน TQS เท่านั้น</option>
-                                        </optgroup>
-                                    </t>
-                                    <t t-if="is_head_admin or user_factory == 'CKR'">
-                                        <optgroup label="CKR Factory">
-                                            <option value="admin_ckr">🏭 ADMIN CKR - โรงงาน CKR</option>
-                                            <option value="user_ckr">👤 USER CKR - โรงงาน CKR เท่านั้น</option>
-                                        </optgroup>
-                                    </t>
-                                    <t t-if="is_head_admin or user_factory == 'TPS'">
-                                        <optgroup label="TPS Factory">
-                                            <option value="admin_tps">🏭 ADMIN TPS - โรงงาน TPS</option>
-                                            <option value="user_tps">👤 USER TPS - โรงงาน TPS เท่านั้น</option>
-                                        </optgroup>
-                                    </t>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="modal-footer"><button type="submit" class="btn btn-primary w-100">เพิ่มพนักงาน</button></div>
-                    </form>
-                </div></div></div>
 
                 <!-- Modal รายละเอียดรถยนต์ (ภาษาไทยคอมเมนต์) -->
                 <div class="modal fade" id="vehicleDetailModal" tabindex="-1" aria-hidden="true">
@@ -2633,6 +2480,579 @@
                 </script>
             </div>
         </t>
+    </template>
+
+    <!-- หน้าจอจัดการพนักงานและสิทธิ์การใช้งาน (ภาษาไทยคอมเมนต์) -->
+    <template id="admin_members_template" name="Admin Members Management">
+        <t t-call="vehicle_borrow.vb_layout">
+            <style>
+                /* ====== Admin Theme CSS (Dark-Sleek Modern) สำหรับแชร์ความสวยงามแบบ reservecar (ภาษาไทยคอมเมนต์) ====== */
+                .adm-section-header-custom {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 2rem;
+                    flex-wrap: wrap;
+                    gap: 1rem;
+                }
+                .adm-section-title-custom h1 {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin: 0 0 0.25rem 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                }
+                .adm-section-title-custom p {
+                    color: #64748b;
+                    font-size: 0.9rem;
+                    margin: 0;
+                }
+                .adm-section-badge-custom {
+                    background: linear-gradient(135deg, #ffc107, #ff9800);
+                    color: #0f172a;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    padding: 0.25rem 0.65rem;
+                    border-radius: 99px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                }
+
+                /* ---- Alerts (ภาษาไทยคอมเมนต์) ---- */
+                .adm-alert {
+                    border-radius: 0.875rem;
+                    padding: 1rem 1.25rem;
+                    margin-bottom: 1.75rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-size: 0.9rem;
+                    animation: adm-fadein 0.35s ease;
+                }
+                @keyframes adm-fadein {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .adm-alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #065f46; }
+                .adm-alert-error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.2);  color: #991b1b; }
+
+                /* ---- Tables and Sections (ภาษาไทยคอมเมนต์) ---- */
+                .adm-section {
+                    background: #ffffff; border: 1px solid #e2e8f0;
+                    border-radius: 1.25rem; margin-bottom: 2rem; overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+                }
+                .adm-section-header {
+                    padding: 1.25rem 1.75rem; border-bottom: 1px solid #e2e8f0;
+                    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;
+                    background: #f8fafc;
+                }
+                .adm-section-title { font-size: 1.05rem; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+                .adm-section-body { padding: 1.5rem 1.75rem; }
+                .adm-table-wrap { overflow-x: auto; }
+                .adm-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+                .adm-table th {
+                    text-align: left; color: #475569; font-weight: 600; font-size: 0.78rem;
+                    text-transform: uppercase; letter-spacing: 0.04em; padding: 0.85rem 1rem;
+                    border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+                }
+                .adm-table td { padding: 1rem 1rem; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+                .adm-table tbody tr:hover { background: #f8fafc; }
+                .veh-name { font-weight: 600; color: #0f172a; margin-bottom: 0.1rem; }
+                .veh-plate { font-size: 0.8rem; color: #64748b; }
+
+                /* ---- Buttons (ภาษาไทยคอมเมนต์) ---- */
+                .adm-btn {
+                    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+                    border-radius: 0.75rem; font-size: 0.88rem; font-weight: 600; padding: 0.6rem 1.2rem;
+                    cursor: pointer; transition: all 0.2s; border: 1px solid transparent; text-decoration: none;
+                }
+                .adm-btn:hover { text-decoration: none; }
+                .adm-btn-primary { background: linear-gradient(135deg, #1e293b, #0f172a); color: white; box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
+                .adm-btn-primary:hover { background: linear-gradient(135deg, #0f172a, #020617); transform: translateY(-1px); }
+                .adm-btn-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #0f766e; }
+                .adm-btn-success:hover { background: rgba(16,185,129,0.2); color: #115e59; }
+                .adm-btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #b91c1c; }
+                .adm-btn-danger:hover { background: rgba(239,68,68,0.2); color: #991b1b; }
+                .adm-btn-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #b45309; }
+                .adm-btn-warning:hover { background: rgba(245,158,11,0.2); color: #92400e; }
+                .adm-btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; border-radius: 0.5rem; }
+
+                /* ---- Badges (ภาษาไทยคอมเมนต์) ---- */
+                .adm-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.77rem; font-weight: 600; }
+                .badge-active   { background: rgba(16,185,129,0.1); color: #0f766e; border: 1px solid rgba(16,185,129,0.2); }
+                .badge-pending  { background: rgba(245,158,11,0.1);  color: #b45309; border: 1px solid rgba(245,158,11,0.2); }
+                .badge-rejected { background: rgba(239,68,68,0.1);   color: #b91c1c; border: 1px solid rgba(239,68,68,0.2); }
+                .badge-neutral  { background: rgba(100,116,139,0.1); color: #475569; border: 1px solid rgba(100,116,139,0.2); }
+
+                /* ---- Actions Wrapper (ภาษาไทยคอมเมนต์) ---- */
+                .adm-actions { display: flex; align-items: center; gap: 0.5rem; }
+                .adm-actions form { margin: 0; display: inline-block; }
+
+                /* ====== Modals (ภาษาไทยคอมเมนต์) ====== */
+                .adm-modal-overlay {
+                    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000;
+                    display: flex; align-items: center; justify-content: center;
+                    opacity: 0; pointer-events: none; transition: all 0.25s ease; backdrop-filter: blur(4px);
+                }
+                .adm-modal-overlay.active { opacity: 1; pointer-events: auto; }
+                .adm-modal {
+                    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.5rem;
+                    width: 100%; max-width: 480px; padding: 2rem; transform: scale(0.9); transition: all 0.25s ease;
+                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+                }
+                .adm-modal-overlay.active .adm-modal { transform: scale(1); }
+                .adm-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+                .adm-modal-title { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0; }
+                .adm-modal-close { background: none; border: none; color: #64748b; cursor: pointer; transition: color 0.2s; }
+                .adm-modal-close:hover { color: #0f172a; }
+                
+                /* ---- Forms (ภาษาไทยคอมเมนต์) ---- */
+                .adm-form-group { margin-bottom: 1.25rem; }
+                .adm-form-label { display: block; font-size: 0.85rem; font-weight: 500; color: #475569; margin-bottom: 0.5rem; }
+                .adm-form-control {
+                    width: 100%; background: #f8fafc; border: 1px solid #cbd5e1;
+                    border-radius: 0.75rem; padding: 0.65rem 1rem; color: #0f172a; font-size: 0.9rem; transition: all 0.2s;
+                }
+                .adm-form-control:focus { border-color: #0f172a; outline: none; background: #ffffff; }
+            </style>
+
+            <div class="container-fluid py-4 px-4">
+                <!-- ส่วนหัวและอธิบายหน้านี้ (ภาษาไทยคอมเมนต์) -->
+                <div class="adm-section-header-custom">
+                    <div class="adm-topbar-left">
+                        <div class="d-flex align-items-center gap-2">
+                            <h1>จัดการผู้ใช้งานและระดับสิทธิ์</h1>
+                            <span class="adm-section-badge-custom">
+                                <t t-if="is_head_admin">ผู้ดูแลระบบสูงสุด</t>
+                                <t t-else="">ผู้จัดการสาขา: <t t-esc="user_factory"/></t>
+                            </span>
+                        </div>
+                        <p>เพิ่ม ลบ แก้ไขข้อมูลพนักงาน และตั้งค่าสิทธิ์การเข้าใช้งานระบบยืมรถและระบบจองรถยนต์ร่วมกัน</p>
+                    </div>
+                </div>
+
+                <!-- แสดงสถานะการทำงาน แจ้งเตือนข้อผิดพลาด/ความสำเร็จ (ภาษาไทยคอมเมนต์) -->
+                <div t-if="success_msg or error_msg" class="mb-4">
+                    <div t-if="success_msg" class="adm-alert adm-alert-success">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span><t t-esc="success_msg"/></span>
+                    </div>
+                    <div t-if="error_msg" class="adm-alert adm-alert-error">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span><t t-esc="error_msg"/></span>
+                    </div>
+                </div>
+
+                <!-- ตารางแสดงรายการผู้ใช้งานพนักงาน (ภาษาไทยคอมเมนต์) -->
+                <div class="adm-section">
+                    <div class="adm-section-header">
+                        <h2 class="adm-section-title">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            รายชื่อผู้ใช้งานและระดับสิทธิ์ในระบบทั้งหมด
+                        </h2>
+                        <button class="adm-btn adm-btn-primary adm-btn-sm" onclick="openCreateUserModal()">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                            </svg>
+                            เพิ่มผู้ใช้งานใหม่
+                        </button>
+                    </div>
+                    <div class="adm-section-body">
+                        <!-- ส่วนตัวกรองข้อมูลผู้ใช้งาน สำหรับการค้นหาและแยกแยะประเภท (ภาษาไทยคอมเมนต์) -->
+                        <div class="adm-filter-box mb-4" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.875rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+                            <div class="row g-3" style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                                <!-- ค้นหาผู้ใช้งาน -->
+                                <div style="flex: 1; min-width: 250px;">
+                                    <label class="form-label" style="color: #475569; font-size: 0.8rem; margin-bottom: 0.4rem; display: block; font-weight: 600;">ค้นหาผู้ใช้งาน</label>
+                                    <div style="position: relative;">
+                                        <input type="text" id="filter-search" class="adm-form-control" placeholder="ค้นหาชื่อ หรืออีเมล..." style="width: 100%; box-sizing: border-box;"/>
+                                    </div>
+                                </div>
+                                <!-- โรงงานสังกัด -->
+                                <div style="width: 150px; min-width: 120px;">
+                                    <label class="form-label" style="color: #475569; font-size: 0.8rem; margin-bottom: 0.4rem; display: block; font-weight: 600;">โรงงานสังกัด</label>
+                                    <select id="filter-factory" class="adm-form-control" style="width: 100%; height: 38px;">
+                                        <option value="all">ทั้งหมด</option>
+                                        <option value="TQS">TQS</option>
+                                        <option value="CKR">CKR</option>
+                                        <option value="TPS">TPS</option>
+                                        <option value="ไม่มีโรงงาน">ส่วนกลาง / ไม่มี</option>
+                                    </select>
+                                </div>
+                                <!-- สิทธิ์ระบบยืมรถ -->
+                                <div style="width: 180px; min-width: 150px;">
+                                    <label class="form-label" style="color: #475569; font-size: 0.8rem; margin-bottom: 0.4rem; display: block; font-weight: 600;">สิทธิ์ระบบยืมรถ</label>
+                                    <select id="filter-vb-role" class="adm-form-control" style="width: 100%; height: 38px;">
+                                        <option value="all">ทั้งหมด</option>
+                                        <option value="admin">แอดมินโรงงาน</option>
+                                        <option value="user_t">พนักงานโรงงาน</option>
+                                        <option value="head_admin">Head Admin</option>
+                                        <option value="user">User General</option>
+                                        <option value="none">ไม่มีสิทธิ์</option>
+                                    </select>
+                                </div>
+                                <!-- สิทธิ์ระบบจองรถ -->
+                                <div style="width: 180px; min-width: 150px;">
+                                    <label class="form-label" style="color: #475569; font-size: 0.8rem; margin-bottom: 0.4rem; display: block; font-weight: 600;">สิทธิ์ระบบจองรถ</label>
+                                    <select id="filter-rc-role" class="adm-form-control" style="width: 100%; height: 38px;">
+                                        <option value="all">ทั้งหมด</option>
+                                        <option value="manager">ผู้จัดการ (Manager)</option>
+                                        <option value="user">ผู้ใช้ทั่วไป (User)</option>
+                                        <option value="none">ไม่มีสิทธิ์ (None)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="adm-table-wrap">
+                            <table class="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>ชื่อ-นามสกุลพนักงาน</th>
+                                        <th>ชื่อเข้าใช้ (Login / Email)</th>
+                                        <th style="text-align: center;">โรงงานสังกัด</th>
+                                        <th style="text-align: center;">สิทธิ์ระบบยืมรถ (vehicle_borrow)</th>
+                                        <th style="text-align: center;">สิทธิ์ระบบจองรถ (reservecar)</th>
+                                        <th style="text-align: center;">การดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- เพิ่มคลาส user-row และ data-attributes สำหรับทำฟรอนต์เอนด์ฟิลเตอร์กรองอย่างเร็ว (ภาษาไทยคอมเมนต์) -->
+                                    <tr t-foreach="users_data" t-as="u" class="user-row"
+                                        t-att-data-name="u['name'].lower()"
+                                        t-att-data-login="u['login'].lower()"
+                                        t-att-data-factory="u['factory']"
+                                        t-att-data-vb-role="u['vehicle_borrow_role']"
+                                        t-att-data-rc-role="'manager' if u['is_reservecar_manager'] else 'user' if u['is_reservecar_user'] else 'none'">
+                                        <td>
+                                            <div class="veh-name"><t t-esc="u['name']"/></div>
+                                        </td>
+                                        <td>
+                                            <span style="font-family: monospace; color: #475569;"><t t-esc="u['login']"/></span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="adm-badge badge-neutral"><t t-esc="u['factory']"/></span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="adm-badge badge-pending"><t t-esc="u['vehicle_borrow_role_label']"/></span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <t t-if="u['is_reservecar_manager']">
+                                                <span class="adm-badge badge-active">ผู้จัดการ (Manager)</span>
+                                            </t>
+                                            <t t-elif="u['is_reservecar_user']">
+                                                <span class="adm-badge badge-pending">ผู้ใช้ทั่วไป (User)</span>
+                                            </t>
+                                            <t t-else="">
+                                                <span class="adm-badge badge-neutral">ไม่มีสิทธิ์จอง (None)</span>
+                                            </t>
+                                        </td>
+                                        <td>
+                                            <div class="adm-actions" style="justify-content: center;">
+                                                <!-- ปุ่มแก้ไขสิทธิ์ผู้ใช้ (ภาษาไทยคอมเมนต์) -->
+                                                <button class="adm-btn adm-btn-warning adm-btn-sm"
+                                                        t-attf-onclick="openEditUserModal(#{u['id']}, '#{u['name']}', '#{u['login']}', '#{'manager' if u['is_reservecar_manager'] else 'user' if u['is_reservecar_user'] else 'none'}', '#{u['factory']}', '#{u['vehicle_borrow_role']}')">
+                                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                    แก้ไขสิทธิ์
+                                                </button>
+                                                <!-- ปุ่มลบผู้ใช้ (ซ่อนกรณีเป็นบัญชีตัวเอง) (ภาษาไทยคอมเมนต์) -->
+                                                <t t-if="u['id'] != request.env.user.id">
+                                                    <form t-attf-action="/automotive/admin/user/delete/#{u['id']}" method="post"
+                                                          t-attf-onsubmit="return confirm('คุณต้องการลบผู้ใช้งาน #{u['name']} ออกจากระบบถาวรใช่หรือไม่? การดำเนินการนี้จะลบข้อมูลพนักงานที่ผูกไว้ด้วย')">
+                                                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                        <button type="submit" class="adm-btn adm-btn-danger adm-btn-sm">
+                                                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                            </svg>
+                                                            ลบผู้ใช้
+                                                        </button>
+                                                    </form>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="adm-badge badge-neutral" style="font-size:0.7rem;">บัญชีปัจจุบัน</span>
+                                                </t>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modals สำหรับจัดการผู้ใช้งาน (ภาษาไทยคอมเมนต์) -->
+            <!-- 1. Modal สร้างผู้ใช้งานใหม่ (ภาษาไทยคอมเมนต์) -->
+            <div class="adm-modal-overlay" id="modalCreateUser" onclick="closeModalOnOverlay(event, 'modalCreateUser')">
+                <div class="adm-modal">
+                    <div class="adm-modal-header">
+                        <h3 class="adm-modal-title">เพิ่มผู้ใช้งานระบบใหม่</h3>
+                        <button class="adm-modal-close" onclick="closeModal('modalCreateUser')">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form action="/automotive/admin/user/create" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_user_name">ชื่อ-นามสกุลพนักงาน</label>
+                            <input type="text" class="adm-form-control" id="create_user_name" name="name" required="required" placeholder="เช่น นายสมชาย ใจดี"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_user_login">อีเมล / ชื่อล็อกอิน</label>
+                            <input type="email" class="adm-form-control" id="create_user_login" name="login" required="required" placeholder="เช่น somchai@company.com"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_user_password">รหัสผ่านสำหรับเข้าใช้</label>
+                            <input type="password" class="adm-form-control" id="create_user_password" name="password" required="required" placeholder="ความยาว 6 ตัวขึ้นไป"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_user_factory">โรงงานสังกัด</label>
+                            <select class="adm-form-control" id="create_user_factory" name="factory">
+                                <t t-if="is_head_admin">
+                                    <option value="">ไม่มีโรงงาน / ส่วนกลาง</option>
+                                    <option value="TQS">TQS</option>
+                                    <option value="CKR">CKR</option>
+                                    <option value="TPS">TPS</option>
+                                </t>
+                                <t t-else="">
+                                    <option t-att-value="user_factory" t-esc="user_factory" selected="selected"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_vehicle_borrow_role">สิทธิ์ระบบยืมรถ (vehicle_borrow)</label>
+                            <select class="adm-form-control" id="create_vehicle_borrow_role" name="vehicle_borrow_role">
+                                <t t-if="is_head_admin">
+                                    <option value="none">ไม่มีสิทธิ์</option>
+                                    <option value="user_tqs">User Factory TQS</option>
+                                    <option value="user_ckr">User Factory CKR</option>
+                                    <option value="user_tps">User Factory TPS</option>
+                                    <option value="admin_tqs">Admin Factory TQS</option>
+                                    <option value="admin_ckr">Admin Factory CKR</option>
+                                    <option value="admin_tps">Admin Factory TPS</option>
+                                    <option value="head_admin">Head Admin (ทุกโรงงาน)</option>
+                                    <option value="user">User General (ทุกโรงงาน)</option>
+                                </t>
+                                <t t-else="">
+                                    <option value="none">ไม่มีสิทธิ์</option>
+                                    <option t-att-value="'user_' + user_factory.lower()" t-esc="'User Factory ' + user_factory"/>
+                                    <option t-att-value="'admin_' + user_factory.lower()" t-esc="'Admin Factory ' + user_factory"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="create_user_role">บทบาทในระบบจองรถ (reservecar)</label>
+                            <select class="adm-form-control" id="create_user_role" name="role">
+                                <option value="user">ผู้ใช้งานทั่วไป (User)</option>
+                                <option value="manager">ผู้ดูแลระบบ (Manager)</option>
+                                <option value="none">ไม่มีสิทธิ์เข้าจอง (None)</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; justify-content: flex-end; gap:0.75rem; margin-top: 2rem;">
+                            <button type="button" class="adm-btn" style="background:rgba(0,0,0,0.05); color:#475569;" onclick="closeModal('modalCreateUser')">ยกเลิก</button>
+                            <button type="submit" class="adm-btn adm-btn-primary">สร้างบัญชีผู้ใช้</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. Modal แก้ไขรายละเอียดและสิทธิ์ผู้ใช้งาน (ภาษาไทยคอมเมนต์) -->
+            <div class="adm-modal-overlay" id="modalEditUser" onclick="closeModalOnOverlay(event, 'modalEditUser')">
+                <div class="adm-modal">
+                    <div class="adm-modal-header">
+                        <h3 class="adm-modal-title">แก้ไขรายละเอียดและระดับสิทธิ์</h3>
+                        <button class="adm-modal-close" onclick="closeModal('modalEditUser')">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form id="editUserForm" action="" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_user_name">ชื่อ-นามสกุลพนักงาน</label>
+                            <input type="text" class="adm-form-control" id="edit_user_name" name="name" required="required"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_user_login">อีเมล / ชื่อล็อกอิน</label>
+                            <input type="email" class="adm-form-control" id="edit_user_login" name="login" required="required"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_user_password">รหัสผ่านใหม่ (ปล่อยว่างหากไม่ต้องการเปลี่ยน)</label>
+                            <input type="password" class="adm-form-control" id="edit_user_password" name="password" placeholder="กรอกรหัสผ่านใหม่เพื่อทำการเปลี่ยน"/>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_user_factory">โรงงานสังกัด</label>
+                            <select class="adm-form-control" id="edit_user_factory" name="factory">
+                                <t t-if="is_head_admin">
+                                    <option value="">ไม่มีโรงงาน / ส่วนกลาง</option>
+                                    <option value="TQS">TQS</option>
+                                    <option value="CKR">CKR</option>
+                                    <option value="TPS">TPS</option>
+                                </t>
+                                <t t-else="">
+                                    <option t-att-value="user_factory" t-esc="user_factory" selected="selected"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_vehicle_borrow_role">สิทธิ์ระบบยืมรถ (vehicle_borrow)</label>
+                            <select class="adm-form-control" id="edit_vehicle_borrow_role" name="vehicle_borrow_role">
+                                <t t-if="is_head_admin">
+                                    <option value="none">ไม่มีสิทธิ์</option>
+                                    <option value="user_tqs">User Factory TQS</option>
+                                    <option value="user_ckr">User Factory CKR</option>
+                                    <option value="user_tps">User Factory TPS</option>
+                                    <option value="admin_tqs">Admin Factory TQS</option>
+                                    <option value="admin_ckr">Admin Factory CKR</option>
+                                    <option value="admin_tps">Admin Factory TPS</option>
+                                    <option value="head_admin">Head Admin (ทุกโรงงาน)</option>
+                                    <option value="user">User General (ทุกโรงงาน)</option>
+                                </t>
+                                <t t-else="">
+                                    <option value="none">ไม่มีสิทธิ์</option>
+                                    <option t-att-value="'user_' + user_factory.lower()" t-esc="'User Factory ' + user_factory"/>
+                                    <option t-att-value="'admin_' + user_factory.lower()" t-esc="'Admin Factory ' + user_factory"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="adm-form-group">
+                            <label class="adm-form-label" for="edit_user_role">บทบาทในระบบจองรถ (reservecar)</label>
+                            <select class="adm-form-control" id="edit_user_role" name="role">
+                                <option value="user">ผู้ใช้งานทั่วไป (User)</option>
+                                <option value="manager">ผู้ดูแลระบบ (Manager)</option>
+                                <option value="none">ไม่มีสิทธิ์เข้าจอง (None)</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; justify-content: flex-end; gap:0.75rem; margin-top: 2rem;">
+                            <button type="button" class="adm-btn" style="background:rgba(0,0,0,0.05); color:#475569;" onclick="closeModal('modalEditUser')">ยกเลิก</button>
+                            <button type="submit" class="adm-btn adm-btn-primary">บันทึกข้อมูล</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- JavaScript สำหรับจัดการสลับ Modal และบันทึกค่า (ภาษาไทยคอมเมนต์) -->
+            <script type="text/javascript">
+                function openCreateUserModal() {
+                    document.getElementById('modalCreateUser').classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(function() {
+                        document.getElementById('create_user_name').focus();
+                    }, 100);
+                }
+                function openEditUserModal(userId, name, login, role, factory, vehicleBorrowRole) {
+                    document.getElementById('editUserForm').action = '/automotive/admin/user/edit/' + userId;
+                    document.getElementById('edit_user_name').value = name;
+                    document.getElementById('edit_user_login').value = login;
+                    document.getElementById('edit_user_password').value = '';
+                    document.getElementById('edit_user_role').value = role;
+                    
+                    var factorySelect = document.getElementById('edit_user_factory');
+                    if (factorySelect.querySelector('option[value="' + factory + '"]')) {
+                        factorySelect.value = factory;
+                    } else if (factory === 'ไม่มีโรงงาน' || !factory) {
+                        factorySelect.value = '';
+                    }
+
+                    var roleSelect = document.getElementById('edit_vehicle_borrow_role');
+                    if (roleSelect.querySelector('option[value="' + vehicleBorrowRole + '"]')) {
+                        roleSelect.value = vehicleBorrowRole || 'none';
+                    } else {
+                        roleSelect.value = 'none';
+                    }
+
+                    document.getElementById('modalEditUser').classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                    setTimeout(function() {
+                        document.getElementById('edit_user_name').focus();
+                    }, 100);
+                }
+                function closeModal(modalId) {
+                    document.getElementById(modalId).classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                function closeModalOnOverlay(event, modalId) {
+                    if (event.target === document.getElementById(modalId)) {
+                        closeModal(modalId);
+                    }
+                }
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        closeModal('modalCreateUser');
+                        closeModal('modalEditUser');
+                    }
+                });
+
+                // โค้ด JavaScript สำหรับควบคุมการกรองรายชื่อผู้ใช้งาน (ภาษาไทยคอมเมนต์)
+                document.addEventListener('DOMContentLoaded', function() {
+                    var searchInput = document.getElementById('filter-search');
+                    var factorySelect = document.getElementById('filter-factory');
+                    var vbRoleSelect = document.getElementById('filter-vb-role');
+                    var rcRoleSelect = document.getElementById('filter-rc-role');
+                    
+                    function performFilter() {
+                        var searchVal = searchInput.value.toLowerCase().trim();
+                        var factoryVal = factorySelect.value;
+                        var vbRoleVal = vbRoleSelect.value;
+                        var rcRoleVal = rcRoleSelect.value;
+                        
+                        var rows = document.querySelectorAll('.user-row');
+                        rows.forEach(function(row) {
+                            var name = row.getAttribute('data-name') || '';
+                            var login = row.getAttribute('data-login') || '';
+                            var factory = row.getAttribute('data-factory') || '';
+                            var vbRole = row.getAttribute('data-vb-role') || '';
+                            var rcRole = row.getAttribute('data-rc-role') || '';
+                            
+                            // 1. ค้นหาชื่อ/อีเมล
+                            var matchSearch = !searchVal || name.indexOf(searchVal) !== -1 || login.indexOf(searchVal) !== -1;
+                            
+                            // 2. กรองโรงงาน
+                            var matchFactory = (factoryVal === 'all') || (factory === factoryVal);
+                            
+                            // 3. กรองสิทธิ์ระบบยืมรถ
+                            var matchVb = false;
+                            if (vbRoleVal === 'all') {
+                                matchVb = true;
+                            } else if (vbRoleVal === 'admin') {
+                                matchVb = vbRole.startsWith('admin_');
+                            } else if (vbRoleVal === 'user_t') {
+                                matchVb = vbRole.startsWith('user_') &amp;&amp; vbRole !== 'user';
+                            } else {
+                                matchVb = (vbRole === vbRoleVal);
+                            }
+                            
+                            // 4. กรองสิทธิ์ระบบจองรถ
+                            var matchRc = (rcRoleVal === 'all') || (rcRole === rcRoleVal);
+                            
+                            if (matchSearch &amp;&amp; matchFactory &amp;&amp; matchVb &amp;&amp; matchRc) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    if (searchInput) searchInput.addEventListener('input', performFilter);
+                    if (factorySelect) factorySelect.addEventListener('change', performFilter);
+                    if (vbRoleSelect) vbRoleSelect.addEventListener('change', performFilter);
+                    if (rcRoleSelect) rcRoleSelect.addEventListener('change', performFilter);
+                });
+            </script>
+         </t>
     </template>
 
     <template id="my_bookings_template" name="My Vehicle Bookings">
@@ -3452,7 +3872,17 @@
                         <div class="modal-body p-4">
                             <!-- โหลดข้อมูลผู้ใช้และยานพาหนะจากฐานข้อมูลโดยตรงเพื่อความมั่นคงและหลีกเลี่ยงการส่งค่าว่างจากคอนโทรลเลอร์ -->
                             <t t-set="modal_employee" t-value="request.env['hr.employee'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)"/>
-                            <t t-set="modal_user_factory" t-value="request.session.get('selected_factory') or ( 'TQS' if request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs') else 'CKR' if request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr') else 'TPS' if request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps') else None )"/>
+                            <!-- คำนวณโรงงานสำหรับโมดูลแจ้งซ่อมตามสิทธิ์การเลือกของ Head Admin หรือกลุ่มสิทธิ์ (ภาษาไทย) -->
+                            <t t-set="modal_session_factory" t-value="request.session.get('selected_factory')"/>
+                            <t t-set="modal_is_head_admin" t-value="request.env.user._is_admin() or request.env.user.has_group('base.group_system') or request.env.user.has_group('vehicle_borrow.group_vb_head_admin')"/>
+                            <t t-set="modal_user_factory" t-value="
+                                None if modal_session_factory == 'ALL' else (
+                                modal_session_factory if modal_session_factory else (
+                                'TQS' if modal_is_head_admin else (
+                                'TQS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tqs') or request.env.user.has_group('vehicle_borrow.group_vb_user_tqs')) else (
+                                'CKR' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_ckr') or request.env.user.has_group('vehicle_borrow.group_vb_user_ckr')) else (
+                                'TPS' if (request.env.user.has_group('vehicle_borrow.group_vb_admin_tps') or request.env.user.has_group('vehicle_borrow.group_vb_user_tps')) else None
+                                )))))"/>
                             <t t-set="modal_vehicles_domain" t-value="[('active', '=', True)] + ([('factory', '=', modal_user_factory)] if modal_user_factory else [])"/>
                             <t t-set="modal_vehicles" t-value="request.env['fleet.vehicle'].sudo().search(modal_vehicles_domain)"/>
                             <!-- ค้นหาประเภทรถเฉพาะที่มีตัวรถจริงในระบบตามโรงงาน เพื่อแสดงเฉพาะประเภทรถที่มีอยู่ในระบบจริง ป้องกันการกดเลือกพลาด -->
@@ -5649,4 +6079,5 @@
             </div>
         </t>
     </template>
+    </data>
 </odoo>

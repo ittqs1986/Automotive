@@ -1,6 +1,6 @@
 {
     'name': 'Vehicle Borrowing System',        # ชื่อโมดูล: ระบบยืมรถ
-    'version': '3.11',                         # เวอร์ชัน 3.11: บูรณะปุ่มสแกน QR Code และฟังก์ชันสแกนด้วยกล้องในระบบขอใช้รถใหม่
+    'version': '3.21',                         # เวอร์ชัน 3.21: อัปเดตโมดูลและรีเฟรชระบบ (ภาษาไทย)
     'category': 'Human Resources/Fleet',       # หมวดหมู่: ทรัพยากรบุคคลและยานพาหนะ
     'summary': 'ระบบยืม-คืนรถสำหรับพนักงาน',     # สรุป: ระบบจัดการการยืมรถภายในองค์กร
     'author': 'ittqs',                         # ผู้เขียน: ittqs
@@ -18,14 +18,9 @@
         'views/vehicle_qrcode_report.xml',      # เพิ่มรายงาน PDF สำหรับสั่งพิมพ์ QR Code ประจำรถยนต์
     ],
     'assets': {
-        # โหลดใน frontend ทุกหน้า (รวม /web/login)
-        'web.assets_frontend': [
-            'vehicle_borrow/static/src/js/login_factory_selector.js',
-        ],
-        # โหลดใน backend ด้วย (ครอบคลุมกรณี portal/backend login)
-        'web.assets_web': [
-            'vehicle_borrow/static/src/js/login_factory_selector.js',
-        ],
+        # โพลดคอมโพเนนต์อื่น ๆ หากจำเป็น (ปัจจุบันไม่มีการโหลดตัวเลือกโรงงานหน้าล็อกอินแล้ว) (ภาษาไทย)
+        'web.assets_frontend': [],
+        'web.assets_web': [],
     },
     'installable': True,                      # ระบุว่าติดตั้งได้
     'application': True,                      # ระบุว่าเป็นแอปพลิเคชันหลัก

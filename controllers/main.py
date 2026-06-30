@@ -311,16 +311,18 @@ class VehicleBorrowController(http.Controller):
 
     def _get_user_factory(self):
         """คืนโรงงานที่ user มีสิทธิ์: 'TQS', 'CKR', 'TPS' หรือ None (Head Admin)"""
-        # 1. Check session first (set during login)
+        # 1. Check session first (set during login or switched via sidebar)
         session_factory = request.session.get('selected_factory')
+        if session_factory == 'ALL':
+            return None
         if session_factory:
             return session_factory
 
         user = request.env.user
-        if user._is_admin() or user.has_group('base.group_system'):
-            return None  # system admin = head admin
-        if user.has_group('vehicle_borrow.group_vb_head_admin'):
-            return None  # head admin เห็นทุกโรงงาน
+        # กำหนดค่าเริ่มต้นเป็น TQS สำหรับ Head Admin เสมอ หากยังไม่มีการเลือกในเซสชัน (ภาษาไทย)
+        if self._is_head_admin():
+            return 'TQS'
+
         if user.has_group('vehicle_borrow.group_vb_admin_tqs') or user.has_group('vehicle_borrow.group_vb_user_tqs'):
             return 'TQS'
         if user.has_group('vehicle_borrow.group_vb_admin_ckr') or user.has_group('vehicle_borrow.group_vb_user_ckr'):
@@ -356,6 +358,7 @@ class VehicleBorrowController(http.Controller):
         domain = list(base_domain or [])
         user_factory = self._get_user_factory()
         
+        # ถ้า user_factory คืน None หมายถึงให้ดูทั้งหมดได้ (Head Admin เลือก ALL) (ภาษาไทย)
         if self._is_head_admin() and not user_factory:
             return domain
             
@@ -364,6 +367,20 @@ class VehicleBorrowController(http.Controller):
         else:
             domain.append(('factory', '=', user_factory))
         return domain
+
+    @http.route(['/automotive/admin/switch_factory/<string:factory>'], type='http', auth="user", website=True)
+    def switch_factory(self, factory, **kw):
+        """เส้นทางสำหรับการสลับสิทธิ์การกรองโรงงานของ Head Admin บนไซด์บาร์ (ภาษาไทย)"""
+        if not self._is_head_admin():
+            return request.redirect('/automotive/dashboard?error=คุณไม่มีสิทธิ์เปลี่ยนโรงงาน')
+
+        factory = factory.upper()
+        if factory in ('TQS', 'CKR', 'TPS', 'ALL'):
+            request.session['selected_factory'] = factory
+
+        # รีไดเรกต์กลับไปหน้าเดิม (ภาษาไทย)
+        referrer = request.httprequest.referrer or '/automotive/dashboard'
+        return request.redirect(referrer)
 
     @http.route(['/automotive/admin/kpi'], type='http', auth="user", website=True)
     def admin_kpi_dashboard(self, **post):
@@ -551,86 +568,11 @@ class VehicleBorrowController(http.Controller):
             params = {k: v for k, v in params.items() if v}
             v_next_page_url = '/automotive/dashboard?' + urlencode(params)
 
-
-        # --- ระบบแบ่งหน้า (Pagination) สำหรับตาราง "จัดการพนักงาน/สิทธิ์" (แสดงครั้งละ 10 รายการ) ---
-        try:
-            u_page = int(post.get('u_page', 1))
-        except (ValueError, TypeError):
-            u_page = 1
-        if u_page < 1:
-            u_page = 1
-
-        u_limit = 10
-        u_offset = (u_page - 1) * u_limit
-
         # คำขอยืมรถ (สำหรับ KPI แดชบอร์ด ไม่ระบุ pagination) (ภาษาไทยคอมเมนต์)
         req_domain = [('vehicle_id.factory', '=', user_factory)] if user_factory else []
         borrow_requests = env_sudo['vehicle.borrow.request'].search(req_domain, order='create_date desc') or []
 
         vehicle_models = env_sudo['fleet.vehicle.model'].search([]) or []
-        
-        # ดึงกลุ่มสิทธิ์ต่างๆ เพื่อใช้กรองและส่งไปหน้ากาก (ภาษาไทยคอมเมนต์)
-        head_admin_group = request.env.ref('vehicle_borrow.group_vb_head_admin')
-        admin_tqs_group = request.env.ref('vehicle_borrow.group_vb_admin_tqs')
-        admin_ckr_group = request.env.ref('vehicle_borrow.group_vb_admin_ckr')
-        admin_tps_group = request.env.ref('vehicle_borrow.group_vb_admin_tps')
-        user_tqs_group = request.env.ref('vehicle_borrow.group_vb_user_tqs')
-        user_ckr_group = request.env.ref('vehicle_borrow.group_vb_user_ckr')
-        user_tps_group = request.env.ref('vehicle_borrow.group_vb_user_tps')
-        fleet_manager_group = request.env.ref('fleet.fleet_group_manager')
-
-        # กรองรายชื่อพนักงานตามโรงงาน (กรองไม่เอาผู้ใช้งาน ID 1 ออกเพื่อไม่ให้กระทบกับการแบ่งหน้า) (ภาษาไทยคอมเมนต์)
-        user_search_domain = [('share', '=', False), ('id', '!=', 1)]
-        if user_factory:
-            # ใช้ Domain แบบ OR '|' เพื่อให้แอดมิน TQS, CKR, TPS เห็น Head Admin ในตารางจัดการสิทธิ์ด้วย (ภาษาไทยคอมเมนต์)
-            my_role_ids = {
-                'TQS': [admin_tqs_group.id, user_tqs_group.id],
-                'CKR': [admin_ckr_group.id, user_ckr_group.id],
-                'TPS': [admin_tps_group.id, user_tps_group.id],
-            }.get(user_factory, [])
-            user_search_domain += [
-                '|',
-                ('group_ids', 'in', my_role_ids),
-                ('group_ids', 'in', [head_admin_group.id])
-            ]
-            
-        # นับจำนวนพนักงานทั้งหมดที่ตรงตามเงื่อนไขเพื่อคำนวณจำนวนหน้า (ภาษาไทยคอมเมนต์)
-        u_total_count = env_sudo['res.users'].with_context(active_test=False).search_count(user_search_domain)
-        u_total_pages = math.ceil(u_total_count / u_limit) or 1
-        if u_page > u_total_pages:
-            u_page = u_total_pages
-            u_offset = (u_page - 1) * u_limit
-
-        # ดึงรายชื่อพนักงานเฉพาะหน้านั้นๆ (จำกัด 10 รายการ) (ภาษาไทยคอมเมนต์)
-        users = env_sudo['res.users'].with_context(active_test=False).search(
-            user_search_domain, order='login', limit=u_limit, offset=u_offset
-        )
-
-        # สร้างรายการปุ่มลิงก์ Pagination พนักงานโดยรักษาพารามิเตอร์อื่นๆ ไว้ (ภาษาไทยคอมเมนต์)
-        u_pages_list = []
-        for p in range(1, u_total_pages + 1):
-            params = post.copy()
-            params['u_page'] = p
-            params = {k: v for k, v in params.items() if v}
-            u_pages_list.append({
-                'num': p,
-                'url': '/automotive/dashboard?' + urlencode(params),
-                'is_current': p == u_page
-            })
-
-        u_prev_page_url = None
-        if u_page > 1:
-            params = post.copy()
-            params['u_page'] = u_page - 1
-            params = {k: v for k, v in params.items() if v}
-            u_prev_page_url = '/automotive/dashboard?' + urlencode(params)
-
-        u_next_page_url = None
-        if u_page < u_total_pages:
-            params = post.copy()
-            params['u_page'] = u_page + 1
-            params = {k: v for k, v in params.items() if v}
-            u_next_page_url = '/automotive/dashboard?' + urlencode(params)
 
         _logger.info(
             "ADMIN DASHBOARD: user=%s factory=%s | type=%s | all_v=%d | vehicles=%d",
@@ -701,15 +643,6 @@ class VehicleBorrowController(http.Controller):
             'vehicles': vehicles,
             'requests': borrow_requests,
             'models': vehicle_models,
-            'users': users,
-            'fleet_manager_group': fleet_manager_group,
-            'head_admin_group': head_admin_group,
-            'admin_tqs_group': admin_tqs_group,
-            'admin_ckr_group': admin_ckr_group,
-            'admin_tps_group': admin_tps_group,
-            'user_tqs_group': user_tqs_group,
-            'user_ckr_group': user_ckr_group,
-            'user_tps_group': user_tps_group,
             'vehicle_types': vehicle_types,
             'selected_type': selected_type,
             'user_factory': user_factory,
@@ -723,13 +656,6 @@ class VehicleBorrowController(http.Controller):
             'v_pages_list': v_pages_list,
             'v_prev_page_url': v_prev_page_url,
             'v_next_page_url': v_next_page_url,
-            # ส่งตัวแปรสำหรับแบ่งหน้าพนักงานไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
-            'u_page': u_page,
-            'u_total_pages': u_total_pages,
-            'u_total_count': u_total_count,
-            'u_pages_list': u_pages_list,
-            'u_prev_page_url': u_prev_page_url,
-            'u_next_page_url': u_next_page_url,
             # ส่งตัวแปรสำหรับแบ่งหน้าประวัติการโยกย้ายไปยังหน้ากาก (ภาษาไทยคอมเมนต์)
             't_page': t_page,
             't_total_pages': t_total_pages,
@@ -739,96 +665,290 @@ class VehicleBorrowController(http.Controller):
             't_next_page_url': t_next_page_url,
         })
 
-    @http.route(['/automotive/member/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    @http.route(['/automotive/admin/members'], type='http', auth="user", website=True)
+    def admin_members(self, **post):
+        # โหลด logging เพื่อเก็บบันทึกข้อมูลการเข้าใช้งาน (ภาษาไทยคอมเมนต์)
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        # ตรวจสอบสิทธิ์ว่าผู้ใช้งานปัจจุบันเป็นผู้ดูแลระบบหรือไม่ (ภาษาไทยคอมเมนต์)
+        if not self._is_admin():
+            _logger.warning("ADMIN MEMBERS: การเข้าถึงถูกปฏิเสธสำหรับผู้ใช้งาน %s", request.env.user.name)
+            return request.render("http_routing.403")
+
+        env_sudo = request.env(su=True)
+        user_factory = self._get_user_factory()  # None = head admin (เข้าถึงทุกโรงงาน)
+        is_head_admin = self._is_head_admin()
+
+        # ดึงรายชื่อผู้ใช้งาน Odoo ทั้งหมดที่ไม่ใช่ share และไม่ใช่ admin หลัก (ID=1) (ภาษาไทยคอมเมนต์)
+        if is_head_admin:
+            users = env_sudo['res.users'].search([('share', '=', False), ('id', '!=', 1)], order='name asc')
+        else:
+            # กรองพนักงานเฉพาะโรงงานของผู้ดูแลระบบรายนี้ (ภาษาไทยคอมเมนต์)
+            employees = env_sudo['hr.employee'].search([('factory', '=', user_factory)])
+            allowed_user_ids = employees.mapped('user_id').ids
+            users = env_sudo['res.users'].search([
+                ('share', '=', False),
+                ('id', '!=', 1),
+                ('id', 'in', allowed_user_ids)
+            ], order='name asc')
+
+        # จัดทำข้อมูลผู้ใช้เพื่อส่งไปยัง QWeb Template ป้องกันข้อผิดพลาดด้าน API (ภาษาไทยคอมเมนต์)
+        users_data = []
+        for u in users:
+            emp = env_sudo['hr.employee'].search([('user_id', '=', u.id)], limit=1)
+            role_label = 'ไม่มีสิทธิ์'
+            if emp and emp.vehicle_borrow_role:
+                selection_dict = dict(emp._fields['vehicle_borrow_role'].selection or [])
+                role_label = selection_dict.get(emp.vehicle_borrow_role, 'ไม่มีสิทธิ์')
+            
+            # ตรวจสอบระดับสิทธิ์ระบบจองรถยนต์ reservecar (ภาษาไทยคอมเมนต์)
+            is_reservecar_manager = False
+            is_reservecar_user = False
+            try:
+                is_reservecar_manager = u.has_group('reservecar.group_reservecar_manager')
+                is_reservecar_user = u.has_group('reservecar.group_reservecar_user')
+            except Exception:
+                pass
+
+            users_data.append({
+                'id': u.id,
+                'name': u.name,
+                'login': u.login,
+                'factory': emp.factory or 'ไม่มีโรงงาน',
+                'vehicle_borrow_role': emp.vehicle_borrow_role or 'none',
+                'vehicle_borrow_role_label': role_label,
+                'is_reservecar_manager': is_reservecar_manager,
+                'is_reservecar_user': is_reservecar_user,
+            })
+
+        success_msg = post.get('success') or (post.get('msg') == 'member_added' and 'เพิ่มสมาชิกใหม่เข้าระบบเรียบร้อยแล้ว') or (post.get('msg') == 'member_deleted' and 'ลบสมาชิกออกจากระบบหรือระงับการใช้งานชั่วคราวแล้ว') or (post.get('msg') == 'role_updated' and 'อัปเดตสิทธิ์การใช้งานพนักงานสำเร็จ') or (post.get('msg') == 'status_updated' and 'ปรับปรุงสถานะการเข้าใช้งานระบบสำเร็จ')
+        error_msg = post.get('error')
+
+        # เรนเดอร์หน้าจัดการพนักงานแยกเฉพาะพร้อมส่งพารามิเตอร์ที่จำเป็น (ภาษาไทยคอมเมนต์)
+        return request.render("vehicle_borrow.admin_members_template", {
+            'users_data': users_data,
+            'user_factory': user_factory,
+            'is_head_admin': is_head_admin,
+            'success_msg': success_msg,
+            'error_msg': error_msg,
+        })
+
+    @http.route(['/automotive/member/add', '/automotive/admin/user/create'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_add(self, **post):
+        # โหลด logging เพื่อเก็บบันทึกข้อมูล (ภาษาไทยคอมเมนต์)
+        import logging
+        _logger = logging.getLogger(__name__)
+
         if not self._is_admin():
             return request.render("http_routing.403")
         
+        name = post.get('name', '').strip()
+        login = post.get('login', '').strip()
+        password = post.get('password', '').strip()
+        role = post.get('role', 'none').strip()  # บทบาทในระบบจองรถ: user, manager, none
+        factory = post.get('factory', '').strip()  # โรงงานสังกัด
+        vehicle_borrow_role = post.get('vehicle_borrow_role', 'none').strip()  # บทบาทในระบบยืมรถ
+
+        # ตรวจสอบสิทธิ์ผู้สร้างและจำกัดการเข้าถึงโรงงาน (ภาษาไทยคอมเมนต์)
+        user_factory = self._get_user_factory()
+        is_head_admin = self._is_head_admin()
+
+        if not is_head_admin:
+            # แอดมินโรงงานจำกัดการเพิ่มผู้ใช้เฉพาะโรงงานของตนเองเท่านั้น (ภาษาไทยคอมเมนต์)
+            if factory != user_factory:
+                factory = user_factory
+            if vehicle_borrow_role not in (f'user_{factory.lower()}', f'admin_{factory.lower()}', 'none'):
+                vehicle_borrow_role = f'user_{factory.lower()}'
+
+        if not name or not login or not password:
+            return request.redirect('/automotive/admin/members?error=กรุณากรอกข้อมูลผู้ใช้งานให้ครบถ้วนในทุกช่อง')
+
+        existing_user = request.env['res.users'].sudo().search([('login', '=', login)], limit=1)
+        if existing_user:
+            return request.redirect('/automotive/admin/members?error=ชื่อเข้าใช้งาน (Login) นี้มีอยู่ในระบบแล้ว')
+
         try:
-            name = post.get('name')
-            login = post.get('login')
-            password = post.get('password')
-            role = post.get('role')  # 'user', 'head_admin', 'admin_tqs', 'admin_ckr', 'admin_tps'
-            
-            # สร้าง User (เปลี่ยนเป็น group_ids เพื่อความเข้ากันได้กับ Odoo 19)
+            base_group = request.env.ref('base.group_user')
+            # ปรับปรุงฟิลด์ group_ids แทน groups_id ตามรูปแบบ Odoo 19 (ภาษาไทย)
             new_user = request.env['res.users'].sudo().create({
                 'name': name,
                 'login': login,
-                'password': password,
-                'group_ids': [(6, 0, [request.env.ref('base.group_user').id])]
+                'email': login,
+                'group_ids': [(6, 0, [base_group.id])]
             })
-            
-            # กำหนด group ตาม role ที่เลือก (รองรับบทบาท 'user' ที่ต้องเข้าถึงได้ทุกโรงงานโดยการเพิ่มเข้าไปในทุกกลุ่มของพนักงาน)
-            group_map = {
-                'head_admin': ['vehicle_borrow.group_vb_head_admin'],
-                'admin_tqs': ['vehicle_borrow.group_vb_admin_tqs'],
-                'admin_ckr': ['vehicle_borrow.group_vb_admin_ckr'],
-                'admin_tps': ['vehicle_borrow.group_vb_admin_tps'],
-                'user_tqs': ['vehicle_borrow.group_vb_user_tqs'],
-                'user_ckr': ['vehicle_borrow.group_vb_user_ckr'],
-                'user_tps': ['vehicle_borrow.group_vb_user_tps'],
-                'user': [
-                    'vehicle_borrow.group_vb_user_tqs',
-                    'vehicle_borrow.group_vb_user_ckr',
-                    'vehicle_borrow.group_vb_user_tps'
-                ],
-            }
-            if role in group_map:
-                for group_xmlid in group_map[role]:
-                    group = request.env.ref(group_xmlid)
-                    # อัปเดตกลุ่มสิทธิ์ผู้ใช้เป็น group_ids ตามมาตรฐาน Odoo 19
-                    new_user.sudo().write({'group_ids': [(4, group.id)]})
-                
-            # วิเคราะห์โรงงานของพนักงานตามสิทธิ์ที่เลือก
-            emp_factory = False
-            if role:
-                if 'tqs' in role:
-                    emp_factory = 'TQS'
-                elif 'ckr' in role:
-                    emp_factory = 'CKR'
-                elif 'tps' in role:
-                    emp_factory = 'TPS'
+            new_user.write({'password': password})
 
-            # สร้าง Employee (ถ้ายังไม่มี) พร้อมส่งค่าสิทธิ์และโรงงาน เพื่อให้ Odoo ซิงค์ข้อมูลเข้ากลุ่ม res.users อัตโนมัติ
+            # ปรับปรุงกลุ่มสิทธิ์ของระบบ reservecar โดยใช้ฟิลด์ user_ids แทน users ใน Odoo 19 และแยกปรับสิทธิ์ตามที่เลือก (ภาษาไทย)
+            try:
+                group_user = request.env.ref('reservecar.group_reservecar_user')
+                group_manager = request.env.ref('reservecar.group_reservecar_manager')
+                if group_user and group_manager:
+                    if role == 'manager':
+                        group_manager.write({'user_ids': [(4, new_user.id)]})
+                        group_user.write({'user_ids': [(4, new_user.id)]})
+                    elif role == 'user':
+                        group_user.write({'user_ids': [(4, new_user.id)]})
+                        group_manager.write({'user_ids': [(3, new_user.id)]})
+                    elif role == 'none':
+                        group_manager.write({'user_ids': [(3, new_user.id)]})
+                        group_user.write({'user_ids': [(3, new_user.id)]})
+            except Exception as ge:
+                _logger.warning("Cannot link reservecar groups: %s", str(ge))
+
+            # สร้างข้อมูลพนักงาน hr.employee พร้อมกำหนดโรงงานและบทบาทเพื่อความสอดคล้องกัน (ภาษาไทยคอมเมนต์)
+            # ซึ่งใน write/create ของ hr.employee จะเรียกซิงค์สิทธิ์ Odoo ให้อัตโนมัติ (ภาษาไทยคอมเมนต์)
             request.env['hr.employee'].sudo().create({
                 'name': name,
                 'user_id': new_user.id,
-                'vehicle_borrow_role': role or 'none',
-                'factory': emp_factory,
+                'factory': factory or False,
+                'vehicle_borrow_role': vehicle_borrow_role,
             })
-            
-            return request.redirect('/automotive/dashboard?msg=member_added')
-        except Exception as e:
-            return request.redirect("/automotive/dashboard?error=" + str(e))
 
-    @http.route(['/automotive/member/delete/<int:user_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+            _logger.info("Admin created new user via vehicle_borrow: %s (role: %s, factory: %s) by user %s", login, role, factory, request.env.user.login)
+            return request.redirect(f'/automotive/admin/members?success=เพิ่มผู้ใช้งาน {name} เรียบร้อยแล้ว')
+        except Exception as e:
+            _logger.error("Failed to create user: %s", str(e))
+            return request.redirect(f'/automotive/admin/members?error=เกิดข้อผิดพลาดในการสร้างผู้ใช้งาน: {str(e)}')
+
+    @http.route([
+        '/automotive/member/delete/<int:user_id>',
+        '/automotive/admin/user/delete/<int:user_id>'
+    ], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_member_delete(self, user_id, **post):
+        # โหลด logging เพื่อเก็บบันทึกข้อมูล (ภาษาไทยคอมเมนต์)
+        import logging
+        _logger = logging.getLogger(__name__)
+
         if not self._is_admin():
             return request.render("http_routing.403")
         
         if user_id == request.env.user.id or user_id == 1:
-            return request.redirect('/automotive/dashboard?error=ไม่สามารถลบบัญชีของตัวเองหรือ Admin หลักได้')
+            return request.redirect('/automotive/admin/members?error=ไม่สามารถลบบัญชีของตัวเองหรือ Admin หลักได้')
         
         user = request.env['res.users'].sudo().browse(user_id)
         if not user.exists():
-            return request.redirect('/automotive/dashboard?error=ไม่พบผู้ใช้งานนี้ในระบบ')
+            return request.redirect('/automotive/admin/members?error=ไม่พบผู้ใช้งานนี้ในระบบ')
+
+        # ตรวจสอบสิทธิ์แอดมินระดับโรงงานเพื่อความปลอดภัย (ภาษาไทยคอมเมนต์)
+        user_factory = self._get_user_factory()
+        is_head_admin = self._is_head_admin()
+        target_emp = request.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
+
+        if not is_head_admin and target_emp and target_emp.factory != user_factory:
+            return request.redirect('/automotive/admin/members?error=ขออภัย! คุณไม่มีสิทธิ์ลบข้อมูลผู้ใช้งานนอกโรงงานสังกัดของคุณ')
         
-        # ลองลบก่อน หากลบไม่ได้ (มีประวัติการจองผูกอยู่) ให้ Archive แทน
         try:
-            # หา Employee ที่ผูกกับ User นี้
-            emp = request.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
+            name = user.name
+            login = user.login
             with request.env.cr.savepoint():
-                if emp:
-                    emp.sudo().unlink()
+                if target_emp:
+                    target_emp.sudo().unlink()
                 user.sudo().unlink()
+            _logger.info("Admin deleted user ID %s: %s (%s) by user %s", user_id, name, login, request.env.user.login)
+            return request.redirect('/automotive/admin/members?success=ลบผู้ใช้งาน ' + name + ' สำเร็จเสร็จสิ้น')
         except Exception:
-            # ลบไม่ได้ → Archive (ปิดการใช้งาน) แทน รักษาประวัติการจองไว้
-            emp = request.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
-            if emp:
-                emp.sudo().write({'active': False})
+            # ลบไม่ได้ → Archive (ปิดการใช้งาน) แทนเพื่อรักษาประวัติเอกสาร
+            if target_emp:
+                target_emp.sudo().write({'active': False})
             user.sudo().write({'active': False})
+            _logger.info("Admin archived user ID %s due to database constraint by user %s", user_id, request.env.user.login)
+            return request.redirect('/automotive/admin/members?success=ระงับการใช้งานบัญชีผู้ใช้เนื่องจากมีประวัติข้อมูลผูกโยงในระบบ')
+
+    @http.route(['/automotive/admin/user/edit/<int:user_id>'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
+    def admin_member_edit(self, user_id, **post):
+        # โหลด logging เพื่อเก็บบันทึกข้อมูล (ภาษาไทยคอมเมนต์)
+        import logging
+        _logger = logging.getLogger(__name__)
+
+        if not self._is_admin():
+            return request.render("http_routing.403")
+
+        user = request.env['res.users'].sudo().browse(user_id)
+        if not user.exists():
+            return request.redirect('/automotive/admin/members?error=ไม่พบข้อมูลผู้ใช้งานในระบบ')
+
+        # ตรวจสอบสิทธิ์ผู้กระทำการเพื่อความปลอดภัย (ภาษาไทยคอมเมนต์)
+        user_factory = self._get_user_factory()
+        is_head_admin = self._is_head_admin()
+
+        target_emp = request.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
         
-        return request.redirect('/automotive/dashboard?msg=member_deleted')
+        # ป้องกันไม่ให้แอดมินระดับโรงงานแก้ไขสิทธิ์ผู้ใช้นอกโรงงานตนเอง (ภาษาไทยคอมเมนต์)
+        if not is_head_admin and target_emp and target_emp.factory != user_factory:
+            return request.redirect('/automotive/admin/members?error=ขออภัย! คุณไม่มีสิทธิ์แก้ไขข้อมูลผู้ใช้นอกโรงงานสังกัดของคุณ')
+
+        name = post.get('name', '').strip()
+        login = post.get('login', '').strip()
+        password = post.get('password', '').strip()
+        role = post.get('role', 'none').strip()  # บทบาทในระบบจองรถยนต์: user, manager, none
+        factory = post.get('factory', '').strip()  # โรงงานสังกัด
+        vehicle_borrow_role = post.get('vehicle_borrow_role', 'none').strip()  # บทบาทในระบบยืมรถ
+
+        if not is_head_admin:
+            # แอดมินโรงงานจำกัดการบันทึกสิทธิ์เฉพาะโรงงานตนเอง (ภาษาไทยคอมเมนต์)
+            if factory != user_factory:
+                factory = user_factory
+            if vehicle_borrow_role not in (f'user_{factory.lower()}', f'admin_{factory.lower()}', 'none'):
+                vehicle_borrow_role = f'user_{factory.lower()}'
+
+        if not name or not login:
+            return request.redirect('/automotive/admin/members?error=กรุณากรอกชื่อและชื่อล็อกอินให้ครบถ้วน')
+
+        existing_user = request.env['res.users'].sudo().search([('login', '=', login), ('id', '!=', user_id)], limit=1)
+        if existing_user:
+            return request.redirect('/automotive/admin/members?error=ชื่อเข้าใช้งาน (Login) นี้ถูกใช้งานโดยบัญชีอื่นแล้ว')
+
+        try:
+            user_vals = {
+                'name': name,
+                'login': login,
+                'email': login,
+            }
+            if password:
+                user_vals['password'] = password
+            user.write(user_vals)
+
+            # อัปเดตกลุ่มสิทธิ์หลักของ reservecar โดยใช้ฟิลด์ user_ids และแยกสิทธิ์ตามบทบาทที่เลือกจริงใน Odoo 19 (ภาษาไทย)
+            try:
+                group_user = request.env.ref('reservecar.group_reservecar_user')
+                group_manager = request.env.ref('reservecar.group_reservecar_manager')
+                if group_user and group_manager:
+                    # ล้างสิทธิ์จองรถเดิม (ภาษาไทย)
+                    group_manager.write({'user_ids': [(3, user.id)]})
+                    group_user.write({'user_ids': [(3, user.id)]})
+
+                    if role == 'manager':
+                        group_manager.write({'user_ids': [(4, user.id)]})
+                        group_user.write({'user_ids': [(4, user.id)]})
+                    elif role == 'user':
+                        group_user.write({'user_ids': [(4, user.id)]})
+                        group_manager.write({'user_ids': [(3, user.id)]})
+                    elif role == 'none':
+                        group_manager.write({'user_ids': [(3, user.id)]})
+                        group_user.write({'user_ids': [(3, user.id)]})
+            except Exception as ge:
+                _logger.warning("Cannot update reservecar groups: %s", str(ge))
+
+            if target_emp:
+                target_emp.write({
+                    'name': name,
+                    'factory': factory or False,
+                    'vehicle_borrow_role': vehicle_borrow_role,
+                })
+            else:
+                request.env['hr.employee'].sudo().create({
+                    'name': name,
+                    'user_id': user.id,
+                    'factory': factory or False,
+                    'vehicle_borrow_role': vehicle_borrow_role,
+                })
+
+            _logger.info("Admin edited user ID %s (role: %s, factory: %s) via vehicle_borrow by user %s", user_id, role, factory, request.env.user.login)
+            return request.redirect(f'/automotive/admin/members?success=แก้ไขรายละเอียดผู้ใช้งาน {name} เรียบร้อยแล้ว')
+        except Exception as e:
+            _logger.error("Failed to edit user ID %s: %s", user_id, str(e))
+            return request.redirect(f'/automotive/admin/members?error=เกิดข้อผิดพลาดในการแก้ไขข้อมูล: {str(e)}')
 
     # รองรับทั้ง URL /automotive และ /admin เพื่อป้องกันปัญหา Error 404
     @http.route([
@@ -840,10 +960,10 @@ class VehicleBorrowController(http.Controller):
             return request.render("http_routing.403")
         
         try:
-            # ค้นหาพนักงานที่ผูกกับ User ID นี้เพื่อเปลี่ยนสิทธิ์และโรงงาน
+            # ค้นหาพนักงานที่ผูกกับ User ID นี้เพื่อเปลี่ยนสิทธิ์และโรงงาน (ภาษาไทยคอมเมนต์)
             employee = request.env['hr.employee'].sudo().search([('user_id', '=', user_id)], limit=1)
             
-            # วิเคราะห์โรงงานของพนักงานตามสิทธิ์ที่ต้องการเปลี่ยน
+            # วิเคราะห์โรงงานของพนักงานตามสิทธิ์ที่ต้องการเปลี่ยน (ภาษาไทยคอมเมนต์)
             emp_factory = False
             if role:
                 if 'tqs' in role:
@@ -853,14 +973,19 @@ class VehicleBorrowController(http.Controller):
                 elif 'tps' in role:
                     emp_factory = 'TPS'
 
+            # ตรวจสอบสิทธิ์แอดมินระดับโรงงานเพื่อความปลอดภัย (ภาษาไทยคอมเมนต์)
+            user_factory = self._get_user_factory()
+            is_head_admin = self._is_head_admin()
+            if not is_head_admin:
+                if emp_factory != user_factory or (employee and employee.factory != user_factory):
+                    return request.redirect('/automotive/admin/members?error=ขออภัย! คุณไม่มีสิทธิ์จัดการข้อมูลพนักงานของโรงงานอื่น')
+
             if employee:
-                # เขียนค่าสิทธิ์และโรงงานลงใน Employee ซึ่งจะทริกเกอร์ _sync_user_groups() เพื่อซิงค์ไป res.users อัตโนมัติ
                 employee.sudo().write({
                     'vehicle_borrow_role': role,
                     'factory': emp_factory
                 })
             else:
-                # กรณีฉุกเฉินถ้าไม่มี Employee ผูกอยู่ ให้ทำการสร้าง Employee ใหม่พร้อมระบุสิทธิ์และโรงงาน
                 user = request.env['res.users'].sudo().browse(user_id)
                 if user.exists():
                     request.env['hr.employee'].sudo().create({
@@ -870,9 +995,9 @@ class VehicleBorrowController(http.Controller):
                         'factory': emp_factory
                     })
                 
-            return request.redirect('/automotive/dashboard?msg=role_updated')
+            return request.redirect('/automotive/admin/members?msg=role_updated')
         except Exception as e:
-            return request.redirect("/automotive/dashboard?error=" + str(e))
+            return request.redirect("/automotive/admin/members?error=" + str(e))
 
     # รองรับทั้ง URL /automotive และ /admin เพื่อป้องกันปัญหา Error 404
     @http.route([
@@ -886,12 +1011,20 @@ class VehicleBorrowController(http.Controller):
         try:
             user = request.env['res.users'].sudo().with_context(active_test=False).browse(user_id)
             if user.exists():
+                # ตรวจสอบสิทธิ์ระดับโรงงานเพื่อความปลอดภัย (ภาษาไทยคอมเมนต์)
+                user_factory = self._get_user_factory()
+                is_head_admin = self._is_head_admin()
+                target_emp = request.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
+                
+                if not is_head_admin and target_emp and target_emp.factory != user_factory:
+                    return request.redirect('/automotive/admin/members?error=ขออภัย! คุณไม่มีสิทธิ์ปรับปรุงสถานะผู้ใช้งานนอกโรงงานสังกัดของคุณ')
+
                 active_val = True if status == 'active' else False
                 user.sudo().write({'active': active_val})
-                return request.redirect('/automotive/dashboard?msg=status_updated')
+                return request.redirect('/automotive/admin/members?msg=status_updated')
         except Exception as e:
-            return request.redirect("/automotive/dashboard?error=" + str(e))
-        return request.redirect('/automotive/dashboard')
+            return request.redirect("/automotive/admin/members?error=" + str(e))
+        return request.redirect('/automotive/admin/members')
 
     @http.route(['/automotive/add'], type='http', auth="user", methods=['POST'], website=True, csrf=True)
     def admin_vehicle_add(self, **post):
@@ -2085,25 +2218,17 @@ class VehicleBorrowController(http.Controller):
             return request.render("http_routing.403")
         
         env_sudo = request.env(su=True)
-        selected_factory = request.session.get('selected_factory')
-        user = request.env.user
-        is_head_admin = user.has_group('vehicle_borrow.group_vb_head_admin')
         user_factory = self._get_user_factory()
         
-        # กรองข้อมูลเฉพาะโมเดลที่มี field 'factory'
-        if is_head_admin and not selected_factory:
+        # กรองข้อมูลเฉพาะโมเดลที่มี field 'factory' ตามสิทธิ์โรงงาน Odoo 19 (ภาษาไทย)
+        if not user_factory:
             vehicle_domain = [('active', '=', True)]
             repair_domain = [('state', '=', 'repairing')]
             repair_factory_domain = []
-        elif not selected_factory:
-            # ถ้าไม่มีโรงงานใน session และไม่ใช่ Head Admin ให้ล็อกไว้ (ไม่เห็นอะไรเลย)
-            vehicle_domain = [('id', '=', 0)]
-            repair_domain = [('id', '=', 0)]
-            repair_factory_domain = []
         else:
-            vehicle_domain = [('factory', '=', selected_factory), ('active', '=', True)]
-            repair_domain = [('vehicle_id.factory', '=', selected_factory), ('state', '=', 'repairing')]
-            repair_factory_domain = [('vehicle_id.factory', '=', selected_factory)]
+            vehicle_domain = [('factory', '=', user_factory), ('active', '=', True)]
+            repair_domain = [('vehicle_id.factory', '=', user_factory), ('state', '=', 'repairing')]
+            repair_factory_domain = [('vehicle_id.factory', '=', user_factory)]
             
         categories = env_sudo['vehicle.spare.part.category'].search([], order='name')
         vehicles = env_sudo['fleet.vehicle'].search(vehicle_domain)
